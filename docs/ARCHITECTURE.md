@@ -141,7 +141,7 @@ POST transfer execution with Idempotency-Key
 GET execution status by execution ID
 ```
 
-Every call uses an injectable transport, timeout, validated JSON decoder, safe public error, and recursive redaction. Poll hints are clamped to local bounds.
+Every call uses an injectable transport, timeout, validated JSON decoder, safe public error, and recursive redaction. Poll hints are clamped to local bounds. Provider HTTP statuses map to stable typed errors (`PROVIDER_AUTH_FAILED`, `PROVIDER_FORBIDDEN`, `PROVIDER_RATE_LIMITED`, method-specific failures), and simulation-to-broadcast parity is enforced on the exact serialized transfer parameters before any broadcast.
 
 ## Failure Model
 

@@ -4,8 +4,8 @@
 
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
-- Current phase: Phase 1 - Foundation and contract freeze
-- Current checkpoint: CP-011
+- Current phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Current checkpoint: CP-013
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -44,12 +44,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Current Objective
 
-- Phase: Phase 1 - Foundation and contract freeze
-- Checkpoint: CP-011
-- Goal: Pass a fresh independent re-review of the corrected Phase 1 contracts (stable payment identity + separate request hash, atomic-unit decimal conversion with token-precision bound, canonical request validation boundary, and removal of the stray gitlink), after which the Phase 1 exit gate closes and Phase 2 may begin.
-- Expected files or assets: Updated independent review record; no new implementation files until the gate passes.
-- Acceptance criteria: Re-review approves the corrected contracts and tests; foundation gates pass; Phase 2 (GitHub event + KeeperHub execution) may begin.
-- Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, audit, secret scan, clean working tree).
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Checkpoint: CP-013
+- Goal: Build the settlement core on the provider layer: GitHub event/state normalization (FR-001, FR-002), GitHub receipt discovery and integrity validation (FR-012), and the settlement orchestrator with duplicate/conflict resolution and audit serialization (FR-009 to FR-013, BR-004 to BR-006), all test-first against a deterministic fake provider.
+- Expected files or assets: `src/github/*`, `src/execution/*`, `src/evidence/*`, fake provider fixture, tests.
+- Acceptance criteria: Deterministic and safe success, duplicate, blocked, failure, pending, conflict, and manual-review outcomes; exact simulation/broadcast parity; no automatic rebroadcast; evidence serializes secret-free.
+- Required verification: Contract, integration, failure, and security tests; `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
 
 ## Current Status
 
@@ -60,10 +60,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Product, architecture, security, configuration, KeeperHub, test, demo, and submission intent were normalized into this plan.
 - Planning mode, research depth, feasibility verdict, assumptions, risks, open decisions, phases, acceptance criteria, and definitions of ready/done were recorded.
 - No implementation files were created by this planning operation.
+- Phase 1 (CP-006 through CP-011): toolchain, domain/config contracts, canonical payment identity, policy reason codes, and pure policy evaluator implemented and independently reviewed; findings REV-001..REV-004 fixed (CP-010) and the re-review approved the Phase 1 exit gate (CP-011).
 
 ### In Progress
 
-- Phase 1 (Foundation and contract freeze): review findings REV-001..REV-004 fixed and verified (90 tests green); only a fresh independent re-review of the corrected contracts remains before the Phase 1 exit gate closes.
+- Phase 2 (Trusted GitHub and KeeperHub execution): the KeeperHub provider layer (CP-012) is implemented and green; the settlement core (GitHub normalization, receipt integrity, orchestrator) is next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
 
 ### Blocked (resolved / narrowed)
 
@@ -307,6 +308,43 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Push the fixes and request a fresh independent re-review (CP-011) of the corrected Phase 1 contracts.
 
+### CP-011: Phase 1 exit gate approved
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 1 - Foundation and contract freeze
+- Objective: Fresh independent re-review of the CP-010 corrections to close the Phase 1 exit gate (CP-011).
+- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `65563d5`). Verdict: Approve with non-blocking findings. 0 blocker/critical/high/medium; 1 Low (`REV-005`); 4 positives. Phase 1 exit gate approved for revision `4554773` only. Prior findings REV-001 (payment identity), REV-002 (atomic conversion/precision), and REV-003 (canonical validation) confirmed materially corrected and covered by new tests.
+- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Commands or checks run: Independent reproduction of 90/90 tests, format, lint, typecheck, build, bundle load, and the payment-identity/decimal/canonical regression tests.
+- Acceptance criteria verified: Phase 1 gate closed for `4554773`; Phase 2 not approved and requires its own review scope.
+- Decisions: None required; approval applies to the reviewed Phase 1 revision only.
+- Known issues: `REV-005` Low — untracked nested `mergepay/` copy in the reviewer workspace (not present in this repository's working tree, which is clean). Dependency audit and dedicated secret scan were not reproducible in the reviewer environment; both were verified locally (audit 0 vulnerabilities, secret scan clean).
+- Blockers: None.
+- Next exact action: Begin Phase 2 (CP-012) test-first, starting with the KeeperHub Direct Execution client, GitHub state normalization, simulation/broadcast parity, and duplicate/conflict resolution; Phase 2 broadcast behavior requires its own independent review.
+
+### CP-012: KeeperHub provider layer
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Implement the highest-risk Phase 2 seam test-first: the KeeperHub Direct Execution client (typed transport, simulation, broadcast, lookup, bounded polling, error mapping), recursive secret redaction, and simulation-to-broadcast parity (plan Tasks 49-57).
+- Requirements covered: `FR-009`, `FR-010`, `FR-011`, `NFR-001`, `NFR-002`, `NFR-003`, `BR-004`.
+- Work completed: Created `src/security/redaction.ts` (recursive redaction of secret values and secret-named keys, non-mutating); `src/keeperhub/types.ts` (TransferParameters, TransferSimulation, TransferBroadcast, ExecutionStatusResponse, KeeperHubChain, KeeperHubExecutionStatus); `src/keeperhub/errors.ts` (ProviderError extending MergePayError with statusCode/kind/retryAfterMs); `src/keeperhub/transport.ts` (injectable HttpTransport + FetchHttpTransport with AbortSignal.timeout, header normalization, network/timeout -> PROVIDER_TRANSPORT_FAILED); `src/keeperhub/client.ts` (KeeperHubClient: simulateTransfer, broadcastTransfer with Idempotency-Key and 409 idempotency classification, getExecution with X-Poll-Interval-Hint, waitForTerminal with clamped bounded polling and injectable clock/sleeper, discoverChains; status mapping 401/403/429/method-specific; validated JSON decoding; redacted error causes); `src/keeperhub/parity.ts` (serializeTransferParameters, assertSameTransferParameters -> EXECUTION_PARITY_MISMATCH). Added `atomicToHumanUnits` to `src/domain/decimal.ts`. Added provider error codes to `src/domain/errors.ts`. Tests: `tests/security/redaction.test.ts`, `tests/keeperhub/transport.test.ts`, `tests/keeperhub/client.test.ts`, `tests/keeperhub/parity.test.ts`, decimal atomic conversion additions.
+- Files or assets changed: the files above, docs `KEEPERHUB-INTEGRATION.md`, `ARCHITECTURE.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: focused vitest runs (red first), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run audit`, grep secret scan.
+- Test results: 128 tests pass (was 90): redaction 7, transport 6, client 25, parity 7, decimal atomic-conversion 4, prior suites unchanged. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; audit 0 vulnerabilities; secret scan clean (only labeled synthetic fixture values).
+- Acceptance criteria verified: Simulation and broadcast use the same serialized transfer parameters (parity guard); broadcast sends the payment key as the idempotency key without the simulate flag; statuses map to typed errors with safe messages; polling honors clamped hints, stops at terminal/zero-hint, and times out; secrets are redacted recursively from errors; every HTTP call has a timeout.
+- Decisions: Poll hint interpreted as seconds (clamped); recipient sent as normalized lowercase address pending live EIP-55 confirmation; simulation success is any 2xx; these assumptions are documented in `KEEPERHUB-INTEGRATION.md` pending Phase 3 live confirmation. Polling clock/sleeper are injectable for deterministic tests.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: Provider contract field-name and status-unit assumptions (documented) must be reconciled with live evidence in Phase 3 before any broadcast.
+- Known issues: None blocking. The client is not yet wired into `src/action.ts` (entrypoint stays a placeholder until the orchestrator exists).
+- Blockers: None.
+- Next exact action: CP-013 — implement test-first the GitHub event/state normalization, receipt discovery/integrity, settlement orchestrator with duplicate/conflict resolution, and audit serialization, using a deterministic fake provider.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -368,6 +406,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-010 | Config precision and cap bounds | Pass | Over-precision amount and maximum rejected; amount equal to maximum accepted; over-cap blocked (config validation tests) |
 | CP-010 | Canonical request validation boundary | Pass | 17 malformed-field cases rejected with `CANONICAL_REQUEST_INVALID`; equivalent inputs canonicalize identically |
 | CP-010 | Verification suite | Pass | `npm test` 90/90; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean; `git rm mergepay` removed stray gitlink |
+| CP-011 | Independent Phase 1 re-review | Approve | `CODE_REVIEW.md`: 0 blocker/critical/high/medium; REV-001..REV-003 confirmed corrected; 1 Low (`REV-005` nested copy in reviewer workspace); Phase 1 gate approved for `4554773` |
+| CP-012 | Provider transport | Pass | `FetchHttpTransport` injectable fetch, per-request timeout, header normalization, network/timeout -> `PROVIDER_TRANSPORT_FAILED` |
+| CP-012 | Provider client | Pass | Simulate/broadcast/lookup/poll/discover against fake transport; idempotency-key on broadcast, `simulate` only on simulation, 409 -> conflict/in-progress kind, 401/403/429 mapping, malformed JSON rejected |
+| CP-012 | Bounded polling | Pass | Clamped hints, terminal at completed/failed/zero-hint, deterministic `PROVIDER_POLL_TIMEOUT` via injected clock/sleeper |
+| CP-012 | Parity and redaction | Pass | `EXECUTION_PARITY_MISMATCH` on any parameter change; recursive secret redaction non-mutating |
+| CP-012 | Verification suite | Pass | `npm test` 128/128; typecheck/lint/format clean; build + bundle load; `npm audit` 0; secret scan clean |
 
 ## Known Issues
 
@@ -388,7 +432,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Push the corrected Phase 1 contracts (CP-010) and request a fresh independent re-review (CP-011) of the corrected diff covering REV-001..REV-004: stable payment identity vs separate request hash, atomic-unit decimal conversion with token-precision bound, canonical request validation boundary, and the gitlink removal. Phase 2 (GitHub event + KeeperHub execution) may begin only after the re-review approves.
+Begin CP-013 in Phase 2: implement test-first the GitHub event/state normalization, receipt discovery and integrity validation, the settlement orchestrator with duplicate/conflict resolution, uncertain-state handling, and audit serialization, using a deterministic fake provider. Phase 2 broadcast behavior must pass its own independent review before any live execution.
 
 ## Checkpoint and Amendment Contract
 

@@ -2,8 +2,8 @@
 
 ## Test Layers
 
-1. Pure unit tests: config, event normalization, policy, decimal amounts, canonical serialization, payment keys, reason codes, redaction.
-2. Contract tests: GitHub API adapters, KeeperHub transport decoders, polling hints, error mapping.
+1. Pure unit tests: config, event normalization, policy, decimal amounts, atomic conversion, canonical serialization, payment keys, reason codes, redaction, transfer-parameter parity.
+2. Contract tests: GitHub API adapters, KeeperHub transport decoders, simulation, broadcast, execution lookup, polling hints, error mapping, and a deterministic fake provider.
 3. State-machine tests: duplicate resolution, uncertain submission, terminal states, receipt integrity.
 4. Action integration tests: saved GitHub event fixtures through the action entrypoint with fake APIs/provider.
 5. Security fixtures: fork event, altered config, spoofed wallet, contributor amount, secret leakage, changed idempotency body.

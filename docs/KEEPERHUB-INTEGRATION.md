@@ -19,15 +19,27 @@ Record the supported chains, execution wallet, balances, organization limits, to
 
 ## Provider Boundary
 
-The client must hide HTTP details behind typed methods:
+The client hides HTTP details behind typed methods:
 
-- `discoverCapabilities()`
-- `simulateTransfer(request)`
-- `broadcastTransfer(request, paymentKey)`
+- `discoverChains()`
+- `simulateTransfer(parameters)`
+- `broadcastTransfer(parameters, paymentKey)`
 - `getExecution(executionId)`
 - `waitForTerminal(executionId)`
 
 Transport errors are mapped to stable codes and redacted safe messages. Raw responses are never emitted to logs.
+
+## Implemented Contract (CP-012)
+
+The provider layer is implemented against the Phase 0 observed contract with an injectable transport, validated JSON decoding, and typed error mapping:
+
+- POST `/api/execute/transfer` with `simulate: true` returns `{ wouldRevert, ... }`; simulation is a business outcome, not an exception.
+- Broadcast adds `Idempotency-Key: <paymentKey>` and omits the `simulate` flag; `409` responses are classified as `idempotency_conflict` or `idempotency_in_progress`.
+- `401` maps to `PROVIDER_AUTH_FAILED`, `403` to `PROVIDER_FORBIDDEN`, `429` to `PROVIDER_RATE_LIMITED` (with `retry-after` in milliseconds), other failures to method-specific codes.
+- GET `/api/execute/{id}/status` reads the `X-Poll-Interval-Hint` header; polling honors the hint clamped to configured bounds and stops at a terminal status or zero hint, failing with `PROVIDER_POLL_TIMEOUT` after a deadline.
+- Simulation-to-broadcast parity is enforced by comparing the exact serialized transfer parameters; any mismatch aborts with `EXECUTION_PARITY_MISMATCH`.
+
+Assumptions pending live confirmation: the poll hint is treated as seconds, the recipient is sent as the normalized lowercase address (no EIP-55 mixed-case conversion), and simulation success is any 2xx. Adjust these only with live evidence.
 
 ## Smoke-Test Order
 

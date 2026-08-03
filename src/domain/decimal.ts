@@ -14,6 +14,21 @@ export function toAtomicUnits(decimal: string, decimals: number): string | undef
   return (int * 10n ** BigInt(decimals) + fracValue).toString();
 }
 
+export function atomicToHumanUnits(amountAtomic: string, decimals: number): string {
+  const amount = BigInt(amountAtomic);
+  const scale = 10n ** BigInt(decimals);
+  const whole = amount / scale;
+  const fraction = amount % scale;
+  if (fraction === 0n) {
+    return whole.toString();
+  }
+  const frac = fraction.toString().padStart(decimals, "0").replace(/0+$/, "");
+  if (frac.length === 0) {
+    return whole.toString();
+  }
+  return `${whole}.${frac}`;
+}
+
 export function isZeroAmount(decimal: string): boolean {
   const [integer, fraction] = decimal.split(".");
   const intPart = integer ?? "";

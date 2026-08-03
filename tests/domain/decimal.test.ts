@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isZeroAmount, toAtomicUnits } from "../../src/domain/decimal.js";
+import { atomicToHumanUnits, isZeroAmount, toAtomicUnits } from "../../src/domain/decimal.js";
 
 describe("toAtomicUnits", () => {
   it("converts whole amounts using the token decimals", () => {
@@ -36,6 +36,35 @@ describe("toAtomicUnits", () => {
     expect(amount).toBeDefined();
     expect(cap).toBeDefined();
     expect(BigInt(amount as string)).toBeGreaterThan(BigInt(cap as string));
+  });
+});
+
+describe("atomicToHumanUnits", () => {
+  it("converts whole atomic amounts to human units", () => {
+    expect(atomicToHumanUnits("5000000", 6)).toBe("5");
+    expect(atomicToHumanUnits("0", 6)).toBe("0");
+    expect(atomicToHumanUnits("7", 0)).toBe("7");
+  });
+
+  it("converts fractional atomic amounts without floating point", () => {
+    expect(atomicToHumanUnits("2500000", 6)).toBe("2.5");
+    expect(atomicToHumanUnits("1", 6)).toBe("0.000001");
+    expect(atomicToHumanUnits("2500001", 6)).toBe("2.500001");
+  });
+
+  it("round-trips with toAtomicUnits", () => {
+    const cases: Array<[string, number]> = [
+      ["2500000", 6],
+      ["1", 6],
+      ["0", 6],
+      ["12345678901234567890", 18],
+      ["7", 0],
+      ["123456789012345678901234567890123456789", 18],
+    ];
+    for (const [amountAtomic, decimals] of cases) {
+      const human = atomicToHumanUnits(amountAtomic, decimals);
+      expect(toAtomicUnits(human, decimals)).toBe(amountAtomic);
+    }
   });
 });
 
