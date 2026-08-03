@@ -1,0 +1,13 @@
+{
+  "action": "opened",
+  "number": 44,
+  "pull_request": {
+    "number": 44,
+    "merged": false,
+    "merge_commit_sha": "",
+    "base": { "ref": "main" },
+    "user": { "login": "alice" },
+    "labels": []
+  },
+  "repository": { "owner": { "login": "acme" }, "name": "mergepay-demo" }
+}

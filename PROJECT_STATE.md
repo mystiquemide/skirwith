@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Current checkpoint: CP-015
+- Current checkpoint: CP-016
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -44,12 +44,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Current Objective
 
-- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Checkpoint: CP-015
-- Goal: Close Phase 2 with the trusted example workflow, saved event fixtures, action packaging verification, and an independent Phase 2 review gate (plan Tasks 70-72) before any live execution. Then proceed to Phase 3 live three-state acceptance.
-- Expected files or assets: Trusted workflow, event fixtures, package verification evidence, review record.
-- Acceptance criteria: The workflow triggers only for closed PRs, checks `merged`, exposes no secret to PR code, checks out no untrusted code, and pins external actions by commit SHA; the packaged action runs against saved fixtures; the independent Phase 2 review approves before live acceptance.
-- Required verification: Security review, clean-room QA pass, fixture-based action test, `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
+- Checkpoint: CP-016
+- Goal: Obtain the independent Phase 2 review (security review + clean-room QA) of the full execution path — GitHub trust boundary, provider client, simulation/broadcast parity, idempotency and duplicate/conflict resolution, polling, redaction, evidence, no-broadcast behavior, workflow, and packaging. Phase 3 live three-state acceptance may begin only after approval.
+- Expected files or assets: Phase 2 review record; no code changes unless the review requires them.
+- Acceptance criteria: Review approves the Phase 2 execution path; no unresolved blocker or major finding; SC-003 (blocked before broadcast) evidenced by review.
+- Required verification: Independent review; if changes are required, re-run the full verification suite.
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): provider layer (CP-012), settlement core (CP-013), and GitHub Action surface (CP-014) are implemented and green; the trusted workflow, fixtures, and Phase 2 review gate are next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
+- Phase 2 (Trusted GitHub and KeeperHub execution): provider layer (CP-012), settlement core (CP-013), GitHub Action surface (CP-014), and trusted workflow/fixtures/packaging (CP-015) are complete and green. The independent Phase 2 review gate (CP-016) is pending; live execution/broadcast behavior is not yet approved.
 
 ### Blocked (resolved / narrowed)
 
@@ -387,6 +387,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: CP-015 — add the trusted example workflow (Task 70), saved event fixtures and packaging verification (Task 72), then request the independent Phase 2 review gate before any live execution.
 
+### CP-015: Trusted workflow, fixtures, and packaging verification
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Close the Phase 2 implementation surface test-first with the trusted example workflow (Task 70), saved event fixtures, and packaged-action verification (Task 72), then stage the independent Phase 2 review gate.
+- Requirements covered: `NFR-001`, `SC-005`, `SC-006`, plan Tasks 70 and 72.
+- Work completed: Created `action.yml` (metadata with outputs matching `buildActionOutputs` and `runs.main: dist/index.js`), `.github/workflows/ci.yml` (format, lint, typecheck, test, audit, build, bundle, verify-packaged; checkout and setup-node pinned by commit SHA verified from the GitHub API), `docs/examples/mergepay-workflow.yml` (trusted consumer workflow: `pull_request` closed only, no `pull_request_target`, pinned action reference, no checkout of untrusted code, minimum permissions contents/checks read + pull-requests write, per-PR concurrency without cancellation), `docs/examples/mergepay.yml` (trusted config template), saved fixtures `tests/fixtures/events/merged-closed.json`, `unmerged-closed.json`, `opened.json`, `tests/fixtures/mergepay.example.yml`, and `scripts/verify-packaged.mjs` which imports the built `dist/index.js` and runs it against the fixtures with synthetic fakes, asserting confirmed / blocked / safe-failure outcomes. Added `verify:packaged` npm script. Added node globals to the ESLint flat config for the `.mjs` script.
+- Files or assets changed: the files above, `package.json`, `eslint.config.mjs`, docs `SECURITY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: `npm run build`, `npm run verify:packaged` (PASS merged -> confirmed, unmerged -> blocked, opened -> safe failure), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run bundle:check`, `npm run audit`, grep secret scan.
+- Test results: 199 tests pass (unchanged; no source logic changed in CP-015). Packaged bundle verified against three fixtures. Typecheck clean; lint clean (`--max-warnings 0`); format clean; bundle loads; audit 0 vulnerabilities; secret scan clean (including action.yml, .github, scripts).
+- Acceptance criteria verified: The workflow triggers only on `pull_request` closed, gates on `merged`, pins the action reference and external actions by SHA, exposes no secret to PR code, and checks out no untrusted code; the packaged `dist/index.js` runs against saved fixtures and matches source behavior; CI enforces SC-006 on a clean checkout.
+- Decisions: Pinned `actions/checkout` (v4 `11d5960a326750d5838078e36cf38b85af677262`) and `actions/setup-node` (v4 `49933ea5288caeca8642d1e84afbd3f7d6820020`) by commit SHA verified from the GitHub API. `dist/` stays gitignored and is committed at release (CP-006 decision) so the `uses: mystiquemide/mergepay@<release-sha>` reference in the example workflow resolves to a bundle; `verify:packaged` requires `npm run build` first.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: The `dist/index.js` referenced by `action.yml` does not exist in the repository until a release commit; this is scheduled for Phase 4 release packaging. GitHub REST field and poll-hint assumptions remain pending live confirmation (CP-012/CP-014 notes).
+- Known issues: None blocking. `main()` in `src/action.ts` is wired but only exercised through `run()` tests and the packaged fixture script.
+- Blockers: None.
+- Next exact action: Request the independent Phase 2 review (CP-016) of the full execution path; after approval, proceed to Phase 3 live three-state acceptance.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -464,6 +485,10 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-014 | Comment receipt store | Pass | Finds markers by payment key, ignores non-markers, creates one comment and updates only its own matching comment |
 | CP-014 | Entrypoint + outputs | Pass | Confirmed run posts exactly one receipt comment; unmerged/failed-checks block with 0 provider calls; non-closed event and config mismatch fail safe; missing secrets fail before network; outputs/summary render all documented fields |
 | CP-014 | Verification suite | Pass | `npm test` 199/199; typecheck/lint/format clean; ncc build + bundle load; `npm audit` 0; src secret scan clean |
+| CP-015 | Trusted example workflow | Pass | `pull_request` closed only, no `pull_request_target`, minimum permissions, per-PR concurrency, no untrusted checkout |
+| CP-015 | Pinned actions | Pass | checkout + setup-node pinned by commit SHA verified from GitHub API |
+| CP-015 | Packaged action vs fixtures | Pass | `npm run verify:packaged` against `dist/index.js`: merged -> confirmed, unmerged -> blocked, opened -> safe failure |
+| CP-015 | Verification suite | Pass | `npm test` 199/199; typecheck/lint/format clean; bundle loads; `npm audit` 0; secret scan clean incl. action.yml/.github/scripts |
 
 ## Known Issues
 
@@ -484,7 +509,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Begin CP-015 in Phase 2: add the trusted example workflow (trigger only on closed PRs, check `merged`, minimum permissions, no secret exposure to PR code, pinned external actions by commit SHA), saved GitHub event fixtures plus packaging verification (Task 72), then request the independent Phase 2 review gate. Phase 3 live three-state acceptance may begin only after Phase 2 review approval.
+Request the independent Phase 2 review (CP-016) of the full execution path — GitHub trust boundary, provider client, parity, idempotency and duplicate/conflict resolution, bounded polling, redaction, evidence, no-broadcast behavior, workflow, and packaging. After Phase 2 review approval, begin Phase 3 live three-state acceptance: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract.
 
 ## Checkpoint and Amendment Contract
 

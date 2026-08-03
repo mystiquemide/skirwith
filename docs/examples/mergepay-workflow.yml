@@ -1,0 +1,43 @@
+# Trusted MergePay settlement workflow.
+#
+# Add this workflow to a consumer repository that also has a trusted
+# `.github/mergepay.yml` config on the default branch (see mergepay.yml in
+# this directory) and the two secrets below.
+#
+# Trust properties:
+# - Runs on `pull_request` (never `pull_request_target`), so no PR head code
+#   is ever checked out or executed.
+# - The action reference is pinned to a release commit SHA, not a mutable tag.
+# - No `actions/checkout` step: the action reads trusted state through the
+#   GitHub API and never touches untrusted working-tree content.
+# - Minimum permissions: contents read (config/state), checks read (status
+#   checks), pull-requests write (receipt comment).
+# - The concurrency group serializes runs for the same PR and never cancels an
+#   in-flight settlement.
+
+name: MergePay settlement
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: write
+
+concurrency:
+  group: mergepay-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      # Replace the placeholder with the release commit SHA of the action.
+      - name: Run MergePay settlement
+        uses: mystiquemide/mergepay@<release-sha>
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}

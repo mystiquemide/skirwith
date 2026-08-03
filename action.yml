@@ -1,0 +1,31 @@
+name: "MergePay"
+description: >-
+  Pay a maintainer-approved contributor after a genuinely merged pull request
+  via KeeperHub on a testnet. Requires GITHUB_TOKEN and KEEPERHUB_API_KEY in
+  the step environment.
+author: "MystiqueMide"
+outputs:
+  status:
+    description: "Terminal settlement status (blocked, pending, confirmed, failed, duplicate, manual-review)."
+  policy-result:
+    description: "Policy result (approved or blocked)."
+  payment-key:
+    description: "Stable payment key derived from the payment identity."
+  request-hash:
+    description: "Canonical request hash (integrity value)."
+  execution-id:
+    description: "KeeperHub execution ID when a broadcast was submitted."
+  transaction-hash:
+    description: "Transaction hash when available."
+  transaction-link:
+    description: "Explorer link when available."
+  duplicate:
+    description: "Whether this run resolved to an existing confirmed payment."
+  broadcast-made:
+    description: "Whether a broadcast was attempted in this run."
+runs:
+  using: "node20"
+  main: "dist/index.js"
+branding:
+  color: "blue"
+  icon: "credit-card"

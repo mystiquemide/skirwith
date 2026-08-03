@@ -1,0 +1,22 @@
+# Synthetic test fixture. Not a live deployment contract.
+
+version: 1
+repository: acme/mergepay-demo
+chain:
+  id: 11155111
+  explorer: https://sepolia.etherscan.io
+  token:
+    address: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
+    symbol: USDC
+    decimals: 6
+payout:
+  requiredLabel: mergepay-approved
+  maximum: "25"
+  amounts:
+    mergepay-5: "5"
+recipients:
+  alice: "0x05619d1a133623b322a8f366ea9594e4e586f26d"
+checks:
+  required: true
+  names:
+    - CI / test

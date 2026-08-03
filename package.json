@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "build": "ncc build src/action.ts --out dist --minify --source-map",
     "bundle:check": "node -e \"require('fs').existsSync('dist/index.js') || process.exit(1)\" && node --input-type=module -e \"import('./dist/index.js').then(()=>console.log('bundle loads')).catch(e=>{console.error(e);process.exit(1)})\"",
+    "verify:packaged": "node scripts/verify-packaged.mjs",
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {

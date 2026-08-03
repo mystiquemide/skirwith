@@ -1,0 +1,13 @@
+{
+  "action": "closed",
+  "number": 43,
+  "pull_request": {
+    "number": 43,
+    "merged": false,
+    "merge_commit_sha": "",
+    "base": { "ref": "main" },
+    "user": { "login": "alice" },
+    "labels": [{ "name": "mergepay-approved" }, { "name": "mergepay-5" }]
+  },
+  "repository": { "owner": { "login": "acme" }, "name": "mergepay-demo" }
+}

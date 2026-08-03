@@ -34,6 +34,10 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 | Network loss after submission | Lookup original execution; no rebroadcast |
 | Fake receipt comment | Structured marker and provider lookup must agree |
 
+## Trusted Workflow
+
+The example consumer workflow (`docs/examples/mergepay-workflow.yml`) runs on `pull_request` closed events, never `pull_request_target`, so PR head code is never checked out or executed. It pins the action reference to a release commit SHA, uses minimum permissions (contents read, checks read, pull-requests write), and serializes runs per PR with `concurrency` and `cancel-in-progress: false`. The trusted `.github/mergepay.yml` config is fetched through the GitHub API at the default-branch ref; contributor-controlled content cannot alter policy, recipient, amount, chain, or token.
+
 ## Residual Risks
 
 GitHub and KeeperHub availability, provider-side semantics, maintainer credential compromise, and lack of durable cumulative accounting remain operational risks. The MVP must disclose them rather than imply production treasury guarantees.
