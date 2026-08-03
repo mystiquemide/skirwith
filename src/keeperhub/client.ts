@@ -1,5 +1,6 @@
 import { redact } from "../security/redaction.js";
 import { ProviderError } from "./errors.js";
+import type { KeeperHubProvider } from "./provider.js";
 import type { HttpTransport } from "./transport.js";
 import type {
   ExecutionStatusResponse,
@@ -201,7 +202,7 @@ function parseChains(body: string): KeeperHubChain[] {
   });
 }
 
-export class KeeperHubClient {
+export class KeeperHubClient implements KeeperHubProvider {
   private readonly apiKey: string;
   private readonly transport: HttpTransport;
   private readonly baseUrl: string;

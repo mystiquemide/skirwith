@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Current checkpoint: CP-013
+- Current checkpoint: CP-014
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,11 +45,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Checkpoint: CP-013
-- Goal: Build the settlement core on the provider layer: GitHub event/state normalization (FR-001, FR-002), GitHub receipt discovery and integrity validation (FR-012), and the settlement orchestrator with duplicate/conflict resolution and audit serialization (FR-009 to FR-013, BR-004 to BR-006), all test-first against a deterministic fake provider.
-- Expected files or assets: `src/github/*`, `src/execution/*`, `src/evidence/*`, fake provider fixture, tests.
-- Acceptance criteria: Deterministic and safe success, duplicate, blocked, failure, pending, conflict, and manual-review outcomes; exact simulation/broadcast parity; no automatic rebroadcast; evidence serializes secret-free.
-- Required verification: Contract, integration, failure, and security tests; `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
+- Checkpoint: CP-014
+- Goal: Wire the settlement core to the GitHub Action surface: the GitHub API adapter (fresh PR/check/config/comment state, FR-002), the receipt store backed by PR comments (FR-012), action input parsing, the Actions summary and PR receipt renderers, the action entrypoint, and action outputs — all test-first with saved event fixtures.
+- Expected files or assets: `src/github/*` adapters, `src/output/*` renderers, updated `src/action.ts`, action input parsing, tests and saved fixtures.
+- Acceptance criteria: A trusted merged event runs the full flow and reports success, duplicate, block, failure, or manual review through GitHub outputs; receipts are found and updated safely; no untrusted content reaches policy or provider parameters.
+- Required verification: Integration, failure, and security tests; `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): the KeeperHub provider layer (CP-012) is implemented and green; the settlement core (GitHub normalization, receipt integrity, orchestrator) is next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
+- Phase 2 (Trusted GitHub and KeeperHub execution): the provider layer (CP-012) and settlement core (CP-013) are implemented and green; the GitHub Action surface (adapters, renderers, entrypoint) is next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
 
 ### Blocked (resolved / narrowed)
 
@@ -345,6 +345,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: CP-013 — implement test-first the GitHub event/state normalization, receipt discovery/integrity, settlement orchestrator with duplicate/conflict resolution, and audit serialization, using a deterministic fake provider.
 
+### CP-013: Settlement core (event normalization, receipts, orchestrator)
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Build the settlement core on the provider layer test-first: GitHub event normalization, receipt discovery/integrity, the settlement orchestrator with duplicate/conflict resolution, uncertain-state handling, and audit serialization (plan Tasks 58-64).
+- Requirements covered: `FR-001`, `FR-009` to `FR-013`, `NFR-001`, `NFR-003`, `BR-003` to `BR-006`.
+- Work completed: Created `src/keeperhub/provider.ts` (KeeperHubProvider interface; `KeeperHubClient` now implements it), `src/keeperhub/transfer-parameters.ts` (canonical -> provider parameters with human amount), `src/github/event.ts` (normalizePullRequestClosedEvent: validates action/pull_request/repository/merge SHA/PR number/labels, allows closed-unmerged with empty merge SHA), `src/evidence/evidence.ts` (buildEvidence + serializeEvidence), `src/evidence/receipt.ts` (versioned hidden receipt marker encode/decode + integrity validation), `src/github/receipt-store.ts` (ReceiptStore interface), `src/execution/duplicate-resolver.ts` (duplicate / resume-poll / manual-review / conflict classification), `src/execution/orchestrator.ts` (SettlementOrchestrator: blocked -> no provider call; approved -> canonical identity, receipt lookup, simulate, broadcast with idempotency key, bounded poll, receipt save; lost broadcast response or poll timeout -> manual review with no rebroadcast; changed content -> conflict). Added `PAYMENT_PURPOSE` constant in `src/domain/constants.ts`. Tests: `tests/keeperhub/transfer-parameters.test.ts`, `tests/github/event.test.ts`, `tests/evidence/evidence.test.ts`, `tests/evidence/receipt.test.ts`, `tests/execution/duplicate-resolver.test.ts`, `tests/execution/orchestrator.test.ts`, `tests/fakes/fakes.ts` (FakeKeeperHubProvider + FakeReceiptStore).
+- Files or assets changed: the files above, docs `ARCHITECTURE.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: focused vitest runs (red first), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run audit`, grep secret scan.
+- Test results: 168 tests pass (was 128): event normalization 8, evidence 3, receipt 8, duplicate resolver 6, orchestrator 14, transfer parameters 2, prior suites unchanged. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; audit 0 vulnerabilities; src secret scan clean.
+- Acceptance criteria verified: Blocked policy makes zero provider calls; simulation revert fails without broadcast; confirmed payouts save pending-then-confirmed receipts; confirmed same-hash receipts return duplicates; changed content returns conflicts; pending receipts resume polling the original execution without rebroadcast; lost broadcast responses and poll timeouts become manual review with exactly one broadcast call; evidence serializes secret-free.
+- Decisions: Receipts are saved on actual executions (pending then terminal), not on policy blocks or reverted simulations, so refusals are re-derivable and only execution state drives replay control. Broadcast outcome mapping: idempotency conflicts and transport loss are manual review; clear pre-submission rejections (auth/forbidden/rate) are failed. Unmerged-close events normalize with empty merge SHA and are blocked by policy.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None beyond plan RISK-003/RISK-004; provider idempotency is the recovery control for a lost broadcast response.
+- Known issues: None blocking. The GitHub API adapters and action entrypoint are not yet wired; `src/action.ts` remains a placeholder.
+- Blockers: None.
+- Next exact action: CP-014 — implement test-first the GitHub API adapters (fresh PR/check/config/comment state), the comment-backed receipt store, action input parsing, summary/receipt renderers, the action entrypoint, and action outputs.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -412,6 +433,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-012 | Bounded polling | Pass | Clamped hints, terminal at completed/failed/zero-hint, deterministic `PROVIDER_POLL_TIMEOUT` via injected clock/sleeper |
 | CP-012 | Parity and redaction | Pass | `EXECUTION_PARITY_MISMATCH` on any parameter change; recursive secret redaction non-mutating |
 | CP-012 | Verification suite | Pass | `npm test` 128/128; typecheck/lint/format clean; build + bundle load; `npm audit` 0; secret scan clean |
+| CP-013 | Event normalization | Pass | Valid closed-merged normalized; non-closed action, missing pull_request, invalid merge SHA/PR number rejected; closed-unmerged accepted with empty merge SHA |
+| CP-013 | Receipt marker + integrity | Pass | Encode/decode round trip through hidden comment block; malformed/invalid markers rejected; identity/hash mismatch rejected |
+| CP-013 | Duplicate resolver | Pass | confirmed->duplicate, pending+id -> resume-poll, failed/pending-no-id -> manual-review, changed content -> conflict |
+| CP-013 | Orchestrator outcomes | Pass | blocked=0 provider calls; simulation revert=failed no broadcast; confirmed saves pending+confirmed receipts; duplicate reuses proof; conflict=manual-review; pending resumes original execution; lost broadcast/poll timeout=manual-review with exactly 1 broadcast call |
+| CP-013 | Verification suite | Pass | `npm test` 168/168; typecheck/lint/format clean; build + bundle load; `npm audit` 0; src secret scan clean |
 
 ## Known Issues
 
@@ -432,7 +458,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Begin CP-013 in Phase 2: implement test-first the GitHub event/state normalization, receipt discovery and integrity validation, the settlement orchestrator with duplicate/conflict resolution, uncertain-state handling, and audit serialization, using a deterministic fake provider. Phase 2 broadcast behavior must pass its own independent review before any live execution.
+Begin CP-014 in Phase 2: implement test-first the GitHub API adapters (fresh PR/check/config/comment state per FR-002), the comment-backed receipt store, action input parsing, the Actions summary and PR receipt renderers, the action entrypoint, and action outputs, using saved event fixtures. Phase 2 broadcast behavior must pass its own independent review before any live execution.
 
 ## Checkpoint and Amendment Contract
 

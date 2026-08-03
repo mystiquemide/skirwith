@@ -100,6 +100,20 @@ type PaymentIdentity = {
   purpose: string;
 };
 
+type ReceiptMarker = {
+  version: 1;
+  product: "mergepay";
+  paymentKey: string;
+  requestHash: string;
+  status: ExecutionStatus;
+  executionId?: string;
+  transactionHash?: string;
+  transactionLink?: string;
+  repository: string;
+  pullRequestNumber: number;
+  mergeSha: string;
+};
+
 type EvidenceRecord = {
   version: 1;
   paymentKey: string;
@@ -119,6 +133,8 @@ type EvidenceRecord = {
 The payment key is derived from the stable `PaymentIdentity` (version, repository, pull request, merge SHA, purpose), independent of material content such as recipient, amount, chain, or token. The canonical request hash covers every material field and is kept separate as the integrity value. On replay, a matching key with a matching hash is a duplicate; a matching key with a changed hash is a conflict requiring manual review. Human decimal amounts are converted to atomic integer units using the configured token decimals before any cap comparison or serialization.
 
 The GitHub receipt contains readable Markdown plus a hidden versioned marker encoding only the minimum safe duplicate fields: product/version, payment key, request hash, execution ID, status, repository, PR, and merge SHA.
+
+The settlement orchestrator composes the pure policy, canonical identity, and provider layers into one deterministic flow: evaluate policy; on approval derive the payment key and request hash; resolve any existing receipt (confirmed same-hash is a duplicate, pending resumes polling the original execution, changed hash is a conflict, prior failure is manual review); otherwise simulate, broadcast the exact parameters with the idempotency key, poll to a terminal state, and save a versioned receipt. A blocked or reverted path performs no provider call; a lost broadcast response or expired poll deadline produces manual review and never rebroadcasts.
 
 ## Integration Contracts
 
