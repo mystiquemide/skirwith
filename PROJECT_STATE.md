@@ -4,9 +4,9 @@
 
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
-- Current phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Current checkpoint: CP-016
-- Last updated: 2026-08-03 (Africa/Lagos)
+- Current phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
+- Current checkpoint: CP-018
+- Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
 
@@ -45,11 +45,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Checkpoint: CP-016
-- Goal: Obtain the independent Phase 2 review (security review + clean-room QA) of the full execution path — GitHub trust boundary, provider client, simulation/broadcast parity, idempotency and duplicate/conflict resolution, polling, redaction, evidence, no-broadcast behavior, workflow, and packaging. Phase 3 live three-state acceptance may begin only after approval.
-- Expected files or assets: Phase 2 review record; no code changes unless the review requires them.
-- Acceptance criteria: Review approves the Phase 2 execution path; no unresolved blocker or major finding; SC-003 (blocked before broadcast) evidenced by review.
-- Required verification: Independent review; if changes are required, re-run the full verification suite.
+- Checkpoint: CP-018
+- Goal: Obtain a fresh independent re-review confirming REV-006 is corrected (untrusted GitHub comments cannot forge or suppress settlement state), after which the Phase 2 exit gate closes and Phase 3 live three-state acceptance may begin.
+- Expected files or assets: Updated independent review record; no code changes unless the review requires them.
+- Acceptance criteria: Re-review approves the receipt-provenance fix and the full Phase 2 execution path; no unresolved blocker or major finding.
+- Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, packaged fixtures, audit, secret scan).
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): provider layer (CP-012), settlement core (CP-013), GitHub Action surface (CP-014), and trusted workflow/fixtures/packaging (CP-015) are complete and green. The independent Phase 2 review gate (CP-016) is pending; live execution/broadcast behavior is not yet approved.
+- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned one Medium finding (REV-006), which is fixed (CP-017); a fresh re-review (CP-018) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
 
 ### Blocked (resolved / narrowed)
 
@@ -408,6 +408,40 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Request the independent Phase 2 review (CP-016) of the full execution path; after approval, proceed to Phase 3 live three-state acceptance.
 
+### CP-016: Phase 2 exit-gate independent review
+
+- Status: Findings returned
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Independently review the Phase 2 execution path (`4554773..887cce2`) as the Phase 2 exit gate before live acceptance.
+- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `ea33028`). Verdict: Changes required. Reproduced 199/199 tests, format, lint, typecheck, build, bundle load, and packaged fixtures; flagged one Medium finding blocking the gate.
+- Findings: `REV-006` Medium — `CommentReceiptStore.findByPaymentKey()` treated any issue comment containing a syntactically valid receipt marker as authoritative execution state. Because payment keys and request hashes are deterministic from public data, a commenter could forge a `confirmed` marker and suppress a legitimate payout (duplicate/manual-review with no broadcast), violating RISK-009 and the replay-integrity control. Also noted: comment-list pagination is a secondary operational risk (not blocking).
+- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Commands or checks run: Independent reproduction of the full verification suite and the forged-marker scenario.
+- Next exact action: Fix REV-006 test-first (bind markers to a secret via HMAC, fail closed on bad provenance, validate marker fields), update docs, rerun verification, and request a re-review.
+
+### CP-017: Review finding REV-006 fixed
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Fix REV-006 so untrusted GitHub comments cannot forge or suppress settlement state.
+- Requirements covered: `FR-012`, `BR-005`, `BR-006`, `NFR-001`, `RISK-009`; CP-016 finding REV-006.
+- Work completed: `src/evidence/receipt.ts` — receipt markers now carry an HMAC-SHA256 `mac` over the marker payload; added `signReceiptMarker`/`verifyReceiptMarker` with sorted-key stable serialization so field ordering is irrelevant; strengthened `isReceiptMarker` field validation (payment key `mergepay:<64 hex>`, 64-hex request hash, 40-hex merge SHA, positive safe-integer PR number, valid status, `0x`-hex transaction hash when present, valid MAC format). `src/github/receipts.ts` — `CommentReceiptStore` now takes a `receiptSecret`, signs markers on save, and verifies the MAC before treating any comment as authoritative; forged/tampered/differently-signed markers fail closed (ignored). `src/output/receipt-comment.ts` — `renderReceiptComment(record, mac)`. `src/action.ts` — passes the KeeperHub API key as the receipt secret. `receiptMatchesCurrent` widened to accept the shared identity fields (marker or record).
+- Files or assets changed: `src/evidence/receipt.ts`, `src/github/receipts.ts`, `src/output/receipt-comment.ts`, `src/action.ts`, tests `tests/evidence/receipt.test.ts`, `tests/github/receipts.test.ts`, `tests/output/receipt-comment.test.ts`, `tests/action.test.ts`, docs `ARCHITECTURE.md`, `SECURITY.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: Focused vitest runs (reproduction first: forged marker previously treated as authoritative), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm run audit`, grep secret scan.
+- Test results: 208 tests pass (was 199): receipt signing/verification + adversarial marker validation, store fail-closed tests (forged MAC, wrong secret), action-level tests proving an attacker-forged confirmed marker still pays and a legitimately signed confirmed receipt returns duplicate with no broadcast, plus prior suites unchanged. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; packaged fixtures pass; audit 0 vulnerabilities; secret scan clean.
+- Acceptance criteria verified: A forged or unsigned comment marker is never treated as execution state and never suppresses provider calls; a legitimately signed confirmed receipt still returns a duplicate with no second broadcast; malformed identity/proof fields reject markers; the packaged bundle behaves identically.
+- Decisions: The receipt MAC uses the KeeperHub API key as the secret (the only credential commenters cannot access); a dedicated receipt secret was not added to avoid expanding the secret surface, and key rotation invalidates old markers fail-closed while provider idempotency remains the ultimate replay guard. Comment-author binding was not required because only the secret holder can produce a valid MAC.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None beyond the documented residual that rotating the KeeperHub key invalidates previously saved receipt MACs (fail-closed; provider idempotency prevents double payment).
+- Known issues: None blocking. Comment-list pagination remains a documented secondary operational item (REV-006 note) for later hardening.
+- Blockers: None.
+- Next exact action: Request a fresh independent re-review (CP-018) confirming REV-006 is corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -489,6 +523,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-015 | Pinned actions | Pass | checkout + setup-node pinned by commit SHA verified from GitHub API |
 | CP-015 | Packaged action vs fixtures | Pass | `npm run verify:packaged` against `dist/index.js`: merged -> confirmed, unmerged -> blocked, opened -> safe failure |
 | CP-015 | Verification suite | Pass | `npm test` 199/199; typecheck/lint/format clean; bundle loads; `npm audit` 0; secret scan clean incl. action.yml/.github/scripts |
+| CP-016 | Independent Phase 2 review | Findings returned | `CODE_REVIEW.md`: REV-006 Medium — forged comment markers treated as authoritative receipt state could suppress payouts |
+| CP-017 | Receipt marker MAC | Pass | HMAC-SHA256 over marker payload with the receipt secret; sorted-key stable serialization; forged/tampered/different-secret markers fail closed |
+| CP-017 | Marker field validation | Pass | Payment key, 64-hex request hash, 40-hex merge SHA, positive PR number, valid status, tx-hash format all validated before acceptance |
+| CP-017 | Adversarial action tests | Pass | Attacker-forged confirmed marker still pays (broadcast 1); legitimately signed confirmed receipt returns duplicate (broadcast 0) |
+| CP-017 | Verification suite | Pass | `npm test` 208/208; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 
 ## Known Issues
 
@@ -509,7 +548,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Request the independent Phase 2 review (CP-016) of the full execution path — GitHub trust boundary, provider client, parity, idempotency and duplicate/conflict resolution, bounded polling, redaction, evidence, no-broadcast behavior, workflow, and packaging. After Phase 2 review approval, begin Phase 3 live three-state acceptance: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract.
+Request a fresh independent re-review (CP-018) confirming REV-006 is corrected: untrusted GitHub comments cannot forge or suppress settlement state. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract.
 
 ## Checkpoint and Amendment Contract
 

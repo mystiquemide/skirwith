@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { run } from "../src/action.js";
 import { decodeReceiptMarker } from "../src/evidence/receipt.js";
+import { encodeReceiptMarker } from "../src/evidence/receipt.js";
+import { buildCanonicalRequest } from "../src/payment/canonical-request.js";
+import { derivePaymentKey } from "../src/payment/payment-key.js";
+import { hashCanonicalRequest } from "../src/payment/payment-hash.js";
+import { toAtomicUnits } from "../src/domain/decimal.js";
+import { PAYMENT_PURPOSE } from "../src/domain/constants.js";
+import { CommentReceiptStore } from "../src/github/receipts.js";
+import type { ReceiptRecord } from "../src/evidence/receipt.js";
 import { FakeGitHubApi, FakeKeeperHubProvider } from "./fakes/fakes.js";
 
 const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
@@ -64,6 +72,20 @@ function happyDeps() {
     provider,
     nowIso: () => "2026-08-03T22:00:00.000Z",
   };
+}
+
+function identityFor(): { paymentKey: string; requestHash: string } {
+  const canonical = buildCanonicalRequest({
+    repository: "acme/mergepay-demo",
+    pullRequestNumber: 42,
+    mergeSha: MERGE_SHA,
+    recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d",
+    amountAtomic: toAtomicUnits("5", 6) as string,
+    chainId: 11155111,
+    tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+    purpose: PAYMENT_PURPOSE,
+  });
+  return { paymentKey: derivePaymentKey(canonical), requestHash: hashCanonicalRequest(canonical) };
 }
 
 describe("run", () => {
@@ -134,5 +156,66 @@ describe("run", () => {
     expect(result.evidence.status).toBe("blocked");
     expect(result.evidence.policy.result).toBe("blocked");
     expect(deps.provider.calls.simulate).toBe(0);
+  });
+
+  it("ignores an attacker-forged confirmed marker and still pays", async () => {
+    const deps = happyDeps();
+    const { paymentKey } = identityFor();
+    const forged = encodeReceiptMarker({
+      version: 1,
+      product: "mergepay",
+      paymentKey,
+      requestHash: "f".repeat(64),
+      status: "confirmed",
+      executionId: "ex_attacker",
+      repository: "acme/mergepay-demo",
+      pullRequestNumber: 42,
+      mergeSha: MERGE_SHA,
+      mac: "0".repeat(64),
+    });
+    deps.api.comments = [{ id: 1, body: forged, createdAt: "2026-08-03T22:00:00.000Z" }];
+
+    const result = await run(deps);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.status).toBe("confirmed");
+    expect(result.evidence.broadcastMade).toBe(true);
+    expect(deps.provider.calls.broadcast).toBe(1);
+  });
+
+  it("honors a legitimately signed confirmed receipt as a duplicate with no broadcast", async () => {
+    const deps = happyDeps();
+    const { paymentKey, requestHash } = identityFor();
+    const receipt: ReceiptRecord = {
+      version: 1,
+      product: "mergepay",
+      paymentKey,
+      requestHash,
+      status: "confirmed",
+      executionId: "ex_orig",
+      repository: "acme/mergepay-demo",
+      pullRequestNumber: 42,
+      mergeSha: MERGE_SHA,
+      createdAt: "2026-08-03T00:00:00.000Z",
+      updatedAt: "2026-08-03T00:00:00.000Z",
+    };
+    const store = new CommentReceiptStore(
+      deps.api,
+      "acme",
+      "mergepay-demo",
+      42,
+      deps.keeperhubApiKey,
+    );
+    await store.save(receipt);
+
+    const result = await run(deps);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.status).toBe("duplicate");
+    expect(result.evidence.broadcastMade).toBe(false);
+    expect(result.evidence.executionId).toBe("ex_orig");
+    expect(deps.provider.calls.broadcast).toBe(0);
   });
 });

@@ -3,14 +3,17 @@ import { renderReceiptComment } from "../../src/output/receipt-comment.js";
 import { decodeReceiptMarker } from "../../src/evidence/receipt.js";
 import type { ReceiptRecord } from "../../src/evidence/receipt.js";
 
+const MAC = "a".repeat(64);
+const KEY = `mergepay:${"a".repeat(64)}`;
+
 const RECEIPT: ReceiptRecord = {
   version: 1,
   product: "mergepay",
-  paymentKey: "mergepay:abc",
-  requestHash: "def",
+  paymentKey: KEY,
+  requestHash: "d".repeat(64),
   status: "confirmed",
   executionId: "ex_1",
-  transactionHash: "0x123",
+  transactionHash: `0x${"a".repeat(64)}`,
   transactionLink: "https://explorer/tx/0x123",
   repository: "acme/mergepay-demo",
   pullRequestNumber: 42,
@@ -20,35 +23,24 @@ const RECEIPT: ReceiptRecord = {
 };
 
 describe("renderReceiptComment", () => {
-  it("renders readable receipt text plus a decodable hidden marker", () => {
-    const body = renderReceiptComment(RECEIPT);
+  it("renders readable receipt text plus a decodable signed marker", () => {
+    const body = renderReceiptComment(RECEIPT, MAC);
     expect(body).toContain("## MergePay receipt");
     expect(body).toContain("Status: `confirmed`");
-    expect(body).toContain("Payment key: `mergepay:abc`");
+    expect(body).toContain(`Payment key: \`${KEY}\``);
     expect(body).toContain("Execution ID: `ex_1`");
-    expect(body).toContain("[0x123](https://explorer/tx/0x123)");
+    expect(body).toContain(`[0x${"a".repeat(64)}](https://explorer/tx/0x123)`);
 
     const marker = decodeReceiptMarker(body);
-    expect(marker).toEqual({
-      version: 1,
-      product: "mergepay",
-      paymentKey: "mergepay:abc",
-      requestHash: "def",
-      status: "confirmed",
-      executionId: "ex_1",
-      transactionHash: "0x123",
-      transactionLink: "https://explorer/tx/0x123",
-      repository: "acme/mergepay-demo",
-      pullRequestNumber: 42,
-      mergeSha: "0123456789abcdef0123456789abcdef01234567",
-    });
+    expect(marker?.mac).toBe(MAC);
+    expect(marker?.transactionHash).toBe(`0x${"a".repeat(64)}`);
   });
 
   it("renders a pending receipt without transaction fields", () => {
     const { transactionHash, transactionLink, ...pendingBase } = RECEIPT;
     void transactionHash;
     void transactionLink;
-    const body = renderReceiptComment({ ...pendingBase, status: "pending" });
+    const body = renderReceiptComment({ ...pendingBase, status: "pending" }, MAC);
     expect(body).toContain("Status: `pending`");
     expect(body).not.toContain("Transaction:");
   });

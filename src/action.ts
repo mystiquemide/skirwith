@@ -80,6 +80,7 @@ export async function run(deps: RunDependencies): Promise<RunResult> {
       event.repository.owner,
       event.repository.name,
       event.pullRequestNumber,
+      deps.keeperhubApiKey,
     );
     const orchestrator = new SettlementOrchestrator({ provider: deps.provider, receipts, nowIso });
     const evidence = await orchestrator.settle(input);

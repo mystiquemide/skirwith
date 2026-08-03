@@ -1,7 +1,7 @@
 import { encodeReceiptMarker } from "../evidence/receipt.js";
 import type { ReceiptRecord } from "../evidence/receipt.js";
 
-export function renderReceiptComment(record: ReceiptRecord): string {
+export function renderReceiptComment(record: ReceiptRecord, mac: string): string {
   const lines = [
     "## MergePay receipt",
     `- Status: \`${record.status}\``,
@@ -32,6 +32,7 @@ export function renderReceiptComment(record: ReceiptRecord): string {
     repository: record.repository,
     pullRequestNumber: record.pullRequestNumber,
     mergeSha: record.mergeSha,
+    mac,
   });
   return `${lines.join("\n")}\n\n${marker}`;
 }

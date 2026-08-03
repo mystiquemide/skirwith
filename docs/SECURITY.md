@@ -29,6 +29,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 | Fork reaches secret-bearing job | Workflow/job boundary prevents secret access |
 | Replayed merge event | Payment key and provider idempotency return original execution |
 | Same key, changed request | Canonical hash conflict; manual review |
+| Forged receipt comment | Receipt markers are HMAC-signed with a secret unavailable to commenters; forged or unsigned markers fail closed and never suppress a payout |
 | Simulation passes, body mutates | Parity hash mismatch aborts broadcast |
 | Provider 401/429/5xx | Typed safe failure; no secret leak or blind retry |
 | Network loss after submission | Lookup original execution; no rebroadcast |

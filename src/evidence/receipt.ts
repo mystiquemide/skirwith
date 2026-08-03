@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import type { ExecutionStatus } from "../domain/types.js";
 
 export interface ReceiptRecord {
@@ -16,7 +17,22 @@ export interface ReceiptRecord {
   updatedAt: string;
 }
 
-export type ReceiptMarker = Omit<ReceiptRecord, "createdAt" | "updatedAt">;
+export interface ReceiptMarker {
+  version: 1;
+  product: "mergepay";
+  paymentKey: string;
+  requestHash: string;
+  status: ExecutionStatus;
+  executionId?: string;
+  transactionHash?: string;
+  transactionLink?: string;
+  repository: string;
+  pullRequestNumber: number;
+  mergeSha: string;
+  mac: string;
+}
+
+export type ReceiptMarkerPayload = Omit<ReceiptMarker, "mac">;
 
 const MARKER_RE = /<!-- mergepay:(\{[\s\S]*?\}) -->/;
 
@@ -29,6 +45,20 @@ const VALID_STATUSES: ReadonlySet<string> = new Set([
   "manual-review",
 ]);
 
+const PAYMENT_KEY_RE = /^mergepay:[0-9a-f]{64}$/;
+const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
+const MERGE_SHA_RE = /^[0-9a-f]{40}$/;
+const TX_HASH_RE = /^0x[0-9a-fA-F]+$/;
+const MAC_RE = /^[0-9a-f]{64}$/;
+
+function isOptionalString(value: unknown, minLength: number): boolean {
+  return value === undefined || (typeof value === "string" && value.length >= minLength);
+}
+
+function isOptionalTransactionLink(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && value.startsWith("https://"));
+}
+
 export function isReceiptMarker(value: unknown): value is ReceiptMarker {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -38,17 +68,64 @@ export function isReceiptMarker(value: unknown): value is ReceiptMarker {
     marker.version === 1 &&
     marker.product === "mergepay" &&
     typeof marker.paymentKey === "string" &&
+    PAYMENT_KEY_RE.test(marker.paymentKey) &&
     typeof marker.requestHash === "string" &&
+    SHA256_HEX_RE.test(marker.requestHash) &&
     typeof marker.status === "string" &&
     VALID_STATUSES.has(marker.status) &&
     typeof marker.repository === "string" &&
+    marker.repository.length > 0 &&
     typeof marker.pullRequestNumber === "number" &&
-    typeof marker.mergeSha === "string"
+    Number.isSafeInteger(marker.pullRequestNumber) &&
+    marker.pullRequestNumber > 0 &&
+    typeof marker.mergeSha === "string" &&
+    MERGE_SHA_RE.test(marker.mergeSha) &&
+    typeof marker.mac === "string" &&
+    MAC_RE.test(marker.mac) &&
+    isOptionalString(marker.executionId, 1) &&
+    (marker.transactionHash === undefined || TX_HASH_RE.test(String(marker.transactionHash))) &&
+    isOptionalTransactionLink(marker.transactionLink)
   );
 }
 
+function pruneUndefined(value: object): Record<string, unknown> {
+  const output: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry !== undefined) {
+      output[key] = entry;
+    }
+  }
+  return output;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+      a < b ? -1 : 1,
+    );
+    return `{${entries
+      .map(([key, entry]) => `${JSON.stringify(key)}:${stableStringify(entry)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+export function signReceiptMarker(payload: ReceiptMarkerPayload, secret: string): string {
+  return createHmac("sha256", secret)
+    .update(stableStringify(pruneUndefined(payload)))
+    .digest("hex");
+}
+
+export function verifyReceiptMarker(marker: ReceiptMarker, secret: string): boolean {
+  const { mac, ...payload } = marker;
+  return signReceiptMarker(payload, secret) === mac;
+}
+
 export function encodeReceiptMarker(marker: ReceiptMarker): string {
-  return `<!-- mergepay:${JSON.stringify(marker)} -->`;
+  return `<!-- mergepay:${JSON.stringify(pruneUndefined(marker))} -->`;
 }
 
 export function decodeReceiptMarker(text: string): ReceiptMarker | undefined {
@@ -77,15 +154,23 @@ export interface ReceiptIntegrityInput {
   mergeSha: string;
 }
 
+export interface ReceiptIdentityFields {
+  paymentKey: string;
+  requestHash: string;
+  repository: string;
+  pullRequestNumber: number;
+  mergeSha: string;
+}
+
 export function receiptMatchesCurrent(
-  marker: ReceiptMarker,
+  receipt: ReceiptIdentityFields,
   current: ReceiptIntegrityInput,
 ): boolean {
   return (
-    marker.paymentKey === current.paymentKey &&
-    marker.requestHash === current.requestHash &&
-    marker.repository === current.repository &&
-    marker.pullRequestNumber === current.pullRequestNumber &&
-    marker.mergeSha === current.mergeSha
+    receipt.paymentKey === current.paymentKey &&
+    receipt.requestHash === current.requestHash &&
+    receipt.repository === current.repository &&
+    receipt.pullRequestNumber === current.pullRequestNumber &&
+    receipt.mergeSha === current.mergeSha
   );
 }
