@@ -136,6 +136,8 @@ The GitHub receipt contains readable Markdown plus a hidden versioned marker enc
 
 The settlement orchestrator composes the pure policy, canonical identity, and provider layers into one deterministic flow: evaluate policy; on approval derive the payment key and request hash; resolve any existing receipt (confirmed same-hash is a duplicate, pending resumes polling the original execution, changed hash is a conflict, prior failure is manual review); otherwise simulate, broadcast the exact parameters with the idempotency key, poll to a terminal state, and save a versioned receipt. A blocked or reverted path performs no provider call; a lost broadcast response or expired poll deadline produces manual review and never rebroadcasts.
 
+The action entrypoint fetches fresh PR, default-branch config, and check state through a typed GitHub API adapter before evaluation, so event fields are never trusted directly. The comment-backed receipt store scans PR comments for the hidden marker, creates one receipt comment, and updates only its own matching comment. Action outputs expose status, policy result, payment key, request hash, execution ID, transaction hash/link, duplicate flag, and broadcast flag.
+
 ## Integration Contracts
 
 ### GitHub inputs

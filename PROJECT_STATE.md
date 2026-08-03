@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Current checkpoint: CP-014
+- Current checkpoint: CP-015
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,11 +45,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
-- Checkpoint: CP-014
-- Goal: Wire the settlement core to the GitHub Action surface: the GitHub API adapter (fresh PR/check/config/comment state, FR-002), the receipt store backed by PR comments (FR-012), action input parsing, the Actions summary and PR receipt renderers, the action entrypoint, and action outputs — all test-first with saved event fixtures.
-- Expected files or assets: `src/github/*` adapters, `src/output/*` renderers, updated `src/action.ts`, action input parsing, tests and saved fixtures.
-- Acceptance criteria: A trusted merged event runs the full flow and reports success, duplicate, block, failure, or manual review through GitHub outputs; receipts are found and updated safely; no untrusted content reaches policy or provider parameters.
-- Required verification: Integration, failure, and security tests; `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
+- Checkpoint: CP-015
+- Goal: Close Phase 2 with the trusted example workflow, saved event fixtures, action packaging verification, and an independent Phase 2 review gate (plan Tasks 70-72) before any live execution. Then proceed to Phase 3 live three-state acceptance.
+- Expected files or assets: Trusted workflow, event fixtures, package verification evidence, review record.
+- Acceptance criteria: The workflow triggers only for closed PRs, checks `merged`, exposes no secret to PR code, checks out no untrusted code, and pins external actions by commit SHA; the packaged action runs against saved fixtures; the independent Phase 2 review approves before live acceptance.
+- Required verification: Security review, clean-room QA pass, fixture-based action test, `npm run lint`, `npm run typecheck`, `npm test`, build, bundle, audit, secret scan.
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): the provider layer (CP-012) and settlement core (CP-013) are implemented and green; the GitHub Action surface (adapters, renderers, entrypoint) is next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
+- Phase 2 (Trusted GitHub and KeeperHub execution): provider layer (CP-012), settlement core (CP-013), and GitHub Action surface (CP-014) are implemented and green; the trusted workflow, fixtures, and Phase 2 review gate are next. Phase 2 requires its own review before execution/broadcast behavior is accepted.
 
 ### Blocked (resolved / narrowed)
 
@@ -366,6 +366,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: CP-014 — implement test-first the GitHub API adapters (fresh PR/check/config/comment state), the comment-backed receipt store, action input parsing, summary/receipt renderers, the action entrypoint, and action outputs.
 
+### CP-014: GitHub Action surface
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Wire the settlement core to the GitHub Action surface test-first: the GitHub REST adapter (fresh PR/check/config/comment state per FR-002), the comment-backed receipt store (FR-012), action input parsing, summary/receipt renderers, the action entrypoint, and action outputs (plan Tasks 65-69, 71).
+- Requirements covered: `FR-001`, `FR-002`, `FR-012`, `FR-013`, `NFR-001`, `NFR-002`, `NFR-005`, `SC-004`.
+- Work completed: Moved the typed HTTP layer to `src/transport/http.ts` (re-exported from `src/keeperhub/transport.ts` for compatibility; added PATCH support). Created `src/github/api.ts` (GitHubApi interface + GithubRestApi: default branch, pull request state, trusted config contents base64 fetch at the default-branch ref, check-runs mapping, issue comment list/create/update; non-2xx and malformed responses -> GITHUB_FETCH_FAILED), `src/github/state.ts` (GithubStateFetcher assembles the SettlementInput from fresh PR/config/checks state so event fields are never trusted), `src/github/receipts.ts` (CommentReceiptStore: finds markers in comments, creates one receipt comment and updates only its own matching comment), `src/output/summary.ts` (renderActionSummary with a SettlementDisplay context), `src/output/receipt-comment.ts` (renderReceiptComment with human text + hidden marker), `src/output/outputs.ts` (buildActionOutputs), `src/action-inputs.ts` (parseRuntimeSecrets from GITHUB_TOKEN/KEEPERHUB_API_KEY), and rewrote `src/action.ts` (run() composes normalization -> fresh state -> orchestrator -> outputs/summary with injected GitHubApi/KeeperHubProvider; main() reads GITHUB_EVENT_PATH, builds real adapters, writes outputs and the Actions summary). Tests: `tests/github/api.test.ts`, `tests/github/state.test.ts`, `tests/github/receipts.test.ts`, `tests/github/inputs.test.ts`, `tests/output/summary.test.ts`, `tests/output/receipt-comment.test.ts`, `tests/output/outputs.test.ts`, rewritten `tests/action.test.ts`; added FakeGitHubApi + FakeHttpTransport to `tests/fakes/fakes.ts`.
+- Files or assets changed: the files above, docs `ARCHITECTURE.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: focused vitest runs (red first), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run audit`, grep secret scan.
+- Test results: 199 tests pass (was 168): github api 8, state 5, receipts 5, inputs 2, summary 2, receipt-comment 2, outputs 2, action run 6, prior suites unchanged. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build succeeds (bundle ~2.7MB with @actions/core + yaml) and loads; audit 0 vulnerabilities; src secret scan clean.
+- Acceptance criteria verified: A trusted merged event runs the full flow to confirmed and posts exactly one receipt comment (created then updated); unmerged closes and failed checks block with zero provider calls and no comment; non-closed events and wrong-repository config fail safe; missing secrets fail before any network call; outputs and summary reflect status, payment key, recipient, amount, chain/token, transaction proof, duplicate, and broadcast flags.
+- Decisions: The action entrypoint composes injected GitHubApi/KeeperHubProvider interfaces while `main()` wires the real adapters from the transport and secrets, keeping `run()` fully testable. Config is fetched only from the default-branch ref (ADR-003). Receipt comments are posted only by orchestrator receipt saves; blocked/refused outcomes are reported via the Actions summary to avoid clobbering original receipts. `token <token>` authorization and the contents API base64 decode are used for the GitHub adapter.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: The GitHub REST response field assumptions (default_branch, merge_commit_sha, check-runs, contents base64) must be validated with live GitHub access in Phase 3; the poll-hint unit and recipient casing assumptions from CP-012 remain pending live confirmation.
+- Known issues: None blocking. `main()` (reading GITHUB_EVENT_PATH and writing outputs/summary via @actions/core) is wired but exercised only through `run()` tests; a fixture-based packaged-action check is Task 72 (CP-015).
+- Blockers: None.
+- Next exact action: CP-015 — add the trusted example workflow (Task 70), saved event fixtures and packaging verification (Task 72), then request the independent Phase 2 review gate before any live execution.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -438,6 +459,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-013 | Duplicate resolver | Pass | confirmed->duplicate, pending+id -> resume-poll, failed/pending-no-id -> manual-review, changed content -> conflict |
 | CP-013 | Orchestrator outcomes | Pass | blocked=0 provider calls; simulation revert=failed no broadcast; confirmed saves pending+confirmed receipts; duplicate reuses proof; conflict=manual-review; pending resumes original execution; lost broadcast/poll timeout=manual-review with exactly 1 broadcast call |
 | CP-013 | Verification suite | Pass | `npm test` 168/168; typecheck/lint/format clean; build + bundle load; `npm audit` 0; src secret scan clean |
+| CP-014 | GitHub REST adapter | Pass | Default branch, PR state, config contents base64 at default-branch ref, check-runs, comment list/create/update; non-2xx and malformed JSON -> `GITHUB_FETCH_FAILED` |
+| CP-014 | Fresh state fetch | Pass | SettlementInput assembled from fresh PR/config/checks; wrong-repository config rejected; fresh PR state used over event fields |
+| CP-014 | Comment receipt store | Pass | Finds markers by payment key, ignores non-markers, creates one comment and updates only its own matching comment |
+| CP-014 | Entrypoint + outputs | Pass | Confirmed run posts exactly one receipt comment; unmerged/failed-checks block with 0 provider calls; non-closed event and config mismatch fail safe; missing secrets fail before network; outputs/summary render all documented fields |
+| CP-014 | Verification suite | Pass | `npm test` 199/199; typecheck/lint/format clean; ncc build + bundle load; `npm audit` 0; src secret scan clean |
 
 ## Known Issues
 
@@ -458,7 +484,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Begin CP-014 in Phase 2: implement test-first the GitHub API adapters (fresh PR/check/config/comment state per FR-002), the comment-backed receipt store, action input parsing, the Actions summary and PR receipt renderers, the action entrypoint, and action outputs, using saved event fixtures. Phase 2 broadcast behavior must pass its own independent review before any live execution.
+Begin CP-015 in Phase 2: add the trusted example workflow (trigger only on closed PRs, check `merged`, minimum permissions, no secret exposure to PR code, pinned external actions by commit SHA), saved GitHub event fixtures plus packaging verification (Task 72), then request the independent Phase 2 review gate. Phase 3 live three-state acceptance may begin only after Phase 2 review approval.
 
 ## Checkpoint and Amendment Contract
 

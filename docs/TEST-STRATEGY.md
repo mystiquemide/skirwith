@@ -5,7 +5,7 @@
 1. Pure unit tests: config, event normalization, policy, decimal amounts, atomic conversion, canonical serialization, payment keys, reason codes, redaction, transfer-parameter parity, receipt marker encoding, and duplicate/conflict resolution.
 2. Contract tests: GitHub API adapters, KeeperHub transport decoders, simulation, broadcast, execution lookup, polling hints, error mapping, and a deterministic fake provider.
 3. State-machine tests: duplicate resolution, uncertain submission, terminal states, receipt integrity, and orchestrator outcome mapping (blocked, failed, confirmed, duplicate, manual-review).
-4. Action integration tests: saved GitHub event fixtures through the action entrypoint with fake APIs/provider.
+4. Action integration tests: saved GitHub event fixtures through the action entrypoint with fake APIs/provider, covering summary/receipt rendering, action outputs, and comment create-or-update.
 5. Security fixtures: fork event, altered config, spoofed wallet, contributor amount, secret leakage, changed idempotency body.
 6. Live acceptance: one real success, one replay, one refusal, plus an independent backup success.
 
