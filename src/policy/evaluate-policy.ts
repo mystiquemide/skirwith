@@ -1,5 +1,5 @@
 import type { MergePayConfig } from "../config/schema.js";
-import { exceedsDecimalString, isZeroAmount } from "../domain/decimal.js";
+import { isZeroAmount, toAtomicUnits } from "../domain/decimal.js";
 import type {
   ChainTokenConfig,
   HexAddress,
@@ -107,7 +107,13 @@ export function evaluatePolicy(input: PolicyEvaluationInput): PolicyDecision {
   if (isZeroAmount(resolved.amount)) {
     return blockedDecision("blocked-invalid-amount");
   }
-  if (exceedsDecimalString(resolved.amount, input.config.payout.maximum)) {
+  const decimals = input.config.chain.token.decimals;
+  const amountAtomic = toAtomicUnits(resolved.amount, decimals);
+  const maximumAtomic = toAtomicUnits(input.config.payout.maximum, decimals);
+  if (amountAtomic === undefined || maximumAtomic === undefined) {
+    return blockedDecision("blocked-invalid-amount");
+  }
+  if (BigInt(amountAtomic) > BigInt(maximumAtomic)) {
     return blockedDecision("blocked-amount-exceeds-cap");
   }
   reasons.push(reason("amount-resolved"));

@@ -300,7 +300,7 @@ Task 34: Implement amount and maximum checks test-first
 Owner: Backend
 Complexity: S
 Depends on: 33
-Done when: Decimal-safe comparison blocks zero, negative, excessive, or precision-invalid amounts without floating-point arithmetic.
+Done when: Human decimal amounts and the maximum convert to atomic integer units using the configured token decimals; fractional precision beyond token decimals is rejected; zero, negative, excessive, or precision-invalid amounts are blocked without floating-point arithmetic.
 
 Task 35: Implement chain and token allowlisting test-first
 Owner: Backend
@@ -330,7 +330,7 @@ Task 39: Implement deterministic payment key test-first **CRITICAL PATH**
 Owner: Backend
 Complexity: S
 Depends on: 38
-Done when: A namespaced key derived from the canonical request is stable, provider-safe, and documented for audit use.
+Done when: A namespaced key derives from the stable payment identity (version, repository, PR, merge SHA, purpose), is unchanged by material content changes (recipient, amount, chain, token), is provider-safe, and is documented for audit use; the canonical request hash remains a separate integrity value so same-key/different-hash conflicts are representable.
 
 Task 40: Define evidence record schema
 Owner: Backend / QA

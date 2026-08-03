@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCanonicalRequest } from "../../src/payment/canonical-request.js";
 import { hashCanonicalRequest } from "../../src/payment/payment-hash.js";
+import { derivePaymentIdentity } from "../../src/payment/payment-identity.js";
 import { derivePaymentKey } from "../../src/payment/payment-key.js";
 import type { CanonicalPaymentRequest } from "../../src/domain/types.js";
 
@@ -64,16 +65,52 @@ describe("hashCanonicalRequest", () => {
   });
 });
 
+describe("derivePaymentIdentity", () => {
+  it("extracts the stable identity fields from a canonical request", () => {
+    const identity = derivePaymentIdentity(buildCanonicalRequest(base));
+    expect(identity).toEqual({
+      version: 1,
+      repository: "acme/mergepay-demo",
+      pullRequestNumber: 42,
+      mergeSha: "0123456789abcdef0123456789abcdef01234567",
+      purpose: "mergepay:payout",
+    });
+  });
+});
+
 describe("derivePaymentKey", () => {
   it("is stable for the same request", () => {
     const key = derivePaymentKey(buildCanonicalRequest(base));
     expect(key).toMatch(/^mergepay:/);
   });
 
-  it("changes when the request changes", () => {
+  it("keeps the same key when material content changes, so conflicts are representable", () => {
+    const a = buildCanonicalRequest(base);
+    const changedContent = [
+      { amountAtomic: "2500001" },
+      { recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26e" },
+      { chainId: 84532 },
+      { tokenAddress: "0x036cbd53842c5426634e7929541ec2318f3dcf7e" },
+    ];
+    for (const change of changedContent) {
+      const b = buildCanonicalRequest({ ...base, ...change });
+      expect(derivePaymentKey(a)).toBe(derivePaymentKey(b));
+      expect(hashCanonicalRequest(a)).not.toBe(hashCanonicalRequest(b));
+    }
+  });
+
+  it("changes the key when payment identity changes", () => {
     const a = derivePaymentKey(buildCanonicalRequest(base));
-    const b = derivePaymentKey(buildCanonicalRequest({ ...base, pullRequestNumber: 43 }));
-    expect(a).not.toBe(b);
+    const changedIdentity = [
+      { pullRequestNumber: 43 },
+      { repository: "other/org" },
+      { mergeSha: "0123456789abcdef0123456789abcdef01234568" },
+      { purpose: "mergepay:reimbursement" },
+    ];
+    for (const change of changedIdentity) {
+      const b = derivePaymentKey(buildCanonicalRequest({ ...base, ...change }));
+      expect(a).not.toBe(b);
+    }
   });
 
   it("is provider-safe (alphanumeric plus safe delimiters)", () => {

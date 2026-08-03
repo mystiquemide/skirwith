@@ -33,7 +33,7 @@ checks:
 - `chain.id`, token address, symbol, and decimals are allowlisted values selected from live KeeperHub verification.
 - `requiredLabel` must be present on the current merged PR.
 - Only configured labels select a fixed amount.
-- `maximum` and every amount are nonnegative decimal strings with bounded precision.
+- `maximum` and every amount are nonnegative decimal strings whose fractional digits never exceed the configured token `decimals`; excess precision is rejected at load. Amounts and the maximum are converted to atomic integer units using token decimals for cap comparison, so no floating-point arithmetic or fixed-width padding is used.
 - `recipients` is maintainer-controlled; wallet addresses from PR text are ignored.
 - Required checks, when enabled, must pass for the exact merge SHA.
 - Daily cumulative limits are intentionally absent in v0.1.

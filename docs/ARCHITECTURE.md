@@ -92,6 +92,14 @@ type CanonicalPaymentRequest = {
   purpose: string;
 };
 
+type PaymentIdentity = {
+  version: 1;
+  repository: string;
+  pullRequestNumber: number;
+  mergeSha: string;
+  purpose: string;
+};
+
 type EvidenceRecord = {
   version: 1;
   paymentKey: string;
@@ -107,6 +115,8 @@ type EvidenceRecord = {
   error?: { code: string; message: string };
 };
 ```
+
+The payment key is derived from the stable `PaymentIdentity` (version, repository, pull request, merge SHA, purpose), independent of material content such as recipient, amount, chain, or token. The canonical request hash covers every material field and is kept separate as the integrity value. On replay, a matching key with a matching hash is a duplicate; a matching key with a changed hash is a conflict requiring manual review. Human decimal amounts are converted to atomic integer units using the configured token decimals before any cap comparison or serialization.
 
 The GitHub receipt contains readable Markdown plus a hidden versioned marker encoding only the minimum safe duplicate fields: product/version, payment key, request hash, execution ID, status, repository, PR, and merge SHA.
 

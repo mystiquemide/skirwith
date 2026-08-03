@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 1 - Foundation and contract freeze
-- Current checkpoint: CP-009
+- Current checkpoint: CP-011
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,11 +45,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 1 - Foundation and contract freeze
-- Checkpoint: CP-009
-- Goal: Pass the Phase 1 exit gate: an independent contract review of the completed Phase 1 contracts (toolchain, config schema, canonical payment identity, policy reason codes, pure policy evaluator) from the final diff, without implementation reasoning. No provider/action implementation until the review approves.
-- Expected files or assets: Review record of the Phase 1 diff; no new implementation files until the gate passes.
-- Acceptance criteria: Review approves types, domain contracts, and tests; foundation gates pass; Phase 2 (GitHub event + KeeperHub execution) may begin.
-- Required verification: Independent review; if the review requires changes, re-run focused tests, `npm run lint`, `npm run typecheck`, `npm test`, build, and audit.
+- Checkpoint: CP-011
+- Goal: Pass a fresh independent re-review of the corrected Phase 1 contracts (stable payment identity + separate request hash, atomic-unit decimal conversion with token-precision bound, canonical request validation boundary, and removal of the stray gitlink), after which the Phase 1 exit gate closes and Phase 2 may begin.
+- Expected files or assets: Updated independent review record; no new implementation files until the gate passes.
+- Acceptance criteria: Re-review approves the corrected contracts and tests; foundation gates pass; Phase 2 (GitHub event + KeeperHub execution) may begin.
+- Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, audit, secret scan, clean working tree).
 
 ## Current Status
 
@@ -63,7 +63,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 1 (Foundation and contract freeze): toolchain, domain/config contracts, canonical payment identity, and the policy reason-code registry with pure evaluator are implemented and green; only the Phase 1 exit gate (independent contract review) remains.
+- Phase 1 (Foundation and contract freeze): review findings REV-001..REV-004 fixed and verified (90 tests green); only a fresh independent re-review of the corrected contracts remains before the Phase 1 exit gate closes.
 
 ### Blocked (resolved / narrowed)
 
@@ -272,6 +272,41 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Pass the Phase 1 exit gate — request an independent contract review of the full Phase 1 diff (toolchain, config, payment identity, policy) before any Phase 2 provider/action implementation.
 
+### CP-009: Phase 1 exit-gate independent review
+
+- Status: Findings returned
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 1 - Foundation and contract freeze
+- Objective: Independently review the full Phase 1 diff (`20b6fa2..46b8825`) as the Phase 1 exit gate before Phase 2.
+- Work completed: The reviewer added `CODE_REVIEW.md` (212 lines) and pushed commit `b0a882e`. Verdict: Changes required. Reproduced 62 passing tests plus clean format/lint/typecheck/build/bundle, but flagged defects that block the contract freeze.
+- Findings: `REV-001` High — payment key was the hash of the whole canonical request, so changed content always changed the key and the FR-007/BR-006 same-key/different-hash conflict was unrepresentable. `REV-002` High — decimal comparison padded to 18 fractional digits without normalizing longer scales, so an over-cap amount could pass (`0.000000000000000001` vs cap `0.0000000000000000001`). `REV-003` Medium — `buildCanonicalRequest` cast/normalized malformed values (bad addresses, fractional atomic amount, non-positive identifiers) instead of validating. `REV-004` Low — repository hygiene: untracked nested `mergepay/` copy; the review commit also introduced a stray self-referential `mergepay` gitlink with no `.gitmodules`.
+- Files or assets changed: `CODE_REVIEW.md` (new); `PROJECT_STATE.md` not touched by the reviewer.
+- Commands or checks run: Independent reproduction of test/build/format/lint/typecheck and the flagged boundary cases.
+- Test results: 62/62 tests reproduced; audit unavailable in the reviewer environment (`EAI_AGAIN`).
+- Next exact action: Fix REV-001..REV-004 test-first, update contract docs, rerun full verification, and request a fresh re-review.
+
+### CP-010: Review findings REV-001..REV-004 fixed
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 1 - Foundation and contract freeze
+- Objective: Fix the Phase 1 exit-gate findings test-first so the contracts are fit to freeze.
+- Requirements covered: `FR-006`, `FR-007`, `BR-005`, `BR-006`, `NFR-003`, Task 34, Task 37, Task 39; CP-009 findings REV-001..REV-004.
+- Work completed: `REV-001` — added `PaymentIdentity` (version, repository, pullRequestNumber, mergeSha, purpose) in `src/domain/types.ts`; new `src/payment/payment-identity.ts` derives and serializes the identity; `src/payment/payment-hash.ts` now exposes `serializeStableRecord`/`hashStableRecord` and a separate `hashPaymentIdentity`; `src/payment/payment-key.ts` derives the key from the identity hash only, keeping the canonical request hash as a separate integrity value. `REV-002` — `src/domain/decimal.ts` now converts decimal strings to atomic integer units via `toAtomicUnits(decimal, decimals)` (rejects fractional precision beyond token decimals, no floating point, no fixed-width padding); removed the scale-buggy `exceedsDecimalString` and its `load-config.ts` re-export; `load-config.ts` validates `payout.maximum` and every amount precision against `chain.token.decimals` and compares caps in atomic units; `src/policy/evaluate-policy.ts` compares caps in atomic units and fails closed if conversion is undefined. `REV-003` — `src/payment/canonical-request.ts` is now a validating boundary that rejects malformed repository/PR/merge-SHA/recipient/atomic-amount/chain/token/purpose with stable `CANONICAL_REQUEST_INVALID` errors (new error code in `src/domain/errors.ts`) and normalizes lowercase. `REV-004` — removed the stray self-referential `mergepay` gitlink.
+- Files or assets changed: `src/domain/types.ts`, `src/domain/errors.ts`, `src/domain/decimal.ts`, `src/config/load-config.ts`, `src/policy/evaluate-policy.ts`, `src/payment/payment-identity.ts` (new), `src/payment/payment-hash.ts`, `src/payment/payment-key.ts`, `src/payment/canonical-request.ts`, `tests/payment/payment-identity.test.ts`, `tests/payment/canonical-request.test.ts` (new), `tests/domain/decimal.test.ts`, `tests/config/validation.test.ts`, docs `ARCHITECTURE.md`, `SECURITY.md`, `CONFIGURATION.md`, `TASKS.md`, `TEST-STRATEGY.md`, gitlink removal, `PROJECT_STATE.md`.
+- Commands or checks run: focused vitest runs (red first on the new boundary/precision/key tests), `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run audit`, grep secret scan.
+- Test results: 90 tests pass (was 62): +21 canonical-request boundary, +10 payment identity/key, rewritten decimal helpers (7), config precision/cap additions (13 config validation). Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; audit 0 vulnerabilities; secret scan clean.
+- Acceptance criteria verified: Same key is stable across material content changes while the canonical hash differs (conflict representable); key changes when identity changes. Over-cap and over-precision values fail at config load and policy, and `toAtomicUnits` is correct at any scale. Canonical construction rejects every malformed field with a stable safe error and canonicalizes equivalent inputs identically. Working tree clean of the stray gitlink.
+- Decisions: `DEC-008` (below) payment identity field set chosen as version/repository/PR/merge SHA/purpose with material fields as content; `DEC-009` (below) atomic-unit conversion and token-precision bound replace generic string comparison.
+- Deviations: None. Review scope changes are within approved Phase 1 scope.
+- Amendments: None.
+- Risks introduced: None beyond plan RISK-003/RISK-004; conflict detection now genuinely representable.
+- Known issues: None blocking. Audit was verified locally (0 vulnerabilities) even though the reviewer environment could not reach the registry.
+- Blockers: None.
+- Next exact action: Push the fixes and request a fresh independent re-review (CP-011) of the corrected Phase 1 contracts.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -283,6 +318,8 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | DEC-005 | 2026-08-03 | Defer chain/token/wallet freeze until authenticated capability discovery | Docs list supported aliases but not the funded organization wallet's actual balances/limits | Phase 0 completion still requires a live `GET /api/chains` + wallet check |
 | DEC-006 | 2026-08-03 | Frozen v0.1 integration target: Ethereum Sepolia (11155111), USDC `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, 6 decimals, org wallet `0x05619d1a133623B322a8f366ea9594e4e586f26D` | Authenticated live discovery confirmed chain stable/testnet/enabled, contract verified, and simulation-only payout passed | Provider config hardcodes this contract as the only allowed default |
 | DEC-007 | 2026-08-03 | Scoped Prettier to source/test/config files; kept pre-existing planning markdown unformatted | Do not reformat files the planner authored | format/format:check cover code only |
+| DEC-008 | 2026-08-03 | Payment key derives from a stable `PaymentIdentity` (version, repository, PR, merge SHA, purpose); recipient/amount/chain/token are content, tracked by the separate canonical request hash | Same-key/different-hash conflicts must be representable for BR-006 replay safety | Confirms FR-007; key no longer changes on material content change |
+| DEC-009 | 2026-08-03 | Convert human decimal amounts to atomic integer units via token decimals and reject fractional precision beyond token decimals; no generic fixed-width string comparison | Fixed-width decimal comparison accepted an over-cap amount (REV-002) | Cap and precision enforced at config load and policy; amounts stay decimal at config boundary |
 
 ## Plan Deviations
 
@@ -325,6 +362,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-008 | Resolution helpers | Pass | `resolveRecipient`, `resolvePayoutAmount`, `isChainTokenAllowed` block unmapped recipient, missing/ambiguous amount, zero amount, over-cap amount, disallowed chain/token |
 | CP-008 | Decimal helpers | Pass | `exceedsDecimalString` and `isZeroAmount` compare big-int decimals without floating point |
 | CP-008 | Verification suite | Pass | `npm test` 62/62; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean |
+| CP-009 | Independent Phase 1 review | Findings returned | `CODE_REVIEW.md`: REV-001 High (payment key = content hash), REV-002 High (fixed-width decimal cap bypass), REV-003 Medium (canonical builder not validating), REV-004 Low (nested copy/gitlink) |
+| CP-010 | Payment key / identity separation | Pass | Same key stable across material content changes while canonical hash differs; key changes on identity change (identity/payment tests) |
+| CP-010 | Atomic-unit decimal conversion | Pass | `toAtomicUnits("0.000000000000000001", 19)` = `10` > cap `1`; excess fractional precision rejected; no floating point |
+| CP-010 | Config precision and cap bounds | Pass | Over-precision amount and maximum rejected; amount equal to maximum accepted; over-cap blocked (config validation tests) |
+| CP-010 | Canonical request validation boundary | Pass | 17 malformed-field cases rejected with `CANONICAL_REQUEST_INVALID`; equivalent inputs canonicalize identically |
+| CP-010 | Verification suite | Pass | `npm test` 90/90; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean; `git rm mergepay` removed stray gitlink |
 
 ## Known Issues
 
@@ -345,7 +388,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Pass the Phase 1 exit gate: request an independent contract review of the full Phase 1 diff (toolchain, config schema and validation, canonical payment identity, policy reason codes, pure policy evaluator, and their tests) from the final diff without implementation reasoning. Phase 2 (GitHub event + KeeperHub execution) may begin only after the review approves.
+Push the corrected Phase 1 contracts (CP-010) and request a fresh independent re-review (CP-011) of the corrected diff covering REV-001..REV-004: stable payment identity vs separate request hash, atomic-unit decimal conversion with token-precision bound, canonical request validation boundary, and the gitlink removal. Phase 2 (GitHub event + KeeperHub execution) may begin only after the re-review approves.
 
 ## Checkpoint and Amendment Contract
 

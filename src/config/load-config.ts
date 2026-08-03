@@ -1,11 +1,9 @@
 import { parse } from "yaml";
-import { exceedsDecimalString } from "../domain/decimal.js";
+import { toAtomicUnits } from "../domain/decimal.js";
 import { MergePayError } from "../domain/errors.js";
 import { isHexAddress } from "../security/validate.js";
 import { CONFIG_SCHEMA_VERSION } from "./schema.js";
 import type { MergePayConfig } from "./schema.js";
-
-export { exceedsDecimalString };
 
 interface LoadConfigOptions {
   expectedRepository: string;
@@ -75,13 +73,26 @@ function isNonnegativeDecimalString(value: string): boolean {
   return /^(0|[1-9]\d*)(\.\d+)?$/.test(value);
 }
 
+function assertFractionalPrecision(decimal: string, decimals: number, context: string): void {
+  const frac = decimal.split(".")[1] ?? "";
+  if (frac.length > decimals) {
+    throw new MergePayError({
+      code: "CONFIG_SEMANTIC_INVALID",
+      category: "configuration",
+      message: `Value '${decimal}' in '${context}' has more than ${decimals} fractional digits for the configured token decimals.`,
+    });
+  }
+}
+
 function parseAmounts(
   record: Record<string, unknown>,
   context: string,
   maximum: string,
+  decimals: number,
 ): Record<string, string> {
   const amounts: Record<string, string> = {};
   const allowed = new Set<string>();
+  const maximumAtomic = BigInt(toAtomicUnits(maximum, decimals) ?? "0");
   for (const key of Object.keys(record)) {
     if (allowed.has(key)) {
       throw new MergePayError({
@@ -99,7 +110,16 @@ function parseAmounts(
         message: `Amount for label '${key}' in '${context}' must be a nonnegative decimal string.`,
       });
     }
-    if (exceedsDecimalString(raw, maximum)) {
+    assertFractionalPrecision(raw, decimals, context);
+    const atomic = toAtomicUnits(raw, decimals);
+    if (atomic === undefined) {
+      throw new MergePayError({
+        code: "CONFIG_SEMANTIC_INVALID",
+        category: "configuration",
+        message: `Amount for label '${key}' in '${context}' exceeds the configured token precision.`,
+      });
+    }
+    if (BigInt(atomic) > maximumAtomic) {
       throw new MergePayError({
         code: "CONFIG_SEMANTIC_INVALID",
         category: "configuration",
@@ -203,8 +223,9 @@ export function loadConfig(yamlText: string, options: LoadConfigOptions): MergeP
       message: "Configuration field 'payout.maximum' must be a nonnegative decimal string.",
     });
   }
+  assertFractionalPrecision(maximum, decimals, "payout.maximum");
   const amountsRaw = asRecord(payout.amounts, "payout.amounts");
-  const amounts = parseAmounts(amountsRaw, "payout.amounts", maximum);
+  const amounts = parseAmounts(amountsRaw, "payout.amounts", maximum, decimals);
   if (Object.keys(amounts).length === 0) {
     throw new MergePayError({
       code: "CONFIG_SEMANTIC_INVALID",

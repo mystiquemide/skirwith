@@ -14,7 +14,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 - Resolve recipients and amounts only through maintainer mappings.
 - Require policy approval and simulation success before broadcast.
 - Hash the canonical request and require simulation/broadcast parity.
-- Use a stable payment key and compare request hashes on replay.
+- Derive the payment key from the stable payment identity (repository, PR, merge SHA, purpose), independent of material content, and compare the canonical request hash on replay: same key plus same hash is a duplicate; same key plus changed hash is a conflict for manual review.
 - Resolve existing executions before any new broadcast.
 - Make blocked/no-broadcast a first-class result.
 - Redact secrets recursively in logs, errors, summaries, comments, fixtures, and evidence.

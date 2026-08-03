@@ -1,16 +1,17 @@
-export function exceedsDecimalString(a: string, b: string): boolean {
-  const [ai, af] = a.split(".");
-  const [bi, bf] = b.split(".");
-  const aInt = ai ?? "0";
-  const bInt = bi ?? "0";
-  const aFrac = (af ?? "").padEnd(18, "0");
-  const bFrac = (bf ?? "").padEnd(18, "0");
-  const aWhole = BigInt(aInt);
-  const bWhole = BigInt(bInt);
-  if (aWhole !== bWhole) {
-    return aWhole > bWhole;
+const NONNEGATIVE_DECIMAL_RE = /^(0|[1-9]\d*)(\.\d+)?$/;
+
+export function toAtomicUnits(decimal: string, decimals: number): string | undefined {
+  if (!NONNEGATIVE_DECIMAL_RE.test(decimal)) {
+    return undefined;
   }
-  return BigInt(aFrac) > BigInt(bFrac);
+  const [intPart, fracPart] = decimal.split(".");
+  const frac = fracPart ?? "";
+  if (frac.length > decimals) {
+    return undefined;
+  }
+  const int = BigInt(intPart ?? "0");
+  const fracValue = frac.length === 0 ? 0n : BigInt(frac.padEnd(decimals, "0"));
+  return (int * 10n ** BigInt(decimals) + fracValue).toString();
 }
 
 export function isZeroAmount(decimal: string): boolean {

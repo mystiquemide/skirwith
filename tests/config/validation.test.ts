@@ -68,6 +68,25 @@ describe("config semantic validation", () => {
     );
   });
 
+  it("accepts an amount exactly equal to the configured maximum", () => {
+    const yaml = base.replace('mergepay-5: "5"', 'mergepay-25: "25"');
+    expect(() => loadConfig(yaml, { expectedRepository: "acme/mergepay-demo" })).not.toThrow();
+  });
+
+  it("rejects an amount with fractional precision beyond the token decimals", () => {
+    const yaml = base.replace('mergepay-5: "5"', 'mergepay-5: "0.0000001"');
+    expect(() => loadConfig(yaml, { expectedRepository: "acme/mergepay-demo" })).toThrow(
+      /fraction|decimal/i,
+    );
+  });
+
+  it("rejects a maximum with fractional precision beyond the token decimals", () => {
+    const yaml = base.replace('maximum: "25"', 'maximum: "0.0000001"');
+    expect(() => loadConfig(yaml, { expectedRepository: "acme/mergepay-demo" })).toThrow(
+      /fraction|decimal/i,
+    );
+  });
+
   it("rejects duplicate payout labels", () => {
     const yaml = base.replace(
       'amounts:\n    mergepay-5: "5"',

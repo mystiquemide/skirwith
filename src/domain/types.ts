@@ -83,6 +83,14 @@ export interface CanonicalPaymentRequest {
   purpose: string;
 }
 
+export interface PaymentIdentity {
+  version: 1;
+  repository: string;
+  pullRequestNumber: number;
+  mergeSha: string;
+  purpose: string;
+}
+
 export type ExecutionStatus =
   "blocked" | "pending" | "confirmed" | "failed" | "duplicate" | "manual-review";
 
