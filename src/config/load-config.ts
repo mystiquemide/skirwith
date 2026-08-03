@@ -1,8 +1,11 @@
 import { parse } from "yaml";
+import { exceedsDecimalString } from "../domain/decimal.js";
 import { MergePayError } from "../domain/errors.js";
 import { isHexAddress } from "../security/validate.js";
 import { CONFIG_SCHEMA_VERSION } from "./schema.js";
 import type { MergePayConfig } from "./schema.js";
+
+export { exceedsDecimalString };
 
 interface LoadConfigOptions {
   expectedRepository: string;
@@ -106,21 +109,6 @@ function parseAmounts(
     amounts[key] = raw;
   }
   return amounts;
-}
-
-export function exceedsDecimalString(a: string, b: string): boolean {
-  const [ai, af] = a.split(".");
-  const [bi, bf] = b.split(".");
-  const aInt = ai ?? "0";
-  const bInt = bi ?? "0";
-  const aFrac = (af ?? "").padEnd(18, "0");
-  const bFrac = (bf ?? "").padEnd(18, "0");
-  const aWhole = BigInt(aInt);
-  const bWhole = BigInt(bInt);
-  if (aWhole !== bWhole) {
-    return aWhole > bWhole;
-  }
-  return BigInt(aFrac) > BigInt(bFrac);
 }
 
 function parseRecipients(record: Record<string, unknown>): Record<string, `0x${string}`> {

@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 1 - Foundation and contract freeze
-- Current checkpoint: CP-008
+- Current checkpoint: CP-009
 - Last updated: 2026-08-03 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,11 +45,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 1 - Foundation and contract freeze
-- Checkpoint: CP-008
-- Goal: Complete the remaining Phase 1 pure contracts: policy reason codes and the pure policy evaluator entrypoint; then pass the Phase 1 exit gate (contract review) before provider/action implementation.
-- Expected files or assets: `src/policy/reason-codes.ts`, `src/policy/evaluate-policy.ts` (pure), tests, example config fixtures.
-- Acceptance criteria: Every allow/block path has a stable reason code with severity and no-broadcast classification; policy evaluation is deterministic; foundation gates pass.
-- Required verification: Unit + contract tests; `npm run lint`, `npm run typecheck`, `npm test`, build.
+- Checkpoint: CP-009
+- Goal: Pass the Phase 1 exit gate: an independent contract review of the completed Phase 1 contracts (toolchain, config schema, canonical payment identity, policy reason codes, pure policy evaluator) from the final diff, without implementation reasoning. No provider/action implementation until the review approves.
+- Expected files or assets: Review record of the Phase 1 diff; no new implementation files until the gate passes.
+- Acceptance criteria: Review approves types, domain contracts, and tests; foundation gates pass; Phase 2 (GitHub event + KeeperHub execution) may begin.
+- Required verification: Independent review; if the review requires changes, re-run focused tests, `npm run lint`, `npm run typecheck`, `npm test`, build, and audit.
 
 ## Current Status
 
@@ -63,7 +63,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 1 (Foundation and contract freeze): toolchain scaffolded and gates verified; domain/config contracts next.
+- Phase 1 (Foundation and contract freeze): toolchain, domain/config contracts, canonical payment identity, and the policy reason-code registry with pure evaluator are implemented and green; only the Phase 1 exit gate (independent contract review) remains.
 
 ### Blocked (resolved / narrowed)
 
@@ -251,6 +251,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: CP-008 — define stable policy reason codes (`src/policy/reason-codes.ts`) and the pure policy evaluator (`src/policy/evaluate-policy.ts`) test-first, with deterministic allow/block outcomes and explicit no-broadcast classification.
 
+### CP-008: Policy reason codes and pure policy evaluator
+
+- Status: Complete
+- Date: 2026-08-03 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 1 - Foundation and contract freeze
+- Objective: Define stable policy reason codes with severity, safe message, and no-broadcast classification, and implement the pure policy evaluator test-first (plan Tasks 31-36 contract portion).
+- Requirements covered: `FR-004`, `FR-005`, `NFR-003`, `BR-001`, `BR-003`, plan Tasks 31-36.
+- Work completed: Created `src/policy/reason-codes.ts` (registry of all 20 reason codes: 9 allow paths, 11 block paths, each with code, severity, safe message, and `broadcastEligible` classification) and `src/policy/evaluate-policy.ts` (pure `evaluatePolicy(input): PolicyDecision` plus exported resolution helpers `resolveRecipient`, `resolvePayoutAmount`, `isChainTokenAllowed`). Moved decimal comparison into `src/domain/decimal.ts` (`exceedsDecimalString` re-exported from `load-config.ts` to preserve its public contract; added `isZeroAmount`). Added `message: string` to `PolicyReason` in `src/domain/types.ts`. Added example policy/config fixture `tests/fixtures/policy.ts` (synthetic, visibly labeled, mirrors frozen v0.1 integration target) and tests `tests/policy/reason-codes.test.ts`, `tests/policy/evaluate-policy.test.ts`, `tests/domain/decimal.test.ts`.
+- Files or assets changed: `src/domain/types.ts`, `src/domain/decimal.ts` (new), `src/config/load-config.ts`, `src/policy/reason-codes.ts` (new), `src/policy/evaluate-policy.ts` (new), `tests/fixtures/policy.ts` (new), `tests/policy/reason-codes.test.ts` (new), `tests/policy/evaluate-policy.test.ts` (new), `tests/domain/decimal.test.ts` (new), `PROJECT_STATE.md`.
+- Commands or checks run: `npx vitest run tests/policy tests/domain` (red first: 3 files failed with missing modules, then green after implementation), `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm test`, `npm run build`, `npm run bundle:check`, `npm run audit`, grep secret scan of `src` and `tests`.
+- Test results: 62 tests pass (was 24): config parse 5, config validation 10, payment identity 8, reason codes 8, policy evaluation 25, decimal helpers 5, action smoke 1. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build succeeds and bundle loads; audit 0 vulnerabilities; no secret patterns found.
+- Acceptance criteria verified: Every allow/block path has a stable code, severity, safe message, and no-broadcast classification; approved decisions carry deterministic ordered info reasons and `broadcastEligible: true`; every blocked decision carries one block reason and `broadcastEligible: false`; resolution helpers block unmapped recipients, ambiguous/missing amounts, zero amounts, over-cap amounts, and disallowed chain/token; checks are enforced only when configured as required.
+- Decisions: Kept the frozen `PolicyDecision` shape (added `message` to `PolicyReason` only); the evaluator returns the decision and Phase 2 reuses the exported resolution helpers so canonical-request construction cannot diverge from the evaluated candidate. Moved `exceedsDecimalString` to `src/domain/decimal.ts` and re-exported it from `load-config.ts` (public contract unchanged) so pure policy does not depend on the YAML loader. `blocked-unknown-reason` is defined for completeness/fallback but is never emitted by v0.1 evaluation, which fails closed with explicit reasons.
+- Deviations: Minor — plan Tasks 32-35 (recipient, amount, cap, chain/token checks) are implemented inside the CP-008 evaluator as exported pure helpers instead of separate CPs, matching the state-file objective to complete the remaining Phase 1 pure contracts together.
+- Amendments: None.
+- Risks introduced: None beyond plan RISK-003/RISK-004; the parity and no-rebroadcast controls remain Phase 2 responsibility.
+- Known issues: None blocking. The policy module is pure and not yet referenced from `src/action.ts`, so the ncc bundle stays 1kB until Phase 2 wiring.
+- Blockers: None.
+- Next exact action: Pass the Phase 1 exit gate — request an independent contract review of the full Phase 1 diff (toolchain, config, payment identity, policy) before any Phase 2 provider/action implementation.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -299,6 +320,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-005 | Wallet funding re-check (native) | Pass | Simulated 0.001 ETH transfer on Sepolia now succeeds: `wouldRevert: false`, gasEstimate 21000 |
 | CP-005 | Wallet funding re-check (USDC) | Pass | Sepolia USDC balanceOf org wallet = 40000000 raw = 40 USDC (6 decimals) |
 | CP-005 | Simulation-only USDC payout smoke test | Pass | Simulated 2.5 USDC transfer on Sepolia: `success: true`, `wouldRevert: false`, `simulatedReturnValue: true`, gasEstimate 40705, value 0 (no native sent). No broadcast, no execution row created |
+| CP-008 | Policy reason-code registry | Pass | 20 codes (9 allow, 11 block); each has code, severity, safe message, `broadcastEligible`; info codes broadcast-eligible, block codes no-broadcast |
+| CP-008 | Pure policy evaluator | Pass | `evaluatePolicy` returns deterministic decision; approved path has 9 ordered info reasons and `broadcastEligible: true`; 12 block paths each return one block reason and `broadcastEligible: false` |
+| CP-008 | Resolution helpers | Pass | `resolveRecipient`, `resolvePayoutAmount`, `isChainTokenAllowed` block unmapped recipient, missing/ambiguous amount, zero amount, over-cap amount, disallowed chain/token |
+| CP-008 | Decimal helpers | Pass | `exceedsDecimalString` and `isZeroAmount` compare big-int decimals without floating point |
+| CP-008 | Verification suite | Pass | `npm test` 62/62; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean |
 
 ## Known Issues
 
@@ -319,7 +345,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Begin CP-008 in Phase 1: define stable policy reason codes and the pure policy evaluator test-first (plan Tasks 31-36 contract portion), with deterministic allow/block outcomes and explicit no-broadcast classification. After the Phase 1 exit gate, Phase 2 (GitHub event + KeeperHub execution) may start.
+Pass the Phase 1 exit gate: request an independent contract review of the full Phase 1 diff (toolchain, config schema and validation, canonical payment identity, policy reason codes, pure policy evaluator, and their tests) from the final diff without implementation reasoning. Phase 2 (GitHub event + KeeperHub execution) may begin only after the review approves.
 
 ## Checkpoint and Amendment Contract
 

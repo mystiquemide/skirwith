@@ -60,6 +60,7 @@ export type PolicyReasonCode =
 export interface PolicyReason {
   code: PolicyReasonCode;
   severity: "info" | "block";
+  message: string;
 }
 
 export type PolicyResult = "approved" | "blocked";
