@@ -39,8 +39,24 @@ All transactions are real KeeperHub executions verified via the Sepolia RPC (`et
 - On-chain: status `0x1`; USDC `Transfer` event of `10000000` (10 USDC)
 - Receipt comment: `Status: confirmed`
 
+## Extended live evidence
+
+Additional confirmed transactions (all verified on-chain via the USDC `Transfer` logs, status `0x1`; all self-payments to the org wallet, so the 40 USDC balance is unchanged):
+
+| PR | Payout | Transaction | Execution id | Receipt |
+|---|---|---|---|---|
+| [#4](https://github.com/mystiquemide/mergepay-acceptance/pull/4) | 5 USDC | [`0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8`](https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8) | not recorded (uncertain response) | pending |
+| [#6](https://github.com/mystiquemide/mergepay-acceptance/pull/6) | 5 USDC | [`0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe`](https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe) | not recorded (uncertain response) | pending |
+| [#7](https://github.com/mystiquemide/mergepay-acceptance/pull/7) | 5 USDC | [`0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d`](https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d) | not recorded (uncertain response) | pending |
+| [#8](https://github.com/mystiquemide/mergepay-acceptance/pull/8) | 5 USDC | [`0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f`](https://sepolia.etherscan.io/tx/0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f) | `do4e7jj9ypabbnvxcljir` | confirmed |
+
+Second refusal type (ambiguous payout labels `mergepay-5` + `mergepay-10`):
+- PR: [#5](https://github.com/mystiquemide/mergepay-acceptance/pull/5), run `30888126456` — success, zero receipt comments, no broadcast (blocked-ambiguous-payout).
+
+Uncertain-response note: for PRs #4, #6, and #7 the KeeperHub broadcast confirmed on-chain but the provider response to the action was not recorded, so the action resolved to manual review with the durable pending reservation intact (broadcast already made). Re-running each resolved to manual review with no second broadcast and no simulation — a live demonstration of the cross-run no-rebroadcast safety invariant. These transactions are independently verified on-chain; the GitHub receipt comments remain `pending` by design because the execution id was not delivered.
+
 ## Cross-checks
 
-- Receipt comments (GitHub) agree with the action outputs and the on-chain transactions for status, amount, chain, token, recipient, and identifiers.
-- Two confirmed KeeperHub transactions preserved as evidence.
+- Receipt comments (GitHub) agree with the action outputs and the on-chain transactions for status, amount, chain, token, recipient, and identifiers on the fully-confirmed runs (PRs #1, #3, #8); PRs #4/#6/#7 are verified on-chain with receipts that remain `pending` because the broadcast response was not delivered (documented above).
+- Six confirmed KeeperHub transactions preserved as evidence (5+10+5+5+5+5 USDC, all self-payments; org wallet balance unchanged at 40 USDC).
 - Testnet only; no production/mainnet claim is made.
