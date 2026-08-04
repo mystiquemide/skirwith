@@ -1,66 +1,116 @@
 # Skirwith
 
-Skirwith is a GitHub Action. It pays an approved contributor after a merged
-pull request. It uses KeeperHub on Ethereum Sepolia. Policy controls the
-payout. Replays never pay twice. Refusals happen before any broadcast.
+**One verified merge. One policy-controlled KeeperHub payment. Signed proof.**
 
-## What it does
+Skirwith is a GitHub Action on Ethereum Sepolia testnet. It turns an eligible
+merged pull request into one policy-controlled USDC transfer through
+KeeperHub. It refuses invalid payouts before broadcast and resolves replays
+without sending a second transaction.
 
-- A merged pull request (PR) triggers the action.
-- The action reads fresh state from GitHub and the trusted config from the
-  default branch.
-- Policy picks the recipient and the amount from the config.
-- The action writes a signed reservation before any broadcast.
-- KeeperHub simulates the transfer, then broadcasts it once.
-- The action posts a receipt comment with the transaction link.
+## Watch and verify
 
-Recipient and amount come only from the config. Contributor text, code, and
-head-branch config are never trusted.
+Demo video: recording against the `v0.1.0` release; the URL will be linked
+here (script: [docs/DEMO_VIDEO_PLAN.md](docs/DEMO_VIDEO_PLAN.md)). To verify
+the claims now from public evidence, follow
+[docs/VERIFY.md](docs/VERIFY.md) or start with:
 
-## Who it is for
+- Confirmed PR: https://github.com/mystiquemide/skirwith-acceptance/pull/1
+- Action run: `30886636409` (checks tab on the PR)
+- KeeperHub execution ID: `mn7vnwz2rednekykkww8d`
+- Sepolia transaction:
+  https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0
+- Replay and refusal evidence: [docs/PHASE3-EVIDENCE.md](docs/PHASE3-EVIDENCE.md)
+- Live site: https://mystiquemide.github.io/skirwith/
 
-- Maintainers who want to pay approved contributors automatically.
-- Reviewers and judges who want to verify the three states: one confirmed
-  payout, replay with no second transaction, and refusal before broadcast.
+## Three-state proof
 
-## Live proof
+| State | Trigger | Observable result | Proof |
+|---|---|---|---|
+| Confirmed | Eligible merged PR | One 5 USDC Sepolia transfer | Run `30886636409`, execution `mn7vnwz2rednekykkww8d`, transaction `0x4c2e…dddb0` |
+| Replay | Same event again | Existing receipt; zero new transactions | Same execution and hash, transaction count unchanged |
+| Blocked | Required label absent | `broadcastMade: false`; no execution ID | Blocked run in the acceptance repository |
 
-The acceptance repository holds 7 confirmed on-chain transactions, one
-replay with no second transaction, and two refusal types. Each transaction
-is verified by the USDC Transfer event on Sepolia. See
-[docs/PHASE3-EVIDENCE.md](docs/PHASE3-EVIDENCE.md) and the
-[live site](https://mystiquemide.github.io/skirwith/).
+The acceptance repository
+([mystiquemide/skirwith-acceptance](https://github.com/mystiquemide/skirwith-acceptance))
+holds 7 on-chain-confirmed transactions, a replay with no second transaction,
+and two refusal types.
+
+## Why KeeperHub is essential
+
+KeeperHub is the settlement layer, not a wrapper. Skirwith calls
+`/api/execute/transfer` with `simulate: true` first, then broadcasts the same
+parameters with an `Idempotency-Key`. It polls `/api/execute/{id}/status`.
+When a broadcast confirms on-chain but the response is lost, the same
+idempotency key recovers the original execution and never creates a second
+transaction. A direct RPC substitute would not reproduce this exact
+simulate-broadcast-recover path. See
+[docs/KEEPERHUB-INTEGRATION.md](docs/KEEPERHUB-INTEGRATION.md).
+
+## How it works
+
+1. Merged PR closes on GitHub.
+2. The action reads fresh GitHub state and the trusted config from the default
+   branch.
+3. Policy picks the recipient and the amount from the config.
+4. The action writes a signed reservation before any broadcast.
+5. KeeperHub simulates the exact transfer.
+6. The action broadcasts once.
+7. The action posts a receipt comment with the transaction link.
+
+## Security invariants
+
+- PR code is never checked out in the secret-bearing job.
+- Recipient and amount come only from protected default-branch configuration.
+- A signed reservation must persist before any broadcast.
+- Simulation and broadcast parameters must match exactly.
+- Existing or uncertain execution state prevents a new broadcast.
+- Receipt comments must authenticate before becoming authoritative.
+- Legacy MergePay receipts remain authoritative (amendment
+  [docs/AMD-001.md](docs/AMD-001.md)).
+- Provider errors map to safe public messages.
+
+See [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Quickstart
+
+Run the first test only with a funded testnet wallet and a controlled
+recipient mapping.
 
 Prerequisites:
 
 - A repository that you control.
 - A KeeperHub organization API key. Create it at app.keeperhub.com.
-- A receipt signing secret. Use any long random string.
+- A receipt signing secret stored as `SKIRWITH_RECEIPT_SECRET`.
 
 Steps:
 
-1. Add the config file `.github/skirwith.yml` to the default branch.
-2. Add the workflow file `.github/workflows/settle.yml`.
-3. Set the repository secrets `KEEPERHUB_API_KEY` and
-   `SKIRWITH_RECEIPT_SECRET`.
-4. Open a PR and add the labels that the config requires.
-5. Merge the PR.
+1. Add `.github/skirwith.yml` to the default branch.
+2. Add `.github/workflows/settle.yml` (below), pinned to the release SHA.
+3. Set the repository secrets `KEEPERHUB_API_KEY` and `SKIRWITH_RECEIPT_SECRET`.
+4. Open a PR, add the labels the config requires, then merge it.
 
-Expected result:
-
-The action runs after the merge. If policy passes, the wallet is funded, and
-KeeperHub is available, it broadcasts once and posts a receipt comment on the
-PR. The comment shows the transaction hash and the explorer link for the
-Sepolia transaction.
-
-You do not need a personal access token (PAT). GitHub Actions provides the
-`GITHUB_TOKEN` automatically.
-
-## Installation
-
-Add the workflow to your repository. Pin the action to a release SHA.
+```yaml
+# .github/skirwith.yml (default branch, trusted)
+version: 1
+repository: owner/name
+chain:
+  id: 11155111
+  explorer: https://sepolia.etherscan.io
+  token:
+    address: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
+    symbol: USDC
+    decimals: 6
+payout:
+  requiredLabel: skirwith-approved
+  maximum: "25"
+  amounts:
+    skirwith-5: "5"
+recipients:
+  contributor-login: "0x…"
+checks:
+  required: false
+  names: []
+```
 
 ```yaml
 # .github/workflows/settle.yml
@@ -86,118 +136,72 @@ jobs:
           SKIRWITH_RECEIPT_SECRET: ${{ secrets.SKIRWITH_RECEIPT_SECRET }}
 ```
 
-The workflow never checks out or runs PR code.
+You do not need a personal access token (PAT). GitHub Actions provides the
+`GITHUB_TOKEN` automatically. The workflow never checks out or runs PR code.
+Config rules live in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-## Configuration
+## Outcome guide
 
-Add `.github/skirwith.yml` to the default branch.
+| Outcome | Meaning | Broadcast state | Next step |
+|---|---|---|---|
+| Confirmed | Transfer completed | Sent once | Verify explorer link |
+| Existing payment found | Matching receipt already exists | Not repeated | Use original proof |
+| Stopped before broadcast | Policy failed | Not attempted | Correct trusted config or labels |
+| Waiting for confirmation | Existing execution remains active | Not repeated | Check execution status |
+| Manual review required | Outcome is uncertain or conflicting | Never automatically repeated | Review receipt and execution |
+| Failed safely | No safe settlement completed | See evidence | Correct the cause before a controlled rerun |
 
-```yaml
-version: 1
-repository: owner/name
-chain:
-  id: 11155111
-  explorer: https://sepolia.etherscan.io
-  token:
-    address: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
-    symbol: USDC
-    decimals: 6
-payout:
-  requiredLabel: skirwith-approved
-  maximum: "25"
-  amounts:
-    skirwith-5: "5"
-recipients:
-  contributor-login: "0x…"
-checks:
-  required: false
-  names: []
-```
+Skirwith never rebroadcasts an uncertain outcome. For each state, follow
+[docs/RECOVERY.md](docs/RECOVERY.md).
 
-Rules:
+## Evidence and limitations
 
-- `repository` must match the repository that runs the workflow.
-- `chain` values are the allowlist from live KeeperHub verification.
-- `requiredLabel` must be on the merged PR.
-- Only configured labels select an amount.
-- Amounts and `maximum` are decimal strings. Their fractional digits must
-  not exceed the token decimals.
-- `recipients` maps GitHub logins to payout wallets.
+Skirwith is a testnet proof of concept for the KeeperHub Agents Onchain
+hackathon. Scope is one chain (Ethereum Sepolia), one token (USDC
+`0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`). Recipient and amount mappings
+are maintainer-controlled. There is no daily-limit accounting and no automatic
+recovery. All live transactions are testnet self-payments to the organization
+wallet to avoid moving funds to an external person during testing; the
+workflow still validates the complete recipient mapping and transfer path.
+KeeperHub availability, GitHub API state, wallet funding, and gas must hold
+for settlement to complete.
 
-See [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
+## Reproduce locally
 
-## Usage
-
-Open a PR, add the `skirwith-approved` label and one amount label, then merge
-it. The action pays the amount to the mapped wallet.
-
-The action supports these outcomes:
-
-- confirmed: one transaction exists for the payment key.
-- duplicate: a replay resolved an existing confirmed transaction.
-- blocked: policy refused before any broadcast.
-- manual-review: the outcome was uncertain. The action never rebroadcasts.
-
-## Examples
-
-The three states are proven with real transactions. See the
-[acceptance repository](https://github.com/mystiquemide/skirwith-acceptance).
-
-## Architecture
-
-- `src/policy`: pure decision logic and reason codes.
-- `src/payment`: canonical request, hash, and payment key.
-- `src/keeperhub`: typed provider client.
-- `src/github`: GitHub API adapter, state, and receipt store.
-- `src/execution`: settlement orchestrator.
-- `src/evidence`: signed receipt markers.
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Safety design
-
-- Recipient and amount come only from the config.
-- A signed reservation is written before any broadcast. No broadcast without
-  a reservation.
-- Simulation and broadcast use the same transfer parameters.
-- Replays resolve the existing receipt. They never broadcast twice.
-- Uncertain outcomes become manual review. The action never rebroadcasts.
-- Receipt markers use an HMAC signature with a dedicated key. A forged
-  comment cannot suppress a payout.
-
-See [docs/SECURITY.md](docs/SECURITY.md).
-
-## Troubleshooting
-
-- The receipt stays pending and the broadcast confirmed on-chain. The
-  KeeperHub response did not reach the action. Re-run the action. It resolves
-  to manual review and does not rebroadcast. Recover the execution id with
-  KeeperHub idempotent replay.
-- The run reports a blocked outcome. Check the labels and the required label
-  in the config.
-- The run reports a config error. Check the config against
-  [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
-
-For every outcome, follow the state-by-state
-[docs/RECOVERY.md](docs/RECOVERY.md). To confirm the project claims from public
-evidence, follow [docs/VERIFY.md](docs/VERIFY.md).
-
-## Development
-
-Requirements: Node 24 (the action runtime), npm.
+Requirements: Node 24, npm.
 
 ```bash
-npm install
-npm run typecheck
+npm ci
+npm run format:check
 npm run lint
+npm run typecheck
 npm test
 npm run build
+npm run bundle:check
 npm run verify:packaged
+npm run test:coverage
+npm run audit
 ```
 
 Behavior is test-driven. Domain logic stays pure. Provider and GitHub calls
 sit behind injected interfaces.
 
-## License
+## Repository map
 
-MIT.
+- `src/policy`: pure decision logic and reason codes.
+- `src/payment`: canonical request, hash, and payment key.
+- `src/keeperhub`: typed KeeperHub provider client.
+- `src/github`: GitHub API adapter, state, and receipt store.
+- `src/execution`: settlement orchestrator.
+- `src/evidence`: signed receipt markers and verification.
+- `src/output`: action summary, receipt comment, and outcome copy.
+- `docs/`: architecture, security, configuration, evidence, recovery, and
+  verification guides.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## License and submission
+
+MIT (see [LICENSE](LICENSE)). Release tag `v0.1.0` points to commit
+`594bcb928ed0fb40df1845263e17ce62ead6c8bc`. Submission archive:
+[docs/SUBMISSION.md](docs/SUBMISSION.md).
