@@ -2,24 +2,55 @@
 
 ## Required Links
 
-- Public GitHub repository.
-- Final release tag.
-- Demo video under three minutes.
-- Real KeeperHub transaction explorer link.
-- KeeperHub execution/audit reference when publicly shareable.
-- Optional public documentation site.
+- Public GitHub repository: https://github.com/mystiquemide/skirwith
+- Final release tag: `v0.1.0` → commit `594bcb928ed0fb40df1845263e17ce62ead6c8bc`
+- Demo video under three minutes: PENDING (see `docs/DEMO_VIDEO_PLAN.md`; URL recorded here once uploaded)
+- Real KeeperHub transaction explorer link: https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0
+- KeeperHub execution reference: `mn7vnwz2rednekykkww8d`
+- Optional public documentation site: https://mystiquemide.github.io/skirwith/
+
+## Pinned Action Reference
+
+Docs and the example workflow pin the action to the `v0.1.0` release commit:
+
+```yaml
+uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
+```
 
 ## Verification
 
-- Open every link logged out.
-- Confirm transaction chain, token, amount, recipient, status, and timestamp.
-- Confirm the repository tag matches the recorded demo build.
-- Confirm README separates live proof from fixtures.
-- Confirm no secrets, private wallet material, fake hashes, or unsupported claims are present.
-- Confirm sponsor integration names the exact executed KeeperHub path.
-- Confirm blocked and duplicate evidence is present, not merely described.
+- Open every link logged out: DONE 2026-08-04. All GitHub links, the Pages site,
+  and the Google Fonts CSS returned HTTP 200. All 7 Sepolia transaction hashes
+  resolve via `eth_getTransactionByHash` on a public Sepolia RPC. Etherscan
+  returns HTTP 403 to plain curl (bot protection), not a broken link.
+- Confirm transaction chain, token, amount, recipient, status, and timestamp:
+  recorded in `docs/PHASE3-EVIDENCE.md`.
+- Confirm the repository tag matches the recorded demo build: tag `v0.1.0`
+  points to the commit the docs pin.
+- Confirm README separates live proof from fixtures: README marks fixtures as
+  synthetic and links `docs/PHASE3-EVIDENCE.md` for live proof.
+- Confirm no secrets, private wallet material, fake hashes, or unsupported
+  claims are present: tracked-file secret scan clean; the `kh_` org key and the
+  receipt secret exist only in gitignored `.env` and private repo secrets.
+- Confirm sponsor integration names the exact executed KeeperHub path:
+  KeeperHub Direct Execution API (`/api/execute/transfer`,
+  `/api/execute/{id}/status`) per `docs/KEEPERHUB-INTEGRATION.md`.
+- Confirm blocked and duplicate evidence is present, not merely described:
+  `docs/PHASE3-EVIDENCE.md` refusal and replay rows.
 
 ## Honest Disclosures
 
-State testnet/mainnet status, one-chain/one-token scope, maintainer-controlled mappings, no daily-limit accounting, no automatic recovery, and all provider or availability limitations.
+State testnet/mainnet status, one-chain/one-token scope, maintainer-controlled
+mappings, no daily-limit accounting, no automatic recovery, and all provider or
+availability limitations.
 
+Skirwith is a testnet proof of concept for the KeeperHub Agents Onchain
+hackathon (deadline 2026-08-13 10:00). It targets Ethereum Sepolia only, USDC
+`0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, one chain, one token. Recipient
+and amount mappings are maintainer-controlled in the trusted config. There is
+no daily-limit accounting and no automatic recovery or rebroadcast after an
+uncertain outcome. All live transactions are testnet self-payments to the
+organization wallet to avoid moving funds to an external person during testing;
+the workflow still validates the complete recipient mapping and transfer path.
+KeeperHub availability, GitHub API state, wallet funding, and gas/allowance
+must hold for settlement to complete.
