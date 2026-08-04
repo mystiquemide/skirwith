@@ -5,67 +5,59 @@
 - Project: MergePay
 - Review date: 2026-08-04 (Africa/Lagos)
 - Reviewer: Independent Codex review
-- Review target: CP-017 remediation of REV-006 (receipt-marker authentication); re-review of the Phase 2 exit gate
-- Base revision: `ea33028` (code-identical to the last reviewed head `887cce2` except `CODE_REVIEW.md`)
-- Head revision: `bee4a94`
-- Review mode: Checkpoint re-review
-- Secondary focus: Security (receipt provenance, replay integrity), payment safety, release readiness
-- Plan phase or checkpoint: Phase 2 — Trusted GitHub and KeeperHub execution / CP-017 (REV-006 fix)
-- Files reviewed: `src/evidence/receipt.ts`, `src/github/receipts.ts`, `src/output/receipt-comment.ts`, `src/action.ts`, `src/execution/duplicate-resolver.ts`, `src/execution/orchestrator.ts`, related tests, and `docs/ARCHITECTURE.md` / `SECURITY.md` / `TEST-STRATEGY.md`
-- Files excluded: Live KeeperHub/GitHub execution and Phase 3 real-transaction evidence
-- Environment: Node.js/npm workspace `/root/projects/mergepay`; `master` synchronized with `origin/master`; working tree clean
-- Overall confidence: High for the receipt-authentication fix and local verification; Medium for live GitHub comment-permission behavior on the receipt `save()` path
+- Review target: Recent receipt-provenance remediation and Phase 2 re-review, commits `bee4a94..aa73a92`
+- Base revision: `887cce2`
+- Head revision: `aa73a92`
+- Review mode: Checkpoint re-review / security-focused diff review
+- Secondary focus: Payment replay integrity, GitHub comment ownership, post-broadcast recovery, release risk
+- Plan phase or checkpoint: Phase 2 exit gate / CP-018
+- Files reviewed: All recent changed files, affected GitHub/receipt/orchestrator callers, tests, documentation, action wiring, prior review, plan, and observable repository state
+- Files excluded: Live GitHub/KeeperHub execution and Phase 3 real transaction evidence
+- Environment: Node.js/npm workspace `/home/mide/mergepay`; `master` synchronized with `origin/master`; tracked deletion of `last stop.md` present in working tree
+- Overall confidence: High
 
 ## Verdict
 
-**Approve with non-blocking findings.** REV-006 is materially corrected: receipt markers are now authenticated with an HMAC-SHA256 tag over a secret only the action holds, the tag is verified before any comment is treated as execution state, marker fields are strictly validated, and forged/tampered/differently-signed markers fail closed. The primary attack (an attacker-forged `confirmed` marker suppressing a payout) is closed and covered by passing adversarial tests. One Low-severity hardening gap remains in the receipt `save()` path (REV-007); it does not enable double payment or suppress the first payout and does not block the Phase 2 exit gate.
+**Changes required.** The read path now rejects forged receipt markers using HMAC verification, so the original REV-006 suppression path is partially corrected. However, the write path still selects any decoded marker with the matching payment key, including an attacker-owned forged comment. After a successful broadcast, the action attempts to edit that attacker-owned comment; GitHub rejects edits to comments not owned by the token’s identity. This can leave a submitted execution without a trusted pending receipt and eventually permit a duplicate broadcast after the provider idempotency window.
+
+The current `aa73a92` approval claim is not supported by the implemented write path or the test doubles. Phase 2 must not pass its exit gate on this revision.
 
 ## Executive Summary
 
-The CP-016 finding REV-006 held that `CommentReceiptStore.findByPaymentKey()` treated any issue comment with a syntactically valid marker as authoritative execution state, letting a commenter forge a `confirmed` marker and suppress a legitimate payout. The fix adds a `mac` field to `ReceiptMarker`, computes it as HMAC-SHA256 over a sorted-key, undefined-pruned serialization of the marker payload using a receipt secret, and verifies it in `findByPaymentKey()` before trusting a comment. `isReceiptMarker()` now validates the payment-key format (`mergepay:` + 64 hex), 64-hex request hash, 40-hex merge SHA, positive safe-integer PR number, allowed status, transaction-hash shape, and MAC format. The receipt secret is the KeeperHub API key, wired in `src/action.ts`.
+The remediation adds HMAC-SHA256 marker authentication, stricter marker validation, and useful adversarial read-path tests. Independent verification reproduced 208 passing tests, clean formatting/lint/typecheck, successful build and bundle load, and passing packaged fixtures.
 
-Independent verification reproduced all local claims: 208/208 tests, clean typecheck/lint/format, successful build and bundle load, packaged fixtures (merged → confirmed, unmerged → blocked, opened → safe failure), 0-vulnerability audit, and a clean secret scan. Adversarial tests prove an attacker-forged confirmed marker still pays (broadcast runs) while a legitimately signed confirmed receipt returns a duplicate with no second broadcast.
-
-The residual gap (REV-007) is that `save()` selects a comment to update by matching `paymentKey` without verifying the MAC, so a squatter who pre-posts the deterministic payment key can divert or disrupt receipt creation. KeeperHub idempotency (keyed by payment key) prevents double payment and the MAC check in `findByPaymentKey()` prevents payout suppression, so this is a griefing/robustness issue, not a payment-safety failure.
+The central remaining defect is visible in `CommentReceiptStore.save()`: it finds an existing comment by decoded payment key without verifying the MAC or ownership. The action-level forged-marker test passes only because `FakeGitHubApi.updateIssueComment()` permits editing any comment. Real GitHub authorization does not. Because the first receipt save occurs after KeeperHub broadcast, this mismatch affects financial state recovery rather than merely comment rendering.
 
 ## Scope and Limitations
 
-This re-review covers the REV-006 remediation (`ea33028..bee4a94`) plus the surrounding receipt/execution contracts it touches. The fix commit `bee4a94` is the only code change; its parent `ea33028` modified only `CODE_REVIEW.md`.
+The review focused on the commits after the original Phase 2 review, while inspecting the full receipt-to-orchestrator flow. It did not perform a real broadcast or modify implementation code, tests, plan, or state. Only `CODE_REVIEW.md` was overwritten.
 
-Limitations:
-
-- Live GitHub behavior of `updateIssueComment()` on a comment the action does not own was not exercised (no live GitHub access). The REV-007 impact assessment for that path is inferred from the GitHub REST permission model and code inspection, and should be confirmed during Phase 3.
-- Live KeeperHub execution, wallet funding, and provider response/status semantics remain unverified here (Phase 3 scope).
-- The dependency audit succeeded this time (0 vulnerabilities), resolving the CP-016 `EAI_AGAIN` limitation. A dedicated secret-scanning product and formal bundle-diff tool were still unavailable; source/config inspection found no apparent live credential.
-- Comment-list pagination remains unimplemented (noted in CP-016 as secondary; unchanged).
+`npm audit` could not complete because the npm registry request failed with `EAI_AGAIN`. Dedicated secret scanning and formal bundle-diff tooling were unavailable. No live GitHub test was performed, but GitHub comment-update authorization is an external contract the implementation must model and verify before relying on it.
 
 ## Requirements Reviewed
 
-- `FR-012`: Resolve receipts/executions before any replay broadcast; never automatically rebroadcast uncertain states.
-- `BR-005`: A matching confirmed payment key returns the original proof, not a new payment.
-- `BR-006`: A matching key with a changed canonical request is a conflict requiring manual review.
-- `NFR-001`: No secret or raw sensitive payload appears in output artifacts.
-- `RISK-009`: GitHub receipt is spoofed or stale — control is "structured marker plus request/provider integrity checks."
-- CP-016 finding REV-006 and its recommended corrections.
+- FR-012: resolve receipts/executions before replay and never rebroadcast uncertain state
+- BR-005 and BR-006: confirmed replay suppression and changed-content conflict
+- NFR-001 through NFR-003: safe secrets, bounded external behavior, injectable/testable boundaries
+- RISK-003 and RISK-009: duplicate payment and spoofed/stale receipt risks
+- CP-017 acceptance claim that forged comments cannot suppress or alter settlement state
 
 ## Verification Performed
 
 | Check | Scope | Result | Evidence |
 |---|---|---|---|
-| Repository/revision status | Branch, HEAD, parent, working tree | Pass | HEAD `bee4a94`, parent `ea33028` (review-artifact only), synced with `origin/master`, clean tree |
-| Fix diff scope | `ea33028..bee4a94` | Pass | Receipt-authentication change across `receipt.ts`, `receipts.ts`, `receipt-comment.ts`, `action.ts` + tests/docs |
-| Full tests | 25 Vitest files | Pass | 208/208 tests passed |
-| Typecheck | TypeScript project | Pass | `npm run typecheck` clean |
-| Lint | Repository | Pass | `npm run lint --max-warnings 0` clean |
-| Format | Source/test/config | Pass | `npm run format:check` clean |
-| Build | NCC bundle | Pass | `npm run build`; 2748 kB bundle |
-| Bundle load | `dist/index.js` | Pass | `npm run bundle:check`: bundle loads |
-| Packaged fixtures | merged/unmerged/opened events | Pass | `npm run verify:packaged`: confirmed, blocked, safe failure |
-| Dependency audit | npm advisory service | Pass | `npm audit`: 0 vulnerabilities (resolves CP-016 `EAI_AGAIN`) |
-| Secret scan | src, scripts, action.yml, .github | Pass | No apparent live credential |
-| MAC forgery resistance | tampered field / different secret / forged mac / end-to-end attacker marker | Pass | Covered by passing tests in `receipt.test.ts`, `receipts.test.ts`, `action.test.ts` |
-| Trust-point audit | all `decodeReceiptMarker`/`verifyReceiptMarker` call sites | Pass | Only `findByPaymentKey()` trusts a marker, and it verifies the MAC first |
-| `save()` squatter behavior | `receipts.ts:65-68` | Finding | Existing comment selected by payment key without MAC verification (REV-007) |
+| Repository status | Branch, remote, working tree | Finding | HEAD/remote `aa73a92`; `last stop.md` deleted locally |
+| Recent diff review | `887cce2..aa73a92` plus affected callers | Fail | HMAC read verification added; write selection remains unauthenticated |
+| Format | Configured files | Pass | `npm run format:check` |
+| Lint | Repository | Pass | `npm run lint` |
+| Typecheck | TypeScript | Pass | `npm run typecheck` |
+| Full tests | 25 Vitest files | Pass with coverage defect | 208/208 tests passed |
+| Build | NCC action bundle | Pass | `npm run build`; 653 kB bundle generated |
+| Bundle load | Generated bundle | Pass | `npm run bundle:check` |
+| Packaged fixtures | Merged, unmerged, opened | Pass | `npm run verify:packaged` |
+| Dependency audit | npm advisory service | Unavailable | Registry DNS failure `EAI_AGAIN` |
+| Forged-marker read path | Invalid/wrong-secret MAC | Pass | Tests prove forged marker is ignored during lookup |
+| Forged-marker write path | Existing attacker comment after broadcast | Fail | `save()` selects by payment key without MAC/ownership verification; fake API masks GitHub rejection |
 
 ## Findings Summary
 
@@ -73,90 +65,107 @@ Limitations:
 |---|---:|
 | Blocker | 0 |
 | Critical | 0 |
-| High | 0 |
-| Medium | 0 |
+| High | 1 |
+| Medium | 1 |
 | Low | 1 |
 | Nit | 0 |
-| Positive | 5 |
+| Positive | 4 |
 
 ## Blocking Findings
 
-None.
+## [HIGH] REV-007: Forged comment is selected for update after broadcast, leaving execution state unrecorded
 
-### Resolved: REV-006 (CP-016, Medium)
+- Category: Security / payment reliability / replay integrity / external authorization
+- Location: `src/github/receipts.ts:59-89`; `src/execution/orchestrator.ts:275-307`; `tests/fakes/fakes.ts:83-94`; `tests/action.test.ts:161-185`
+- Requirement or control: FR-012, BR-005, BR-006, RISK-003, RISK-009, Phase 2 safe uncertain-state handling
+- Evidence: `findByPaymentKey()` verifies the marker MAC, but `save()` uses `comments.find()` with only `marker?.paymentKey === record.paymentKey`. A forged marker therefore becomes the update target. The first `save(pending)` occurs after `broadcastTransfer()` succeeds. `FakeGitHubApi.updateIssueComment()` edits any matching ID and does not model GitHub’s rule that an app/token cannot edit another user’s comment. The new action test seeds a forged marker and asserts success, but succeeds only because of this permissive fake.
+- Problem: The remediation secures receipt reads but not receipt writes. An attacker can pre-seed a validly shaped, invalid-MAC marker using the deterministic payment key. The action ignores it during lookup, simulates and broadcasts, then selects the same forged comment during `save(pending)` and attempts to PATCH it. GitHub rejects editing a comment owned by another identity. The thrown save error escapes the post-broadcast recovery logic, and no authenticated pending receipt is created.
+- Impact: A real transfer may be submitted while the action reports failure and records no trusted replay state. Replays repeatedly hit the same forged update target. Once KeeperHub’s documented idempotency window expires, a later retry can create a second transfer. This is a direct duplicate-payment risk and blocks live acceptance.
+- Reproduction or failure scenario: (1) Attacker posts a syntactically valid marker with the target payment key and invalid MAC. (2) Action lookup ignores it. (3) KeeperHub simulation and broadcast succeed. (4) `save(pending)` finds the attacker comment and PATCHes its ID. (5) GitHub returns 403/404 because the action identity does not own the comment. (6) Action fails after broadcast with no trusted pending receipt. (7) Replays cannot recover through comments and may rebroadcast after provider idempotency expiry.
+- Recommended correction: During `save()`, update only a marker that successfully verifies with the receipt secret and matches the expected repository/PR/merge identity. Ignore forged/unverified matches and create a new action-owned receipt comment. Model comment ownership/update rejection explicitly in the GitHub adapter/test fake. Catch receipt persistence failure after broadcast and return manual-review evidence that preserves the execution ID; do not lose the known submitted state. Consider provider lookup by stable key as the authoritative recovery path rather than relying solely on comments.
+- Verification after correction: Add an action/integration test where an invalid-MAC matching comment exists and attempts to update it fail as real GitHub would; assert one broadcast, creation of a separate signed pending/confirmed comment, and no update of the attacker comment. Add a post-broadcast `save(pending)` failure test asserting manual-review with execution ID and no rebroadcast. Verify replay before and after simulated idempotency expiry cannot create a second execution.
+- Confidence: High
+- Status: Open
 
-- Status: Resolved.
-- Evidence of resolution: `src/evidence/receipt.ts:116-125` adds `signReceiptMarker`/`verifyReceiptMarker` (HMAC-SHA256 over sorted-key, undefined-pruned payload). `src/github/receipts.ts:45` verifies the MAC before a comment is returned as execution state; forged/tampered/differently-signed markers are skipped (fail closed). `src/evidence/receipt.ts:62-89` strictly validates marker identity/proof fields. Passing tests: `tests/action.test.ts` "ignores an attacker-forged confirmed marker and still pays" and "honors a legitimately signed confirmed receipt as a duplicate with no broadcast"; `tests/evidence/receipt.test.ts` tampered/different-secret/forged-mac cases; `tests/github/receipts.test.ts` fail-closed cases.
-- The reviewer-recommended "signed MAC over the full marker with a secret unavailable to commenters, fail closed, and validate formats" is implemented. The alternative "authenticated provider lookup / trusted durable store" and "bot-identity binding" were not implemented; the MAC alone is cryptographically sufficient to prevent forgery because only the secret holder can produce a valid tag.
+## [MEDIUM] REV-008: KeeperHub API-key rotation invalidates the only durable replay record
+
+- Category: Security architecture / key lifecycle / replay reliability
+- Location: `src/action.ts:78-84`; `src/evidence/receipt.ts:116-125`; `PROJECT_STATE.md` CP-017 decision
+- Requirement or control: FR-012, BR-005, NFR-001, recovery from credential rotation
+- Evidence: The KeeperHub API key is reused directly as the receipt HMAC secret. Verification accepts only the current key, with no key identifier or previous-key verification. State documentation acknowledges that rotation invalidates old receipt MACs and relies on provider idempotency, which is documented elsewhere as a 24-hour replay window.
+- Problem: Rotating or replacing a provider credential makes every existing confirmed receipt appear forged. A replay after rotation no longer recognizes the original confirmed execution. Provider idempotency is time-limited and is therefore not a durable substitute for historical receipt verification.
+- Impact: Normal security key rotation can disable long-term replay suppression and permit duplicate payment after the provider replay window. It also couples a public audit-record format to an unrelated external credential lifecycle.
+- Reproduction or failure scenario: Complete a payment under KeeperHub key A; rotate to key B; replay the same merged PR after the provider idempotency window. The stored marker fails HMAC verification under B, lookup returns no receipt, and the action proceeds toward a new broadcast.
+- Recommended correction: Use a dedicated versioned receipt-signing secret with an explicit key ID and documented rotation procedure, or use a durable authoritative provider/GitHub record whose validity does not depend on the current broadcast credential. If multiple verification keys are supported, keep signing and broadcast credentials separate and minimize their scopes.
+- Verification after correction: Test receipts signed with the active and previous verification keys, unknown key IDs, key retirement, replay after simulated provider idempotency expiry, and confirmation that rotating the KeeperHub broadcast key does not invalidate historical receipts.
+- Confidence: High
+- Status: Open
 
 ## Other Findings
 
-## [LOW] REV-007: Receipt `save()` selects a comment to update by payment key without verifying the MAC
+## [LOW] REV-009: Protected planning source is deleted in the working tree
 
-- Category: Security hardening / robustness / replay-integrity hygiene
-- Location: `src/github/receipts.ts:65-68`
-- Requirement or control: `RISK-009`, `FR-012`, Task 68 (create-or-update one receipt safely)
-- Evidence: `save()` runs `comments.find((comment) => decodeReceiptMarker(comment.body)?.paymentKey === record.paymentKey)` with no `verifyReceiptMarker()` call, then updates that comment if found. The payment key is deterministic from public event/config data, so an attacker who can comment can pre-post a marker carrying the target payment key (with any/invalid MAC).
-- Problem: When a forged squatter comment matches the payment key, `save()` targets it for update instead of creating a new, action-owned receipt. Two live outcomes are possible: (a) if the token cannot edit another user's comment, `updateIssueComment` throws and `save()` fails after the broadcast already succeeded, so the run reports failure and no clean receipt is recorded; (b) if the update succeeds, the legitimate marker lands in an attacker-owned comment the attacker can later re-forge or delete (cosmetic only, since `findByPaymentKey()` still verifies the MAC).
-- Impact: Griefing/availability against the receipt record and run reporting. It does NOT enable double payment (KeeperHub idempotency is keyed by the payment key, so a re-broadcast returns the original execution) and does NOT suppress the first payout (`findByPaymentKey()` verifies the MAC before trust). Recoverable by admin removal of the squatter comment.
-- Reproduction or failure scenario: Attacker computes the payment key from public data and posts a comment with a marker containing that key and an invalid MAC. The legitimate run pays, then `save()` matches the squatter and either errors (case a) or overwrites an attacker-owned comment (case b).
-- Recommended correction: In `save()`, only update a comment whose marker MAC verifies with the receipt secret (a receipt the action recognizes as its own); otherwise create a new comment. Optionally bind receipts to the action's bot identity and verify authorship through the GitHub API. Add a test where a forged same-key squatter is present and `save()` creates a new comment rather than updating the squatter.
-- Verification after correction: New test proves a forged squatter is not updated and a fresh signed receipt is created; re-run full suite and packaged fixtures; confirm live `updateIssueComment` permission behavior during Phase 3.
-- Confidence: High (code path), Medium (live permission outcome)
+- Category: Repository hygiene / evidence preservation
+- Location: `last stop.md`
+- Requirement or control: Protected evidence and documentation discipline
+- Evidence: `git status --short --branch` reports ` D "last stop.md"`.
+- Problem: The review workspace contains an uncommitted deletion of a planning/evidence source without a corresponding recorded decision.
+- Impact: It can be accidentally included in a later commit and remove historical project context.
+- Reproduction or failure scenario: Commit all working-tree changes without inspecting status; the planning source is removed.
+- Recommended correction: Restore the file unless its removal is explicitly authorized and documented. Do not delete it as part of review remediation.
+- Verification after correction: Working tree contains no unintended deletion and `git status --short` is clean except for the intended review artifact.
+- Confidence: High
 - Status: Open
 
 ## Positive Practices
 
-- The MAC is verified at the single trust point (`findByPaymentKey()`), and a call-site audit confirms no other path treats a decoded marker as execution state.
-- Sorted-key, undefined-pruned stable serialization makes the MAC independent of field ordering and of optional-field presence, and round-trips correctly between sign/encode/decode/verify.
-- Marker field validation was meaningfully tightened (payment-key, request-hash, merge-SHA, PR-number, status, tx-hash, MAC formats), rejecting malformed markers before the MAC check.
-- Adversarial tests exercise the actual abuse case end-to-end (forged marker still pays; legitimate receipt suppresses exactly one replay), not just the codec in isolation.
-- The dependency audit now passes (0 vulnerabilities), clearing the CP-016 environmental limitation.
+- HMAC authentication correctly prevents forged markers from being trusted on the read path.
+- Marker field validation is substantially stricter and fails closed on malformed identity/proof fields.
+- Regression tests distinguish forged markers from legitimately signed confirmed receipts.
+- The full local verification and packaged fixture suite remains deterministic and green.
 
 ## Security Review
 
-The receipt-provenance boundary is now cryptographically enforced: a valid MAC implies the marker was produced by a holder of the receipt secret (the KeeperHub API key), which commenters do not possess. HMAC-SHA256 is an appropriate, established primitive; the secret is not logged or embedded in comments (only the tag is). The MAC binds all identity and proof fields (payment key, request hash, status, execution ID, transaction hash/link, repository, PR, merge SHA), so cross-payment, cross-PR, and cross-repository replay would require forging a new tag. The payment key/request hash remain deterministic and public, but that no longer grants trust because trust now requires the MAC.
-
-Residual, non-blocking: the `save()` path (REV-007) and the absence of bot-identity binding. Neither breaks the core payment-safety invariants, which rest on (a) MAC verification before trust and (b) KeeperHub idempotency keyed by the payment key.
+The original arbitrary-comment trust issue is only partially fixed. Cryptographic verification is appropriate, but all paths that locate or mutate receipt comments must enforce the same provenance rule. Post-broadcast persistence is a security-sensitive state transition and must have explicit failure recovery. Reusing the KeeperHub credential for long-lived audit-record authentication creates an unsafe key-lifecycle dependency.
 
 ## Test and Evidence Review
 
-The 208-test suite includes dedicated receipt-authentication coverage: sign/verify round-trip, tampered-field rejection, different-secret rejection, forged-MAC rejection, malformed-field rejection, store fail-closed behavior, and two end-to-end action-level adversarial tests. These directly satisfy the CP-016 verification requirements ("attacker-authored confirmed marker never suppresses provider calls; legitimate confirmed receipt still suppresses exactly one replay"). Assertions are meaningful and target behavior, not implementation.
-
-Gap: there is no test for `save()` encountering a forged same-key squatter (REV-007). The existing "updates the matching receipt comment" test uses a legitimately signed pending marker, so the unverified-MAC selection path is untested.
-
-The `PROJECT_STATE.md` CP-017 claims were compared against independent reproduction and are accurate (test counts, checks, and the decision to reuse the KeeperHub API key as the receipt secret).
+The new tests prove the intended read behavior but use an unrealistic GitHub fake for the write behavior. `FakeGitHubApi.updateIssueComment()` silently edits any comment, so it cannot detect ownership/authorization failures. No test exercises a failed pending-receipt save after broadcast. The state claim that attacker-forged markers “never suppress settlement state” is therefore broader than the evidence.
 
 ## Code Quality and Maintainability
 
-The change is focused and consistent with the existing module boundaries and injectable-seam style. `receiptMatchesCurrent` was widened to a shared identity-field type so both `ReceiptMarker` and `ReceiptRecord` satisfy it, which is a clean generalization. Naming is clear and error handling fails closed. No dead code, debug output, or unrelated changes were introduced. Documentation (`ARCHITECTURE.md`, `SECURITY.md`, `TEST-STRATEGY.md`) was updated to describe the MAC trust model and matches the implementation.
+The marker codec and validation functions are focused and readable. The receipt store duplicates marker-selection logic with different trust rules between `findByPaymentKey()` and `save()`, which caused the defect. Centralizing authenticated marker selection would reduce divergence.
 
 ## Performance and Reliability
 
-No performance concern is introduced; HMAC over a small marker payload is negligible. The known comment-list pagination gap remains (a long PR discussion could miss older markers or add API load) and is unchanged from CP-016; it is secondary and not blocking. Receipt creation is create-or-update, bounded to one receipt per payment key.
+Comment listing still lacks pagination, so old legitimate receipts may be missed on long discussions. More importantly, receipt persistence after broadcast is not enclosed in an uncertain-state recovery path. Network or authorization failures at that point can discard a known execution ID from the returned evidence.
 
 ## Compatibility and Operations
 
-The marker format now requires `mac`; pre-fix markers (without `mac`) fail `isReceiptMarker()` and are ignored (fail closed). This is acceptable pre-release because no live receipts exist yet. Action metadata still points to `dist/index.js` (generated at release), and the example workflow retains the documented `<release-sha>` placeholder. The dependency audit passed (0 vulnerabilities).
+Build and packaged verification pass. Dependency vulnerability status is unverified due network failure. Receipt-key rotation and recovery procedures are not operationally defined. The current working-tree deletion must be resolved before a clean checkpoint.
 
 ## Plan Conformance
 
-The fix conforms to the approved Phase 2 scope and to the `RISK-009` control ("structured marker plus request/provider integrity checks"). No approved scope, architecture, requirement, or acceptance criterion was changed without an amendment. The decision to reuse the KeeperHub API key as the receipt secret and to forgo bot-identity binding is recorded in `PROJECT_STATE.md` (CP-017) and is a reasonable, documented engineering choice rather than a scope change.
+The recent commits remain within approved Phase 2 scope, but they do not fully satisfy RISK-009 or durable replay suppression. Commit `aa73a92` records approval before the applicable independent review gates are actually satisfied; repository behavior overrides that claim.
 
 ## Required Re-Review Scope
 
-- The REV-007 correction in `src/github/receipts.ts` `save()` and its new test.
-- Any change to the receipt secret source, MAC scheme, or marker format.
-- Live confirmation of `updateIssueComment()` permission behavior during Phase 3.
-- If Phase 3 proceeds without first fixing REV-007, re-review should confirm the squatter path cannot disrupt the live demo or acceptance evidence.
+- Authenticated receipt selection on both read and write paths
+- Realistic GitHub comment ownership/update authorization behavior
+- Receipt-save failures after broadcast and preservation of execution ID/manual-review state
+- Receipt signing-key lifecycle and provider-key rotation
+- Replay behavior beyond provider idempotency expiry
+- Updated architecture/security/test/state documentation
+- Full verification suite, packaged fixtures, audit, secret scan, and clean working tree
 
 ## Recommended Next Action
 
-The Phase 2 exit gate may close for revision `bee4a94`: REV-006 is resolved and only a Low, non-blocking hardening item (REV-007) remains. Fix REV-007 (MAC-verified update-or-create in `save()` plus a squatter test) before or early in Phase 3, then proceed to Phase 3 live three-state acceptance (one confirmed payout, replay with no second transaction, blocked no-broadcast refusal) using the funded Sepolia wallet and frozen USDC contract. Do not treat this approval as covering live execution, which still requires Phase 3 evidence.
+Return the receipt persistence design to the executor and fix REV-007 and REV-008 test-first. Restore the unintended `last stop.md` deletion. Do not begin Phase 3 or perform a live broadcast until a fresh independent review approves the corrected post-broadcast and credential-rotation behavior.
 
 ## Review Sources
 
-- Repository HEAD `bee4a94` and parent `ea33028`
-- `PROJECT_PLAN.md`, `PROJECT_STATE.md` (CP-016/CP-017), `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/TEST-STRATEGY.md`, `docs/KEEPERHUB-INTEGRATION.md`
-- Phase 2 source and tests: `src/evidence/receipt.ts`, `src/github/receipts.ts`, `src/output/receipt-comment.ts`, `src/action.ts`, `src/execution/duplicate-resolver.ts`, `src/execution/orchestrator.ts`, `tests/evidence/receipt.test.ts`, `tests/github/receipts.test.ts`, `tests/output/receipt-comment.test.ts`, `tests/action.test.ts`
-- Local verification commands documented in the Verification Performed table
+- Repository HEAD `aa73a92`
+- Recent commits `bee4a94` and `aa73a92`
+- `PROJECT_PLAN.md`, `PROJECT_STATE.md`, prior `CODE_REVIEW.md`
+- Receipt, GitHub API/store, action, orchestrator, tests, architecture, security, and test-strategy files
+- Local verification outputs recorded above
