@@ -7,6 +7,7 @@ import {
   verifyReceiptMarker,
 } from "../../src/evidence/receipt.js";
 import type { ReceiptMarkerPayload, ReceiptRecord } from "../../src/evidence/receipt.js";
+import type { IssueCommentPage } from "../../src/github/api.js";
 import type { ExecutionStatus } from "../../src/domain/types.js";
 import { FakeGitHubApi } from "../fakes/fakes.js";
 
@@ -209,6 +210,31 @@ describe("CommentReceiptStore", () => {
     await expect(store.findByPaymentKey(KEY)).rejects.toMatchObject({
       code: "GITHUB_FETCH_FAILED",
     });
+  });
+
+  it("fails closed instead of looping when a cyclic Link header repeats a page", async () => {
+    class CyclicApi extends FakeGitHubApi {
+      requests = 0;
+      override async listIssueCommentsPage(
+        owner: string,
+        name: string,
+        number: number,
+        page: number,
+      ): Promise<IssueCommentPage> {
+        void owner;
+        void name;
+        void number;
+        this.requests += 1;
+        return { comments: [], hasMore: true, nextPage: page === 1 ? 2 : 1 };
+      }
+    }
+    const api = new CyclicApi();
+    const store = new CommentReceiptStore(api, "acme", "skirwith-demo", 42, SECRET, undefined, 4);
+
+    await expect(store.findByPaymentKey(KEY)).rejects.toMatchObject({
+      code: "GITHUB_FETCH_FAILED",
+    });
+    expect(api.requests).toBeLessThanOrEqual(4);
   });
 
   it("never updates a forged squatter; it creates a fresh signed receipt comment", async () => {

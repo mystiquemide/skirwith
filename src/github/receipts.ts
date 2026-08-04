@@ -55,7 +55,18 @@ export class CommentReceiptStore implements ReceiptStore {
     createdAt: string;
   }> {
     let page = 1;
+    let requests = 0;
+    const visited = new Set<number>();
     for (;;) {
+      if (requests >= this.maxCommentPages) {
+        throw this.paginationError();
+      }
+      requests += 1;
+      if (visited.has(page)) {
+        // A cyclic Link header must not become an unbounded loop.
+        throw this.paginationError();
+      }
+      visited.add(page);
       const pageResult = await this.api.listIssueCommentsPage(
         this.owner,
         this.name,
@@ -67,9 +78,6 @@ export class CommentReceiptStore implements ReceiptStore {
       }
       if (!pageResult.hasMore || pageResult.nextPage === undefined) {
         return;
-      }
-      if (page >= this.maxCommentPages) {
-        throw this.paginationError();
       }
       page = pageResult.nextPage;
     }

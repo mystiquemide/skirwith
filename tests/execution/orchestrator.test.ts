@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { SettlementOrchestrator } from "../../src/execution/orchestrator.js";
 import type { SettlementInput } from "../../src/execution/orchestrator.js";
 import { buildCanonicalRequest } from "../../src/payment/canonical-request.js";
-import { derivePaymentKey } from "../../src/payment/payment-key.js";
+import type { CanonicalPaymentRequest } from "../../src/domain/types.js";
+import { derivePaymentKey, deriveLegacyPaymentKey } from "../../src/payment/payment-key.js";
 import { hashCanonicalRequest } from "../../src/payment/payment-hash.js";
 import { toAtomicUnits } from "../../src/domain/decimal.js";
-import { PAYMENT_PURPOSE } from "../../src/domain/constants.js";
+import { PAYMENT_PURPOSE, LEGACY_PAYMENT_PURPOSE } from "../../src/domain/constants.js";
 import { ProviderError } from "../../src/keeperhub/errors.js";
 import { serializeEvidence } from "../../src/evidence/evidence.js";
 import type { ReceiptRecord } from "../../src/evidence/receipt.js";
@@ -46,11 +47,11 @@ function makeInput(overrides: Partial<SettlementInput> = {}): SettlementInput {
   };
 }
 
-function identityFor(input: SettlementInput): { paymentKey: string; requestHash: string } {
+function canonicalFor(input: SettlementInput): CanonicalPaymentRequest {
   const recipient = input.config.recipients[input.event.authorLogin] as string;
   const amount = input.config.payout.amounts[FIXTURE_AMOUNT_LABEL] as string;
   const amountAtomic = toAtomicUnits(amount, input.config.chain.token.decimals) as string;
-  const canonical = buildCanonicalRequest({
+  return buildCanonicalRequest({
     repository: input.event.repository.fullName,
     pullRequestNumber: input.event.pullRequestNumber,
     mergeSha: input.event.mergeSha,
@@ -60,6 +61,10 @@ function identityFor(input: SettlementInput): { paymentKey: string; requestHash:
     tokenAddress: input.chainToken.tokenAddress,
     purpose: PAYMENT_PURPOSE,
   });
+}
+
+function identityFor(input: SettlementInput): { paymentKey: string; requestHash: string } {
+  const canonical = canonicalFor(input);
   return { paymentKey: derivePaymentKey(canonical), requestHash: hashCanonicalRequest(canonical) };
 }
 
@@ -77,6 +82,32 @@ function receiptFor(input: SettlementInput, overrides: Partial<ReceiptRecord> = 
     mergeSha: input.event.mergeSha,
     createdAt: "2026-08-03T00:00:00.000Z",
     updatedAt: "2026-08-03T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function legacyReceiptFor(
+  input: SettlementInput,
+  overrides: Partial<ReceiptRecord> = {},
+): ReceiptRecord {
+  const currentCanonical = canonicalFor(input);
+  const paymentKey = deriveLegacyPaymentKey(currentCanonical);
+  const legacyCanonical: CanonicalPaymentRequest = {
+    ...currentCanonical,
+    purpose: LEGACY_PAYMENT_PURPOSE,
+  };
+  return {
+    version: 1,
+    product: "mergepay",
+    paymentKey,
+    requestHash: hashCanonicalRequest(legacyCanonical),
+    status: "confirmed",
+    executionId: "ex_legacy",
+    repository: input.event.repository.fullName,
+    pullRequestNumber: input.event.pullRequestNumber,
+    mergeSha: input.event.mergeSha,
+    createdAt: "2026-08-02T00:00:00.000Z",
+    updatedAt: "2026-08-02T00:00:00.000Z",
     ...overrides,
   };
 }
@@ -423,5 +454,92 @@ describe("SettlementOrchestrator.settle", () => {
     expect(serialized).toContain('"status": "duplicate"');
     expect(serialized).not.toContain("kh_test");
     expect(serialized).not.toContain("ghp_");
+  });
+});
+
+describe("SettlementOrchestrator legacy mergepay compatibility", () => {
+  it("resolves a pre-rebrand mergepay confirmed receipt as a duplicate and never rebroadcasts", async () => {
+    const provider = new FakeKeeperHubProvider();
+    const receipts = new FakeReceiptStore();
+    const input = makeInput();
+    await receipts.save(legacyReceiptFor(input));
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    const evidence = await orchestrator.settle(input);
+
+    expect(evidence.status).toBe("duplicate");
+    expect(evidence.executionId).toBe("ex_legacy");
+    expect(evidence.broadcastMade).toBe(false);
+    expect(evidence.paymentKey).toMatch(/^mergepay:[a-f0-9]{64}$/);
+    expect(provider.calls.simulate).toBe(0);
+    expect(provider.calls.broadcast).toBe(0);
+    expect(receipts.saves).toHaveLength(1);
+  });
+
+  it("resumes polling a pre-rebrand mergepay pending receipt without rebroadcasting", async () => {
+    const provider = new FakeKeeperHubProvider();
+    provider.terminalResult = {
+      executionId: "ex_legacy",
+      status: "completed",
+      transactionHash: "0xlegacy",
+      transactionLink: "https://explorer/tx/0xlegacy",
+      pollIntervalHint: 0,
+    };
+    const receipts = new FakeReceiptStore();
+    const input = makeInput();
+    await receipts.save(legacyReceiptFor(input, { status: "pending" }));
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    const evidence = await orchestrator.settle(input);
+
+    expect(evidence.status).toBe("confirmed");
+    expect(evidence.executionId).toBe("ex_legacy");
+    expect(evidence.transactionHash).toBe("0xlegacy");
+    expect(evidence.broadcastMade).toBe(false);
+    expect(provider.calls.waitForTerminal).toBe(1);
+    expect(provider.calls.broadcast).toBe(0);
+    expect(receipts.saves[1]?.status).toBe("confirmed");
+  });
+
+  it("flags a pre-rebrand mergepay receipt with changed content as a conflict", async () => {
+    const provider = new FakeKeeperHubProvider();
+    const receipts = new FakeReceiptStore();
+    const input = makeInput();
+    await receipts.save(legacyReceiptFor(input, { requestHash: "different-hash" }));
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    const evidence = await orchestrator.settle(input);
+
+    expect(evidence.status).toBe("manual-review");
+    expect(evidence.error?.code).toBe("EXECUTION_CONFLICT");
+    expect(evidence.broadcastMade).toBe(false);
+    expect(provider.calls.simulate).toBe(0);
+    expect(provider.calls.broadcast).toBe(0);
+  });
+
+  it("still broadcasts a new payment when no current or legacy receipt exists", async () => {
+    const provider = new FakeKeeperHubProvider();
+    provider.broadcastResult = {
+      executionId: "ex_new",
+      status: "running",
+      transactionHash: "0xabc",
+      transactionLink: "https://explorer/tx/0xabc",
+    };
+    provider.terminalResult = {
+      executionId: "ex_new",
+      status: "completed",
+      transactionHash: "0xabc",
+      pollIntervalHint: 0,
+    };
+    const receipts = new FakeReceiptStore();
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    const evidence = await orchestrator.settle(makeInput());
+
+    expect(evidence.status).toBe("confirmed");
+    expect(evidence.broadcastMade).toBe(true);
+    expect(provider.calls.broadcast).toBe(1);
+    expect(provider.lastBroadcastKey).toMatch(/^skirwith:[a-f0-9]{64}$/);
+    expect(receipts.saves).toHaveLength(3);
   });
 });

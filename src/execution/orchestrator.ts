@@ -7,7 +7,7 @@ import type {
   ExecutionStatus,
   PolicyDecision,
 } from "../domain/types.js";
-import { PAYMENT_PURPOSE } from "../domain/constants.js";
+import { PAYMENT_PURPOSE, LEGACY_PAYMENT_PURPOSE } from "../domain/constants.js";
 import {
   evaluatePolicy,
   resolvePayoutAmount,
@@ -15,7 +15,7 @@ import {
 } from "../policy/evaluate-policy.js";
 import { buildCanonicalRequest } from "../payment/canonical-request.js";
 import { hashCanonicalRequest } from "../payment/payment-hash.js";
-import { derivePaymentKey } from "../payment/payment-key.js";
+import { derivePaymentKey, deriveLegacyPaymentKey } from "../payment/payment-key.js";
 import type { NormalizedPullRequestEvent } from "../github/event.js";
 import type { ReceiptStore } from "../github/receipt-store.js";
 import type { ReceiptRecord } from "../evidence/receipt.js";
@@ -122,8 +122,27 @@ export class SettlementOrchestrator {
 
     const existing = await this.receipts.findByPaymentKey(paymentKey);
     if (existing !== undefined) {
-      return this.resolveExisting(input, policy, paymentKey, requestHash, existing);
+      return this.resolveExisting(input, policy, { paymentKey, requestHash }, existing);
     }
+
+    // Legacy receipts written under the pre-rebrand mergepay identity stay
+    // authoritative. A re-run of a historical payment must never broadcast
+    // again; resolve it against the legacy identity and stop.
+    const legacyPaymentKey = deriveLegacyPaymentKey(canonical);
+    const legacyExisting = await this.receipts.findByPaymentKey(legacyPaymentKey);
+    if (legacyExisting !== undefined) {
+      const legacyRequestHash = hashCanonicalRequest({
+        ...canonical,
+        purpose: LEGACY_PAYMENT_PURPOSE,
+      });
+      return this.resolveExisting(
+        input,
+        policy,
+        { paymentKey: legacyPaymentKey, requestHash: legacyRequestHash },
+        legacyExisting,
+      );
+    }
+
     return this.executeNew(input, canonical, paymentKey, requestHash, policy);
   }
 
@@ -162,13 +181,12 @@ export class SettlementOrchestrator {
   private async resolveExisting(
     input: SettlementInput,
     policy: PolicyDecision,
-    paymentKey: string,
-    requestHash: string,
+    matched: { paymentKey: string; requestHash: string },
     existing: ReceiptRecord,
   ): Promise<EvidenceRecord> {
     const resolution = resolveExistingReceipt(existing, {
-      paymentKey,
-      requestHash,
+      paymentKey: matched.paymentKey,
+      requestHash: matched.requestHash,
       repository: input.event.repository.fullName,
       pullRequestNumber: input.event.pullRequestNumber,
       mergeSha: input.event.mergeSha,
@@ -177,8 +195,8 @@ export class SettlementOrchestrator {
     if (resolution.kind === "duplicate") {
       return this.evidence({
         policy,
-        paymentKey,
-        requestHash,
+        paymentKey: matched.paymentKey,
+        requestHash: matched.requestHash,
         simulation: "not-run",
         broadcastMade: false,
         status: "duplicate",
@@ -189,13 +207,13 @@ export class SettlementOrchestrator {
     }
 
     if (resolution.kind === "resume-poll") {
-      return this.resumeExisting(policy, paymentKey, requestHash, existing);
+      return this.resumeExisting(policy, matched, existing);
     }
 
     return this.evidence({
       policy,
-      paymentKey,
-      requestHash,
+      paymentKey: matched.paymentKey,
+      requestHash: matched.requestHash,
       simulation: "not-run",
       broadcastMade: false,
       status: "manual-review",
@@ -215,8 +233,7 @@ export class SettlementOrchestrator {
 
   private async resumeExisting(
     policy: PolicyDecision,
-    paymentKey: string,
-    requestHash: string,
+    matched: { paymentKey: string; requestHash: string },
     existing: ReceiptRecord,
   ): Promise<EvidenceRecord> {
     const executionId = existing.executionId as string;
@@ -233,8 +250,8 @@ export class SettlementOrchestrator {
       await this.saveWithRetry(updated);
       return this.evidence({
         policy,
-        paymentKey,
-        requestHash,
+        paymentKey: matched.paymentKey,
+        requestHash: matched.requestHash,
         simulation: "not-run",
         broadcastMade: false,
         status,
@@ -245,8 +262,8 @@ export class SettlementOrchestrator {
     } catch {
       return this.evidence({
         policy,
-        paymentKey,
-        requestHash,
+        paymentKey: matched.paymentKey,
+        requestHash: matched.requestHash,
         simulation: "not-run",
         broadcastMade: false,
         status: "manual-review",

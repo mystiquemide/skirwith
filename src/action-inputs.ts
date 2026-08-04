@@ -9,7 +9,10 @@ export function parseRuntimeSecrets(env: Record<string, string | undefined>): Ru
   return {
     githubToken: env.GITHUB_TOKEN ?? "",
     keeperhubApiKey: env.KEEPERHUB_API_KEY ?? "",
-    receiptSecret: env.MERGE_PAY_RECEIPT_SECRET ?? "",
-    previousReceiptSecret: env.MERGE_PAY_RECEIPT_SECRET_PREVIOUS ?? "",
+    // SKIRWITH_RECEIPT_SECRET is canonical; the pre-rebrand name is accepted
+    // for verification during the migration window.
+    receiptSecret: env.SKIRWITH_RECEIPT_SECRET ?? env.MERGE_PAY_RECEIPT_SECRET ?? "",
+    previousReceiptSecret:
+      env.SKIRWITH_RECEIPT_SECRET_PREVIOUS ?? env.MERGE_PAY_RECEIPT_SECRET_PREVIOUS ?? "",
   };
 }

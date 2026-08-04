@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   decodeReceiptMarker,
   encodeReceiptMarker,
+  isReceiptMarker,
   keyIdFor,
   receiptMatchesCurrent,
   signReceiptMarker,
@@ -159,6 +160,41 @@ describe("encodeReceiptMarker / decodeReceiptMarker", () => {
       const marker = signed(change);
       expect(decodeReceiptMarker(encodeReceiptMarker(marker))).toBeUndefined();
     }
+  });
+});
+
+describe("legacy mergepay receipt compatibility", () => {
+  const LEGACY_KEY = `mergepay:${"b".repeat(64)}`;
+
+  it("decodes a legacy mergepay marker envelope", () => {
+    const marker = signed({ product: "mergepay", paymentKey: LEGACY_KEY });
+    const encoded = encodeReceiptMarker(marker).replace(/^<!-- skirwith:/, "<!-- mergepay:");
+    const decoded = decodeReceiptMarker(encoded);
+    expect(decoded?.product).toBe("mergepay");
+    expect(decoded?.paymentKey).toBe(LEGACY_KEY);
+    expect(decoded).toEqual(marker);
+  });
+
+  it("accepts a legacy mergepay product with a mergepay payment key", () => {
+    const marker = signed({ product: "mergepay", paymentKey: LEGACY_KEY });
+    expect(isReceiptMarker(marker)).toBe(true);
+  });
+
+  it("accepts a legacy mergepay marker embedded in a larger comment", () => {
+    const marker = signed({ product: "mergepay", paymentKey: LEGACY_KEY });
+    const encoded = encodeReceiptMarker(marker).replace(/^<!-- skirwith:/, "<!-- mergepay:");
+    expect(decodeReceiptMarker(`Summary.\n${encoded}\nMore.`)).toEqual(marker);
+  });
+
+  it("rejects a marker with an unknown product", () => {
+    const marker = signed({ product: "other" as never });
+    expect(isReceiptMarker(marker)).toBe(false);
+    expect(decodeReceiptMarker(encodeReceiptMarker(marker))).toBeUndefined();
+  });
+
+  it("rejects a legacy marker with a non-legacy key under the mergepay prefix shape", () => {
+    const marker = signed({ product: "mergepay", paymentKey: "mergepay:not-a-hash" });
+    expect(isReceiptMarker(marker)).toBe(false);
   });
 });
 
