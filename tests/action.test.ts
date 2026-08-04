@@ -228,9 +228,22 @@ describe("run", () => {
     expect(deps.provider.calls.broadcast).toBe(0);
   });
 
-  it("reports manual review with the execution id when the pending receipt cannot be saved", async () => {
+  it("does not broadcast when the pre-broadcast reservation cannot be saved", async () => {
     const deps = happyDeps();
     deps.api.createIssueCommentError = new Error("receipt comment creation failed");
+
+    const result = await run(deps);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.status).toBe("failed");
+    expect(result.evidence.broadcastMade).toBe(false);
+    expect(deps.provider.calls.broadcast).toBe(0);
+  });
+
+  it("reports manual review with the execution id when the submitted receipt save fails after broadcast", async () => {
+    const deps = happyDeps();
+    deps.api.updateIssueCommentError = new Error("receipt comment update failed");
 
     const result = await run(deps);
 
@@ -241,5 +254,33 @@ describe("run", () => {
     expect(result.evidence.executionId).toBe("ex_1");
     expect(result.evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
     expect(deps.provider.calls.broadcast).toBe(1);
+    // The durable reservation comment remains so a later run never rebroadcasts.
+    expect(decodeReceiptMarker(deps.api.comments[0]?.body ?? "")?.status).toBe("pending");
+  });
+
+  it("never rebroadcasts in a later run after a post-broadcast receipt failure", async () => {
+    const deps = happyDeps();
+    deps.api.updateIssueCommentError = new Error("receipt comment update failed");
+
+    const first = await run(deps);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.evidence.status).toBe("manual-review");
+    expect(deps.provider.calls.broadcast).toBe(1);
+
+    // Second run: same event, comment store now healthy. The durable
+    // reservation (pending, no execution id) must resolve to manual review
+    // with zero broadcasts.
+    deps.api.updateIssueCommentError = undefined;
+    deps.provider.calls.broadcast = 0;
+    deps.provider.calls.simulate = 0;
+    const second = await run(deps);
+
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.evidence.status).toBe("manual-review");
+    expect(second.evidence.broadcastMade).toBe(false);
+    expect(deps.provider.calls.broadcast).toBe(0);
+    expect(deps.provider.calls.simulate).toBe(0);
   });
 });

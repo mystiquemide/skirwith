@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Current checkpoint: CP-020
+- Current checkpoint: CP-022
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,10 +45,10 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Checkpoint: CP-020
-- Goal: Obtain a fresh independent re-review confirming REV-007 and REV-008 are corrected (authenticated receipt writes and post-broadcast recovery; receipt signing key independent of the broadcast credential), after which the Phase 2 exit gate closes and Phase 3 live three-state acceptance may begin.
+- Checkpoint: CP-022
+- Goal: Obtain a fresh independent re-review confirming REV-010 is corrected: a durable pending reservation written before broadcast guarantees that a later run of the same event resolves the existing record and never rebroadcasts, even after provider idempotency expiry.
 - Expected files or assets: Updated independent review record; no code changes unless the review requires them.
-- Acceptance criteria: Re-review approves the corrected receipt-provenance and recovery behavior; no unresolved blocker or major finding.
+- Acceptance criteria: Re-review approves the cross-run no-rebroadcast recovery; no unresolved blocker or major finding.
 - Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, packaged fixtures, audit, secret scan).
 
 ## Current Status
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned REV-006, fixed in CP-017; the re-review (CP-018) escalated REV-007 to High and added REV-008/REV-009, both security findings fixed in CP-019. A fresh re-review (CP-020) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
+- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned REV-006, fixed in CP-017; re-reviews returned REV-007/REV-008 (fixed in CP-019) and REV-010 (fixed in CP-021). A fresh re-review (CP-022) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
 
 ### Blocked (resolved / narrowed)
 
@@ -475,6 +475,39 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Request a fresh independent re-review (CP-020) confirming REV-007 and REV-008 are corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
 
+### CP-020: Phase 2 re-review after REV-007/REV-008 fix
+
+- Status: Findings returned
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Re-review the REV-007/REV-008 fix (`aa73a92..ebefa9a`) as the Phase 2 exit gate.
+- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `74ca268`). Verdict: Changes required. Confirmed REV-007 (forged-comment write) and REV-008 (key rotation) corrected; reproduced 215/215 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Findings: `REV-010` High — post-broadcast receipt-persistence failure returned manual-review evidence only for the current run; nothing durable was stored, so a later run found no receipt and could broadcast again, creating a duplicate after the provider idempotency window. `REV-011` Low — `last stop.md` deleted in the reviewer workspace (same item as REV-009).
+- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Next exact action: Fix REV-010 by making a durable pending reservation before broadcast so a later run resolves the existing record and never rebroadcasts.
+
+### CP-021: Review finding REV-010 fixed
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Fix REV-010 so a post-broadcast receipt failure cannot lead to an automatic rebroadcast in a later run.
+- Requirements covered: `FR-012`, `BR-005`, `RISK-003`, the nonnegotiable rule to never automatically rebroadcast an uncertain execution across runs.
+- Work completed: `src/execution/orchestrator.ts` `executeNew()` now writes a durable pending reservation (status `pending`, no execution id) BEFORE any broadcast and refuses to broadcast if the reservation cannot be saved (returns failed, `broadcastMade: false`). After a successful broadcast it records the submitted state (pending with the execution id); if that save fails, it returns manual-review preserving the execution id while the durable reservation remains, so a later run resolves to manual review. Terminal-save and poll failures already kept the pending-with-execution-id record so later runs resume-poll. The pre-broadcast reservation guarantees a broadcast can only happen after a durable record exists, closing the cross-run rebroadcast gap. `FakeReceiptStore` gained a `saveErrorAt` switch; `FakeGitHubApi` gained `updateIssueCommentError`. Added tests: pre-broadcast reservation failure -> no broadcast; submitted-save failure -> manual-review with execution id and durable reservation; a two-run action and orchestrator test proving a second invocation of the same event performs zero broadcasts after a post-broadcast receipt failure.
+- Files or assets changed: `src/execution/orchestrator.ts`, tests (orchestrator, action), `tests/fakes/fakes.ts`, docs `ARCHITECTURE.md`, `SECURITY.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: Focused vitest runs, `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm run audit`, grep secret scan.
+- Test results: 218 tests pass (was 215): reservation-first flow, pre-broadcast reservation failure, submitted-save failure manual-review, and two-run zero-rebroadcast tests. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; packaged fixtures pass; audit 0 vulnerabilities; secret scan clean.
+- Acceptance criteria verified: No broadcast occurs unless a durable reservation exists; a post-broadcast receipt failure leaves a durable pending record; a second invocation of the same event performs zero broadcasts (and zero simulations), resolving to manual review; the packaged bundle behaves identically.
+- Decisions: Reservation-first ordering (write pending before broadcast) chosen as the durable recovery mechanism, since the provider contract has no read-only lookup by payment key and a database is excluded (DEC-002). A clean pre-broadcast rejection (e.g. auth) leaves a pending reservation that resolves to manual review on later runs; this is the conservative fail-safe tradeoff and is documented.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None beyond the documented conservative behavior that a pre-broadcast rejection leaves a pending reservation requiring operator action.
+- Known issues: `REV-011` (Low) is a workspace-hygiene item on the reviewer machine (`last stop.md` deleted in `/home/mide/mergepay`); this repository's working tree is clean. Comment-list pagination remains a documented secondary item.
+- Blockers: None.
+- Next exact action: Request a fresh independent re-review (CP-022) confirming REV-010 is corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -568,6 +601,10 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-019 | Post-broadcast recovery | Pass | `save(pending)` failure returns manual-review evidence with execution id and no rebroadcast (orchestrator + action tests) |
 | CP-019 | Ownership-aware fake | Pass | `FakeGitHubApi` rejects updates to comments the action does not own, matching real GitHub authorization |
 | CP-019 | Verification suite | Pass | `npm test` 215/215; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
+| CP-020 | Independent Phase 2 re-review | Findings returned | `CODE_REVIEW.md`: REV-007/REV-008 confirmed corrected; REV-010 High (no durable cross-run rebroadcast guard), REV-011 Low (workspace file deletion) |
+| CP-021 | Pre-broadcast durable reservation | Pass | `executeNew` writes a pending reservation before broadcast; no broadcast without a durable reservation; submitted-save failure returns manual-review with the execution id |
+| CP-021 | Cross-run no-rebroadcast | Pass | Two-run action and orchestrator tests prove a second invocation of the same event performs zero broadcasts and zero simulations after a post-broadcast receipt failure |
+| CP-021 | Verification suite | Pass | `npm test` 218/218; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 
 ## Known Issues
 
@@ -588,7 +625,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Request a fresh independent re-review (CP-020) confirming REV-007 and REV-008 are corrected: authenticated receipt writes that never touch forged squatters, post-broadcast save failures preserved as manual review with the execution id, and a receipt-signing key independent of the broadcast credential with previous-key rotation. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance. Restore `last stop.md` in the reviewer workspace if its deletion is unintended.
+Request a fresh independent re-review (CP-022) confirming REV-010 is corrected: a durable pending reservation written before broadcast ensures a later run of the same event resolves the existing record and never rebroadcasts, even after provider idempotency expiry. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance. Restore `last stop.md` in the reviewer workspace if its deletion is unintended.
 
 ## Checkpoint and Amendment Contract
 

@@ -272,20 +272,15 @@ export class SettlementOrchestrator {
       });
     }
 
-    let broadcast;
-    try {
-      broadcast = await this.provider.broadcastTransfer(parameters, paymentKey);
-    } catch (error) {
-      return this.handleBroadcastError(policy, paymentKey, requestHash, error);
-    }
-
-    const pending: ReceiptRecord = {
+    // Write a durable reservation BEFORE any broadcast. A broadcast may only
+    // happen once a pending record exists, so a later run can always see that
+    // an execution may have been submitted and must never rebroadcast.
+    const reservation: ReceiptRecord = {
       version: 1,
       product: "mergepay",
       paymentKey,
       requestHash,
       status: "pending",
-      executionId: broadcast.executionId,
       repository: input.event.repository.fullName,
       pullRequestNumber: input.event.pullRequestNumber,
       mergeSha: input.event.mergeSha,
@@ -293,10 +288,38 @@ export class SettlementOrchestrator {
       updatedAt: this.nowIso(),
     };
     try {
-      await this.receipts.save(pending);
+      await this.receipts.save(reservation);
     } catch {
-      // The execution was already submitted. Preserve the known execution
-      // identity and fail to manual review rather than rebroadcasting.
+      return this.evidence({
+        policy,
+        paymentKey,
+        requestHash,
+        simulation: "passed",
+        broadcastMade: false,
+        status: "failed",
+        error: {
+          code: "EXECUTION_MANUAL_REVIEW",
+          message: "Could not reserve the payment before broadcast; no broadcast was made.",
+        },
+      });
+    }
+
+    let broadcast;
+    try {
+      broadcast = await this.provider.broadcastTransfer(parameters, paymentKey);
+    } catch (error) {
+      return this.handleBroadcastError(policy, paymentKey, requestHash, error);
+    }
+
+    const submitted: ReceiptRecord = {
+      ...reservation,
+      executionId: broadcast.executionId,
+    };
+    try {
+      await this.receipts.save(submitted);
+    } catch {
+      // The reservation (pending, no execution id) remains durable, so a
+      // later run resolves to manual review and never rebroadcasts.
       return this.evidence({
         policy,
         paymentKey,
@@ -308,7 +331,7 @@ export class SettlementOrchestrator {
         error: {
           code: "EXECUTION_MANUAL_REVIEW",
           message:
-            "Execution was submitted but its pending receipt could not be recorded; manual review required. No automatic rebroadcast.",
+            "Execution was submitted but its receipt could not be updated; manual review required. No automatic rebroadcast.",
         },
       });
     }
@@ -317,7 +340,7 @@ export class SettlementOrchestrator {
       const terminal = await this.provider.waitForTerminal(broadcast.executionId);
       const status: ExecutionStatus = terminal.status === "completed" ? "confirmed" : "failed";
       const updated: ReceiptRecord = {
-        ...pending,
+        ...submitted,
         status,
         transactionHash: terminal.transactionHash,
         transactionLink: terminal.transactionLink,

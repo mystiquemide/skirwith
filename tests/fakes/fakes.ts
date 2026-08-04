@@ -45,6 +45,7 @@ export class FakeGitHubApi implements GitHubApi {
   comments: CommentState[] = [];
   fetchError?: unknown;
   createIssueCommentError?: unknown;
+  updateIssueCommentError?: unknown;
   updateRejectsUnowned = true;
   private ownedCommentIds = new Set<number>();
   private nextCommentId = 100;
@@ -96,6 +97,9 @@ export class FakeGitHubApi implements GitHubApi {
     body: string,
   ): Promise<void> {
     this.throwIfError();
+    if (this.updateIssueCommentError !== undefined) {
+      throw this.updateIssueCommentError;
+    }
     if (this.updateRejectsUnowned && !this.ownedCommentIds.has(commentId)) {
       throw new MergePayError({
         code: "GITHUB_FETCH_FAILED",
@@ -180,16 +184,20 @@ export class FakeReceiptStore implements ReceiptStore {
   records = new Map<string, ReceiptRecord>();
   saves: ReceiptRecord[] = [];
   saveError?: unknown;
+  saveErrorAt?: number;
 
   async findByPaymentKey(paymentKey: string): Promise<ReceiptRecord | undefined> {
     return this.records.get(paymentKey);
   }
 
   async save(record: ReceiptRecord): Promise<void> {
-    if (this.saveError !== undefined) {
+    if (this.saveError !== undefined && this.saveErrorAt === undefined) {
       throw this.saveError;
     }
-    this.records.set(record.paymentKey, record);
+    if (this.saveErrorAt !== undefined && this.saves.length + 1 === this.saveErrorAt) {
+      throw this.saveError ?? new Error("receipt persistence failed");
+    }
     this.saves.push(record);
+    this.records.set(record.paymentKey, record);
   }
 }

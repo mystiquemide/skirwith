@@ -20,6 +20,7 @@
 - Canonical request construction rejects malformed values (addresses, merge SHA, atomic amount, identifiers).
 - Receipt markers are HMAC-signed with a dedicated versioned key; forged, tampered, unknown-key, or differently-signed markers are ignored and never suppress a payout, and the write path never updates a forged squatter.
 - Post-broadcast receipt-persistence failure preserves the execution id as manual review and never rebroadcasts.
+- A durable pending reservation is written before broadcast, so a second invocation of the same event performs zero broadcasts (covered by two-run integration tests).
 - Secrets never appear in public output.
 - Receipt, evidence, execution ID, and transaction proof agree.
 

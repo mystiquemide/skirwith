@@ -153,9 +153,13 @@ describe("SettlementOrchestrator.settle", () => {
     expect(provider.calls.simulate).toBe(1);
     expect(provider.calls.broadcast).toBe(1);
     expect(provider.lastBroadcastKey).toBe(identityFor(input).paymentKey);
-    expect(receipts.saves).toHaveLength(2);
+    expect(receipts.saves).toHaveLength(3);
     expect(receipts.saves[0]?.status).toBe("pending");
-    expect(receipts.saves[1]?.status).toBe("confirmed");
+    expect(receipts.saves[0]?.executionId).toBeUndefined();
+    expect(receipts.saves[1]?.status).toBe("pending");
+    expect(receipts.saves[1]?.executionId).toBe("ex_new");
+    expect(receipts.saves[2]?.status).toBe("confirmed");
+    expect(receipts.saves[2]?.executionId).toBe("ex_new");
   });
 
   it("marks a broadcast that reaches a failed terminal state as failed", async () => {
@@ -172,7 +176,7 @@ describe("SettlementOrchestrator.settle", () => {
 
     expect(evidence.status).toBe("failed");
     expect(evidence.broadcastMade).toBe(true);
-    expect(receipts.saves[1]?.status).toBe("failed");
+    expect(receipts.saves[2]?.status).toBe("failed");
   });
 
   it("returns a duplicate when a confirmed receipt matches the current content", async () => {
@@ -264,7 +268,8 @@ describe("SettlementOrchestrator.settle", () => {
     expect(evidence.executionId).toBe("ex_new");
     expect(evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
     expect(provider.calls.broadcast).toBe(1);
-    expect(receipts.saves[0]?.status).toBe("pending");
+    expect(receipts.saves[1]?.status).toBe("pending");
+    expect(receipts.saves[1]?.executionId).toBe("ex_new");
   });
 
   it("never rebroadcasts when the broadcast response is lost", async () => {
@@ -282,7 +287,11 @@ describe("SettlementOrchestrator.settle", () => {
     expect(evidence.broadcastMade).toBe(false);
     expect(evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
     expect(provider.calls.broadcast).toBe(1);
-    expect(receipts.saves).toHaveLength(0);
+    // The durable pre-broadcast reservation remains so a later run resolves
+    // to manual review and never rebroadcasts.
+    expect(receipts.saves).toHaveLength(1);
+    expect(receipts.saves[0]?.status).toBe("pending");
+    expect(receipts.saves[0]?.executionId).toBeUndefined();
   });
 
   it("maps a rejected broadcast (auth) to a failed outcome without a receipt", async () => {
@@ -301,14 +310,15 @@ describe("SettlementOrchestrator.settle", () => {
     expect(evidence.broadcastMade).toBe(false);
     expect(evidence.error?.code).toBe("PROVIDER_AUTH_FAILED");
     expect(provider.calls.broadcast).toBe(1);
-    expect(receipts.saves).toHaveLength(0);
+    expect(receipts.saves).toHaveLength(1);
+    expect(receipts.saves[0]?.status).toBe("pending");
   });
 
-  it("preserves the execution id as manual review when the pending receipt save fails after broadcast", async () => {
+  it("preserves the execution id as manual review when the submitted receipt save fails after broadcast", async () => {
     const provider = new FakeKeeperHubProvider();
     provider.broadcastResult = { executionId: "ex_new", status: "running" };
     const receipts = new FakeReceiptStore();
-    receipts.saveError = new Error("receipt persistence failed");
+    receipts.saveErrorAt = 2;
     const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
 
     const evidence = await orchestrator.settle(makeInput());
@@ -319,7 +329,39 @@ describe("SettlementOrchestrator.settle", () => {
     expect(evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
     expect(provider.calls.broadcast).toBe(1);
     expect(provider.calls.waitForTerminal).toBe(0);
-    expect(receipts.saves).toHaveLength(0);
+    // The durable pre-broadcast reservation remains (pending, no execution id)
+    // so a later run resolves to manual review and never rebroadcasts.
+    expect(receipts.saves).toHaveLength(1);
+    expect(receipts.saves[0]?.status).toBe("pending");
+    expect(receipts.saves[0]?.executionId).toBeUndefined();
+  });
+
+  it("never rebroadcasts in a later run after a post-broadcast receipt failure", async () => {
+    const provider = new FakeKeeperHubProvider();
+    provider.broadcastResult = { executionId: "ex_new", status: "running" };
+    provider.terminalResult = {
+      executionId: "ex_new",
+      status: "completed",
+      transactionHash: "0xabc",
+      pollIntervalHint: 0,
+    };
+    const receipts = new FakeReceiptStore();
+    receipts.saveErrorAt = 2;
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    // Run 1: broadcast succeeds but the submitted receipt save fails.
+    const first = await orchestrator.settle(makeInput());
+    expect(first.status).toBe("manual-review");
+    expect(provider.calls.broadcast).toBe(1);
+
+    // Run 2: the durable reservation exists; the same event must not broadcast
+    // again, even after simulated provider idempotency expiry.
+    provider.calls.broadcast = 0;
+    receipts.saveErrorAt = undefined;
+    const second = await orchestrator.settle(makeInput());
+    expect(second.status).toBe("manual-review");
+    expect(second.broadcastMade).toBe(false);
+    expect(provider.calls.broadcast).toBe(0);
   });
 
   it("uses the configured recipient wallet from the trusted mapping", async () => {

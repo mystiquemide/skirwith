@@ -17,6 +17,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 - Derive the payment key from the stable payment identity (repository, PR, merge SHA, purpose), independent of material content, and compare the canonical request hash on replay: same key plus same hash is a duplicate; same key plus changed hash is a conflict for manual review.
 - Resolve existing executions before any new broadcast.
 - Make blocked/no-broadcast a first-class result.
+- Write a durable pending reservation before any broadcast and never broadcast unless it persists; on any uncertain post-submission outcome, preserve the execution id as manual review so a later run resolves the existing record and never rebroadcasts across invocations.
 - Redact secrets recursively in logs, errors, summaries, comments, fixtures, and evidence.
 - Pin third-party workflow actions by commit SHA.
 
