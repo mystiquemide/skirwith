@@ -127,7 +127,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: mystiquemide/skirwith@0f821cf4bade597f23cd594be222b4d59a3b33f7
+      - uses: mystiquemide/skirwith@dc705c96e5ff098edbaa9e42c19437cd2d2c8fc6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
@@ -198,6 +198,6 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License and release
 
-MIT (see [LICENSE](LICENSE)). Release tag `v0.1.1` points to commit
-`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Additional release metadata will
+MIT (see [LICENSE](LICENSE)). Release tag `v0.1.2` points to commit
+`dc705c96e5ff098edbaa9e42c19437cd2d2c8fc6`. Additional release metadata will
 be added when the demonstration link is available.

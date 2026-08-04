@@ -39,7 +39,7 @@ replay, created no new transaction, and never rebroadcast.
 
 ## 5. Verify the tagged source and bundle
 
-- Release tag: `v0.1.1` → commit `0f821cf4bade597f23cd594be222b4d59a3b33f7`
+- Release tag: `v0.1.2` → commit `dc705c96e5ff098edbaa9e42c19437cd2d2c8fc6`
 - Repository: https://github.com/mystiquemide/skirwith
 
 Expected: the tag points to the commit the docs pin; `dist/index.js` at that
