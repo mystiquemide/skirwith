@@ -89,6 +89,7 @@
   <a href="#proof">Live proof</a>
   <a href="#setup">Setup</a>
   <a href="#safety">Safety</a>
+  <a href="#docs">Docs</a>
   <a href="https://github.com/mystiquemide/mergepay">GitHub</a>
 </nav>
 
@@ -169,7 +170,7 @@
     The replay returned <code>idempotentReplay: true</code>. It created no new
     transaction. A maintainer posted a reconciliation note on each PR. This is
     a live demonstration of the no-rebroadcast safety rule. See
-    <a href="PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
+    <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
   </p>
 
   <h2 id="setup">Set it up</h2>
@@ -247,6 +248,16 @@ jobs:
     <li>Replays resolve the existing receipt. They never broadcast a second transaction.</li>
     <li>Uncertain outcomes become manual review. The action keeps the execution id. It never rebroadcasts.</li>
     <li>Receipt markers use an HMAC (Hash-based Message Authentication Code) signature with a dedicated key. A forged comment cannot suppress a payout.</li>
+  </ul>
+
+  <h2 id="docs">Documentation</h2>
+  <ul>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/ARCHITECTURE.md">Architecture</a></li>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/SECURITY.md">Security model</a></li>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/CONFIGURATION.md">Configuration</a></li>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/KEEPERHUB-INTEGRATION.md">KeeperHub integration</a></li>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/TEST-STRATEGY.md">Test strategy</a></li>
+    <li><a href="https://github.com/mystiquemide/mergepay/blob/master/docs/PHASE3-EVIDENCE.md">Phase 3 evidence</a></li>
   </ul>
 
   <div class="foot">
