@@ -45,12 +45,12 @@ replay, created no new transaction, and never rebroadcast.
 Expected: the tag points to the commit the docs pin; `dist/index.js` at that
 commit matches a clean rebuild; 235 tests pass under Node 24.
 
-## 6. Review limitations
+## 6. Limitations
 
 - The README lists testnet-only status, one-chain/one-token scope,
   maintainer-controlled mappings, and self-payment disclosure.
 
 ## Recovery
 
-If a run does not settle, review the action summary and existing receipt before
+If a run does not settle, check the action summary and existing receipt before
 re-running.

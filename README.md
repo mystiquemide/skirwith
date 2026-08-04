@@ -9,8 +9,8 @@ without sending a second transaction.
 
 ## Watch and verify
 
-Demo video: pending owner recording against the `v0.1.1` release. To verify
-the claims now from the public acceptance repository, follow
+Demonstration link: not yet published. To verify the claims now from the public
+acceptance repository, follow
 [docs/VERIFY.md](docs/VERIFY.md) or start with:
 
 - Confirmed PR: https://github.com/mystiquemide/skirwith-acceptance/pull/1
@@ -154,13 +154,12 @@ and existing receipt before taking another action.
 
 ## Evidence and limitations
 
-Skirwith is a testnet proof of concept for the KeeperHub Agents Onchain
-hackathon. Scope is one chain (Ethereum Sepolia), one token (USDC
-`0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`). Recipient and amount mappings
+Skirwith runs on Ethereum Sepolia testnet with one supported token, USDC
+(`0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`). Recipient and amount mappings
 are maintainer-controlled. There is no daily-limit accounting and no automatic
 recovery. All live transactions are testnet self-payments to the organization
-wallet to avoid moving funds to an external person during testing; the
-workflow still validates the complete recipient mapping and transfer path.
+wallet during testing; the workflow still validates the complete recipient
+mapping and transfer path. Skirwith makes no mainnet claim.
 KeeperHub availability, GitHub API state, wallet funding, and gas must hold
 for settlement to complete.
 
@@ -178,7 +177,6 @@ npm run build
 npm run bundle:check
 npm run verify:packaged
 npm run test:coverage
-npm run audit
 ```
 
 Behavior is test-driven. Domain logic stays pure. Provider and GitHub calls
@@ -198,8 +196,8 @@ sit behind injected interfaces.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## License and submission
+## License and release
 
 MIT (see [LICENSE](LICENSE)). Release tag `v0.1.1` points to commit
-`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Final submission metadata will be
-added after the demo video is recorded.
+`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Additional release metadata will
+be added when the demonstration link is available.
