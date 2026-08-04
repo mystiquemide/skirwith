@@ -4,8 +4,8 @@
 
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
-- Current phase: Phase 3 - Live three-state acceptance
-- Current checkpoint: CP-026
+- Current phase: Phase 4 - Documentation, onboarding, and submission
+- Current checkpoint: CP-028
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -44,12 +44,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Current Objective
 
-- Phase: Phase 3 - Live three-state acceptance
-- Checkpoint: CP-023
-- Goal: Prove the product with real GitHub and KeeperHub evidence: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract. No mocks may substitute for live proof.
-- Expected files or assets: Private acceptance repository, trusted config, live KeeperHub key, one confirmed transaction, replay and refusal evidence, backup transaction, evidence archive.
-- Acceptance criteria: SC-001 to SC-005 — one eligible merged PR produces exactly one confirmed transfer; replay produces no second transaction; an over-limit/invalid payout is blocked with `broadcastMade: false` and no execution id; receipt/summary/execution/explorer evidence agree; fork/contributor-controlled content cannot reach the secret or alter payout identity.
-- Required verification: Explorer, KeeperHub, GitHub run/receipt cross-check; redacted screenshots/links; secret scan; audit; full local suite before and after live runs.
+- Phase: Phase 4 - Documentation, onboarding, and submission
+- Checkpoint: CP-028
+- Goal: Finish the release-ready package: polished README and docs, a demo video showing the three states, release packaging (address the Node 20 deprecation warning before release), and the DoraHacks submission before the 2026-08-13 10:00 deadline.
+- Expected files or assets: README, demo video, release tag/bundle, logged-out link checks, submission archive.
+- Acceptance criteria: Every public claim maps to live evidence or is labeled a fixture/limitation; all links work logged out; the release tag matches the demo; the submission is archived.
+- Required verification: Documentation review, secret scan, video timing, public-link check, release preflight.
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 3 (Live three-state acceptance): Phase 2 exit gate closed (CP-022); the low-severity hardening item REV-013 (comment pagination) is fixed (CP-023); local readiness re-verified (222 tests, audit 0, packaged fixtures pass). Phase 3 live runs are pending the KeeperHub org `kh_` key, a private acceptance repository with a trusted config and a merged PR, and explicit confirmation before any broadcast.
+- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027). Remaining: README polish, demo video, release packaging (node24 migration check), and DoraHacks submission before 2026-08-13.
 
 ### Blocked (resolved / narrowed)
 
@@ -609,6 +609,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Known issues: PRs #4/#6/#7 receipts remain `pending` (undelivered broadcast response); the execution ids were not recorded by the action and must be pulled from the KeeperHub dashboard to reconcile authoritatively.
 - Blockers: None.
 - Next exact action: Provide execution-id pull steps and reconcile the three pending receipts or document them; then proceed to Phase 4.
+
+### CP-027: Public acceptance evidence and Phase 4 docs site
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 4 - Documentation and site
+- Objective: Make the live acceptance evidence publicly accessible and stand up the optional lightweight docs site.
+- Requirements covered: Phase 4 optional-site scope, `SC-004` public evidence, hackathon public-repo requirement.
+- Work completed: Made `mystiquemide/mergepay-acceptance` public (tracked-file secret scan clean; repo secrets remain private). Recovered the missing execution ids for the three uncertain-response receipts (PRs #4/#6/#7) via KeeperHub idempotent replay (`idempotentReplay: true`, no new transaction, transfer count verified unchanged) and posted maintainer reconciliation notes on each PR. Added `docs/index.html` — a self-contained Phase 4 landing/docs site with the three-state proof, the live transaction table, setup instructions, and the safety design. Enabled GitHub Pages from `/docs` on `master`; verified the site and evidence file are served.
+- Files or assets changed: `docs/index.html` (new), `docs/PHASE3-EVIDENCE.md`, `PROJECT_STATE.md`; `mergepay-acceptance` made public; GitHub Pages enabled.
+- Commands or checks run: idempotent-replay curl lookups, `eth_getLogs` transfer-count verification, `gh repo edit` public, `gh api .../pages`, curl of the Pages site (HTTP 200) and the evidence file (HTTP 200).
+- Test results: Site live at `https://mystiquemide.github.io/mergepay/`; acceptance repo public; all 7 confirmed transactions documented with execution ids and explorer links.
+- Acceptance criteria verified: Reviewers/judges can view the receipts and transactions without credentials; the site presents the proof and setup; the action repo and acceptance repo are public for the hackathon.
+- Decisions: Hosted the site via GitHub Pages from `/docs` (no build step, no extra infra); kept the signed receipt markers untouched (reconciliation posted as plain-text maintainer notes).
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: The public acceptance repo's workflow can be triggered only by users with write access (labels + merge), and payouts are self-payments to the org wallet (net-zero USDC); acceptable for the demo.
+- Known issues: The `kh_` key and receipt secret remain in the acceptance repo's private secrets only; `REV-012` workspace deletion on the reviewer machine remains a user-side item.
+- Blockers: None.
+- Next exact action: Finish Phase 4 — README polish, demo video, release packaging (node24 migration check), and DoraHacks submission before 2026-08-13.
 
 ## Decisions Made During Execution
 
