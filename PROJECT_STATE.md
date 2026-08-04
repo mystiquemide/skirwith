@@ -4,8 +4,8 @@
 
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
-- Current phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Current checkpoint: CP-022
+- Current phase: Phase 3 - Live three-state acceptance
+- Current checkpoint: CP-023
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -44,12 +44,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Current Objective
 
-- Phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Checkpoint: CP-022
-- Goal: Obtain a fresh independent re-review confirming REV-010 is corrected: a durable pending reservation written before broadcast guarantees that a later run of the same event resolves the existing record and never rebroadcasts, even after provider idempotency expiry.
-- Expected files or assets: Updated independent review record; no code changes unless the review requires them.
-- Acceptance criteria: Re-review approves the cross-run no-rebroadcast recovery; no unresolved blocker or major finding.
-- Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, packaged fixtures, audit, secret scan).
+- Phase: Phase 3 - Live three-state acceptance
+- Checkpoint: CP-023
+- Goal: Prove the product with real GitHub and KeeperHub evidence: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract. No mocks may substitute for live proof.
+- Expected files or assets: Private acceptance repository, trusted config, live KeeperHub key, one confirmed transaction, replay and refusal evidence, backup transaction, evidence archive.
+- Acceptance criteria: SC-001 to SC-005 — one eligible merged PR produces exactly one confirmed transfer; replay produces no second transaction; an over-limit/invalid payout is blocked with `broadcastMade: false` and no execution id; receipt/summary/execution/explorer evidence agree; fork/contributor-controlled content cannot reach the secret or alter payout identity.
+- Required verification: Explorer, KeeperHub, GitHub run/receipt cross-check; redacted screenshots/links; secret scan; audit; full local suite before and after live runs.
 
 ## Current Status
 
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned REV-006, fixed in CP-017; re-reviews returned REV-007/REV-008 (fixed in CP-019) and REV-010 (fixed in CP-021). A fresh re-review (CP-022) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
+- Phase 3 (Live three-state acceptance): Phase 2 exit gate closed (CP-022, approved for `f883b81`). Phase 3 is pending live KeeperHub credentials, a private acceptance repository with a merged PR, and explicit confirmation before any broadcast.
 
 ### Blocked (resolved / narrowed)
 
@@ -508,6 +508,22 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Request a fresh independent re-review (CP-022) confirming REV-010 is corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
 
+### CP-022: Phase 2 exit gate approved
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Re-review the REV-010 fix (`ebefa9a..f883b81`) to close the Phase 2 exit gate.
+- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `ed98ef9`). Verdict: Approve with non-blocking findings. REV-010 corrected: a signed pending reservation persists before broadcast, broadcast is refused if reservation persistence fails, and a failed submitted-state update leaves the reservation durable so later runs resolve to manual review without simulation or rebroadcast. Phase 2 execution gate approved for revision `f883b81`. Reproduced 218/218 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Findings: `REV-012` Low — `last stop.md` deleted in the reviewer workspace (hygiene, not in this repository). `REV-013` Low — GitHub comment receipt discovery lacks pagination (reliability hardening for active public PRs; deferred).
+- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Acceptance criteria verified: No unresolved Blocker/Critical/High/Medium; Phase 2 gate closed for `f883b81`; no further Phase 2 re-review required unless reservation/receipt/identity/idempotency/workflow code changes.
+- Decisions: None required.
+- Known issues: REV-012 (workspace deletion on reviewer machine), REV-013 (pagination), audit/secret-scan must be reproduced in a network-enabled clean environment before publication.
+- Blockers: None.
+- Next exact action: Begin Phase 3 (CP-023) live three-state acceptance with real GitHub and KeeperHub evidence.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -605,6 +621,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-021 | Pre-broadcast durable reservation | Pass | `executeNew` writes a pending reservation before broadcast; no broadcast without a durable reservation; submitted-save failure returns manual-review with the execution id |
 | CP-021 | Cross-run no-rebroadcast | Pass | Two-run action and orchestrator tests prove a second invocation of the same event performs zero broadcasts and zero simulations after a post-broadcast receipt failure |
 | CP-021 | Verification suite | Pass | `npm test` 218/218; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
+| CP-022 | Independent Phase 2 re-review | Approve | `CODE_REVIEW.md`: REV-010 confirmed corrected; 0 blocker/critical/high/medium; 2 Low (REV-012 workspace deletion, REV-013 comment pagination); Phase 2 gate approved for `f883b81` |
 
 ## Known Issues
 
@@ -625,7 +642,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Request a fresh independent re-review (CP-022) confirming REV-010 is corrected: a durable pending reservation written before broadcast ensures a later run of the same event resolves the existing record and never rebroadcasts, even after provider idempotency expiry. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance. Restore `last stop.md` in the reviewer workspace if its deletion is unintended.
+Begin Phase 3 (CP-023) live three-state acceptance: obtain the live KeeperHub org `kh_` key and a private acceptance repository with a trusted config and a merged PR; run a simulation-only pass, then one confirmed USDC payout on Sepolia (chain 11155111, token `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, org wallet `0x05619d1a133623B322a8f366ea9594e4e586f26D`), then replay with no second transaction and a blocked no-broadcast refusal, with explicit confirmation before any broadcast. Keep at least one backup successful transaction.
 
 ## Checkpoint and Amendment Contract
 
