@@ -5,59 +5,60 @@
 - Project: MergePay
 - Review date: 2026-08-04 (Africa/Lagos)
 - Reviewer: Independent Codex review
-- Review target: Recent receipt-provenance remediation and Phase 2 re-review, commits `bee4a94..aa73a92`
-- Base revision: `887cce2`
-- Head revision: `aa73a92`
+- Review target: Latest remediation commit `ebefa9a` against Phase 2 findings REV-007 through REV-009
+- Base revision: `aa73a92`
+- Head revision: `ebefa9a`
 - Review mode: Checkpoint re-review / security-focused diff review
-- Secondary focus: Payment replay integrity, GitHub comment ownership, post-broadcast recovery, release risk
-- Plan phase or checkpoint: Phase 2 exit gate / CP-018
-- Files reviewed: All recent changed files, affected GitHub/receipt/orchestrator callers, tests, documentation, action wiring, prior review, plan, and observable repository state
-- Files excluded: Live GitHub/KeeperHub execution and Phase 3 real transaction evidence
-- Environment: Node.js/npm workspace `/home/mide/mergepay`; `master` synchronized with `origin/master`; tracked deletion of `last stop.md` present in working tree
+- Secondary focus: Replay safety, post-broadcast recovery, receipt-key rotation, GitHub authorization
+- Plan phase or checkpoint: Phase 2 exit gate / CP-020
+- Files reviewed: All files changed by `ebefa9a`, affected receipt/action/orchestrator/provider callers, tests, examples, security/architecture/configuration docs, plan, and current state
+- Files excluded: Live GitHub/KeeperHub execution and Phase 3 transaction evidence
+- Environment: Node.js/npm workspace `/home/mide/mergepay`; `master` synchronized with `origin/master`; `last stop.md` deleted locally
 - Overall confidence: High
 
 ## Verdict
 
-**Changes required.** The read path now rejects forged receipt markers using HMAC verification, so the original REV-006 suppression path is partially corrected. However, the write path still selects any decoded marker with the matching payment key, including an attacker-owned forged comment. After a successful broadcast, the action attempts to edit that attacker-owned comment; GitHub rejects edits to comments not owned by the token’s identity. This can leave a submitted execution without a trusted pending receipt and eventually permit a duplicate broadcast after the provider idempotency window.
+**Changes required.** REV-007’s forged-comment update defect and REV-008’s provider-key coupling are corrected. One High replay-safety defect remains: if the trusted pending receipt cannot be persisted after a successful broadcast, the action returns manual-review evidence only to the current run and stores no durable replay guard. A later workflow run sees no receipt and automatically proceeds to broadcast again. After KeeperHub’s documented idempotency window expires, this can create a duplicate payment.
 
-The current `aa73a92` approval claim is not supported by the implemented write path or the test doubles. Phase 2 must not pass its exit gate on this revision.
+Phase 2 must not pass its exit gate on `ebefa9a`.
 
 ## Executive Summary
 
-The remediation adds HMAC-SHA256 marker authentication, stricter marker validation, and useful adversarial read-path tests. Independent verification reproduced 208 passing tests, clean formatting/lint/typecheck, successful build and bundle load, and passing packaged fixtures.
+The latest commit makes meaningful corrections. Receipt writes now update only MAC-verified comments, forged squatters cause a new action-owned comment, GitHub test doubles model comment ownership, and receipt authentication uses a dedicated versioned secret with previous-key verification. Independent verification reproduced 215 passing tests, format, lint, typecheck, build, bundle load, and packaged fixtures.
 
-The central remaining defect is visible in `CommentReceiptStore.save()`: it finds an existing comment by decoded payment key without verifying the MAC or ownership. The action-level forged-marker test passes only because `FakeGitHubApi.updateIssueComment()` permits editing any comment. Real GitHub authorization does not. Because the first receipt save occurs after KeeperHub broadcast, this mismatch affects financial state recovery rather than merely comment rendering.
+The post-broadcast persistence fix is incomplete across workflow runs. Catching `save(pending)` and returning `manual-review` preserves the execution ID in ephemeral action output, but it does not persist a tombstone, uncertain-state marker, provider lookup identity, or other durable block. The next run therefore enters `executeNew()` again. The project’s nonnegotiable rule is never to automatically rebroadcast an uncertain execution; that rule must hold across runs, not only inside one invocation.
 
 ## Scope and Limitations
 
-The review focused on the commits after the original Phase 2 review, while inspecting the full receipt-to-orchestrator flow. It did not perform a real broadcast or modify implementation code, tests, plan, or state. Only `CODE_REVIEW.md` was overwritten.
+The review inspected the latest commit plus surrounding replay and receipt contracts. No real transfer, GitHub mutation, or provider call was performed. No implementation, tests, plan, or state files were changed; only `CODE_REVIEW.md` was overwritten.
 
-`npm audit` could not complete because the npm registry request failed with `EAI_AGAIN`. Dedicated secret scanning and formal bundle-diff tooling were unavailable. No live GitHub test was performed, but GitHub comment-update authorization is an external contract the implementation must model and verify before relying on it.
+`npm audit` remained unavailable because registry DNS failed with `EAI_AGAIN`. Dedicated secret scanning and formal bundle-diff tooling were unavailable. The provider’s live idempotency expiry behavior was not replayed, but the repository’s own state documents a 24-hour window.
 
 ## Requirements Reviewed
 
-- FR-012: resolve receipts/executions before replay and never rebroadcast uncertain state
-- BR-005 and BR-006: confirmed replay suppression and changed-content conflict
-- NFR-001 through NFR-003: safe secrets, bounded external behavior, injectable/testable boundaries
-- RISK-003 and RISK-009: duplicate payment and spoofed/stale receipt risks
-- CP-017 acceptance claim that forged comments cannot suppress or alter settlement state
+- FR-012: resolve existing receipts/executions before replay and never rebroadcast uncertain states
+- BR-005 and BR-006: durable duplicate suppression and changed-content conflict
+- NFR-001 through NFR-003: safe secrets, bounded failure behavior, testable boundaries
+- RISK-003 and RISK-009: duplicate payment and receipt spoofing/staleness
+- CP-019 claims for authenticated writes, post-broadcast recovery, and signing-key rotation
 
 ## Verification Performed
 
 | Check | Scope | Result | Evidence |
 |---|---|---|---|
-| Repository status | Branch, remote, working tree | Finding | HEAD/remote `aa73a92`; `last stop.md` deleted locally |
-| Recent diff review | `887cce2..aa73a92` plus affected callers | Fail | HMAC read verification added; write selection remains unauthenticated |
+| Repository status | Branch, remote, working tree | Finding | HEAD/remote `ebefa9a`; local deletion of `last stop.md` |
+| Latest commit review | `aa73a92..ebefa9a` plus affected callers | Pass with High finding | Authenticated writes/key rotation fixed; cross-run uncertain-state guard absent |
 | Format | Configured files | Pass | `npm run format:check` |
 | Lint | Repository | Pass | `npm run lint` |
 | Typecheck | TypeScript | Pass | `npm run typecheck` |
-| Full tests | 25 Vitest files | Pass with coverage defect | 208/208 tests passed |
-| Build | NCC action bundle | Pass | `npm run build`; 653 kB bundle generated |
+| Full tests | 25 Vitest files | Pass with missing cross-run case | 215/215 tests passed |
+| Build | NCC bundle | Pass | `npm run build`; 654 kB bundle generated |
 | Bundle load | Generated bundle | Pass | `npm run bundle:check` |
 | Packaged fixtures | Merged, unmerged, opened | Pass | `npm run verify:packaged` |
 | Dependency audit | npm advisory service | Unavailable | Registry DNS failure `EAI_AGAIN` |
-| Forged-marker read path | Invalid/wrong-secret MAC | Pass | Tests prove forged marker is ignored during lookup |
-| Forged-marker write path | Existing attacker comment after broadcast | Fail | `save()` selects by payment key without MAC/ownership verification; fake API masks GitHub rejection |
+| Forged receipt write | Invalid-MAC matching comment | Pass | Store creates a separate signed comment and does not edit squatter |
+| Receipt-key rotation | Active/previous receipt keys | Pass | Previous receipt key verifies; KeeperHub key is independent |
+| Pending-save failure | Current invocation | Partial | Returns manual review with execution ID, but no durable record blocks future runs |
 
 ## Findings Summary
 
@@ -66,106 +67,92 @@ The review focused on the commits after the original Phase 2 review, while inspe
 | Blocker | 0 |
 | Critical | 0 |
 | High | 1 |
-| Medium | 1 |
+| Medium | 0 |
 | Low | 1 |
 | Nit | 0 |
-| Positive | 4 |
+| Positive | 5 |
 
 ## Blocking Findings
 
-## [HIGH] REV-007: Forged comment is selected for update after broadcast, leaving execution state unrecorded
+## [HIGH] REV-010: Post-broadcast receipt failure does not prevent automatic rebroadcast in a later run
 
-- Category: Security / payment reliability / replay integrity / external authorization
-- Location: `src/github/receipts.ts:59-89`; `src/execution/orchestrator.ts:275-307`; `tests/fakes/fakes.ts:83-94`; `tests/action.test.ts:161-185`
-- Requirement or control: FR-012, BR-005, BR-006, RISK-003, RISK-009, Phase 2 safe uncertain-state handling
-- Evidence: `findByPaymentKey()` verifies the marker MAC, but `save()` uses `comments.find()` with only `marker?.paymentKey === record.paymentKey`. A forged marker therefore becomes the update target. The first `save(pending)` occurs after `broadcastTransfer()` succeeds. `FakeGitHubApi.updateIssueComment()` edits any matching ID and does not model GitHub’s rule that an app/token cannot edit another user’s comment. The new action test seeds a forged marker and asserts success, but succeeds only because of this permissive fake.
-- Problem: The remediation secures receipt reads but not receipt writes. An attacker can pre-seed a validly shaped, invalid-MAC marker using the deterministic payment key. The action ignores it during lookup, simulates and broadcasts, then selects the same forged comment during `save(pending)` and attempts to PATCH it. GitHub rejects editing a comment owned by another identity. The thrown save error escapes the post-broadcast recovery logic, and no authenticated pending receipt is created.
-- Impact: A real transfer may be submitted while the action reports failure and records no trusted replay state. Replays repeatedly hit the same forged update target. Once KeeperHub’s documented idempotency window expires, a later retry can create a second transfer. This is a direct duplicate-payment risk and blocks live acceptance.
-- Reproduction or failure scenario: (1) Attacker posts a syntactically valid marker with the target payment key and invalid MAC. (2) Action lookup ignores it. (3) KeeperHub simulation and broadcast succeed. (4) `save(pending)` finds the attacker comment and PATCHes its ID. (5) GitHub returns 403/404 because the action identity does not own the comment. (6) Action fails after broadcast with no trusted pending receipt. (7) Replays cannot recover through comments and may rebroadcast after provider idempotency expiry.
-- Recommended correction: During `save()`, update only a marker that successfully verifies with the receipt secret and matches the expected repository/PR/merge identity. Ignore forged/unverified matches and create a new action-owned receipt comment. Model comment ownership/update rejection explicitly in the GitHub adapter/test fake. Catch receipt persistence failure after broadcast and return manual-review evidence that preserves the execution ID; do not lose the known submitted state. Consider provider lookup by stable key as the authoritative recovery path rather than relying solely on comments.
-- Verification after correction: Add an action/integration test where an invalid-MAC matching comment exists and attempts to update it fail as real GitHub would; assert one broadcast, creation of a separate signed pending/confirmed comment, and no update of the attacker comment. Add a post-broadcast `save(pending)` failure test asserting manual-review with execution ID and no rebroadcast. Verify replay before and after simulated idempotency expiry cannot create a second execution.
-- Confidence: High
-- Status: Open
-
-## [MEDIUM] REV-008: KeeperHub API-key rotation invalidates the only durable replay record
-
-- Category: Security architecture / key lifecycle / replay reliability
-- Location: `src/action.ts:78-84`; `src/evidence/receipt.ts:116-125`; `PROJECT_STATE.md` CP-017 decision
-- Requirement or control: FR-012, BR-005, NFR-001, recovery from credential rotation
-- Evidence: The KeeperHub API key is reused directly as the receipt HMAC secret. Verification accepts only the current key, with no key identifier or previous-key verification. State documentation acknowledges that rotation invalidates old receipt MACs and relies on provider idempotency, which is documented elsewhere as a 24-hour replay window.
-- Problem: Rotating or replacing a provider credential makes every existing confirmed receipt appear forged. A replay after rotation no longer recognizes the original confirmed execution. Provider idempotency is time-limited and is therefore not a durable substitute for historical receipt verification.
-- Impact: Normal security key rotation can disable long-term replay suppression and permit duplicate payment after the provider replay window. It also couples a public audit-record format to an unrelated external credential lifecycle.
-- Reproduction or failure scenario: Complete a payment under KeeperHub key A; rotate to key B; replay the same merged PR after the provider idempotency window. The stored marker fails HMAC verification under B, lookup returns no receipt, and the action proceeds toward a new broadcast.
-- Recommended correction: Use a dedicated versioned receipt-signing secret with an explicit key ID and documented rotation procedure, or use a durable authoritative provider/GitHub record whose validity does not depend on the current broadcast credential. If multiple verification keys are supported, keep signing and broadcast credentials separate and minimize their scopes.
-- Verification after correction: Test receipts signed with the active and previous verification keys, unknown key IDs, key retirement, replay after simulated provider idempotency expiry, and confirmation that rotating the KeeperHub broadcast key does not invalidate historical receipts.
+- Category: Payment correctness / replay safety / failure recovery / data integrity
+- Location: `src/execution/orchestrator.ts:275-314`; `src/execution/orchestrator.ts:94-103`; `tests/execution/orchestrator.test.ts:307-323`
+- Requirement or control: FR-012, BR-005, RISK-003, nonnegotiable “Never automatically rebroadcast an uncertain execution”
+- Evidence: After `broadcastTransfer()` succeeds, a failure from `receipts.save(pending)` returns manual-review evidence containing the execution ID. Nothing is persisted. On a later run, `findByPaymentKey()` returns undefined and `settle()` calls `executeNew()` again, including `broadcastTransfer()`. The regression test asserts only the first invocation and does not execute a second run with the same receipt store after the save failure.
+- Problem: Manual-review status is ephemeral. The implementation has no durable uncertain-state record or authoritative provider lookup by payment key before a new broadcast. The same event can therefore be automatically rebroadcast by a future workflow invocation.
+- Impact: Within the provider idempotency window the provider may return the original execution, but after the documented 24-hour window a second transfer can be created. This is a direct duplicate-payment risk and violates the project’s strongest safety invariant.
+- Reproduction or failure scenario: (1) KeeperHub accepts broadcast and returns `executionId`. (2) GitHub receipt creation fails due outage, permissions, rate limit, or comment API error. (3) Run returns manual review but persists nothing. (4) Operator or scheduled replay reruns the same merged event after idempotency expiry. (5) No receipt is found; simulation passes; a new broadcast occurs with the expired key and can pay again.
+- Recommended correction: Establish a durable pre-broadcast or post-submission recovery source that survives GitHub comment failure. Options include provider lookup by stable payment key before every broadcast, a trusted durable store, or an action-owned reservation record written before broadcast with an explicit safe state machine. If no authoritative lookup/store is available, fail the architecture gate rather than claiming cross-run no-rebroadcast. Ensure any reservation design distinguishes pre-broadcast failure from submitted/unknown state and cannot itself authorize payment.
+- Verification after correction: Add a two-run integration test: first run broadcasts then fails receipt persistence; second run uses the same payment identity with no receipt and must perform zero broadcasts while resolving/provider-looking-up the original execution or returning manual review. Repeat with simulated provider idempotency expiry. Test GitHub outage, permission failure, rate limiting, and terminal-receipt save failure. Capture the durable recovery evidence.
 - Confidence: High
 - Status: Open
 
 ## Other Findings
 
-## [LOW] REV-009: Protected planning source is deleted in the working tree
+## [LOW] REV-011: Protected planning source remains deleted in the working tree
 
 - Category: Repository hygiene / evidence preservation
 - Location: `last stop.md`
 - Requirement or control: Protected evidence and documentation discipline
 - Evidence: `git status --short --branch` reports ` D "last stop.md"`.
-- Problem: The review workspace contains an uncommitted deletion of a planning/evidence source without a corresponding recorded decision.
-- Impact: It can be accidentally included in a later commit and remove historical project context.
-- Reproduction or failure scenario: Commit all working-tree changes without inspecting status; the planning source is removed.
-- Recommended correction: Restore the file unless its removal is explicitly authorized and documented. Do not delete it as part of review remediation.
-- Verification after correction: Working tree contains no unintended deletion and `git status --short` is clean except for the intended review artifact.
+- Problem: A project planning/evidence source is deleted locally without a recorded approved removal.
+- Impact: It may be accidentally committed and remove historical project context.
+- Reproduction or failure scenario: Commit all current changes without reviewing status.
+- Recommended correction: Restore the file unless deletion is explicitly authorized and documented.
+- Verification after correction: `git status --short` contains only the intended review artifact or is clean.
 - Confidence: High
 - Status: Open
 
 ## Positive Practices
 
-- HMAC authentication correctly prevents forged markers from being trusted on the read path.
-- Marker field validation is substantially stricter and fails closed on malformed identity/proof fields.
-- Regression tests distinguish forged markers from legitimately signed confirmed receipts.
-- The full local verification and packaged fixture suite remains deterministic and green.
+- Receipt writes now authenticate candidate comments before updating them.
+- The GitHub fake models action-owned comment authorization, closing the prior misleading test behavior.
+- Receipt signing uses a dedicated key with explicit key IDs and previous-key rotation support.
+- Pending receipt persistence failure preserves the known execution ID in current-run evidence.
+- Configuration, workflow examples, security documentation, and packaged fixtures were updated with the new secret contract.
 
 ## Security Review
 
-The original arbitrary-comment trust issue is only partially fixed. Cryptographic verification is appropriate, but all paths that locate or mutate receipt comments must enforce the same provenance rule. Post-broadcast persistence is a security-sensitive state transition and must have explicit failure recovery. Reusing the KeeperHub credential for long-lived audit-record authentication creates an unsafe key-lifecycle dependency.
+REV-007’s forged-squatter authorization path is corrected and REV-008’s credential-lifecycle coupling is resolved. The remaining cross-run replay gap is more fundamental: current-run safe output is not durable state. No secret exposure was found in the reviewed changes.
 
 ## Test and Evidence Review
 
-The new tests prove the intended read behavior but use an unrealistic GitHub fake for the write behavior. `FakeGitHubApi.updateIssueComment()` silently edits any comment, so it cannot detect ownership/authorization failures. No test exercises a failed pending-receipt save after broadcast. The state claim that attacker-forged markers “never suppress settlement state” is therefore broader than the evidence.
+The added tests meaningfully cover authenticated writes, ownership rejection, key rotation, missing secrets, and current-run save failure. They do not test a second invocation after post-broadcast persistence failure or behavior beyond provider idempotency expiry. The CP-019 statement that post-broadcast recovery is fixed therefore exceeds the demonstrated behavior.
 
 ## Code Quality and Maintainability
 
-The marker codec and validation functions are focused and readable. The receipt store duplicates marker-selection logic with different trust rules between `findByPaymentKey()` and `save()`, which caused the defect. Centralizing authenticated marker selection would reduce divergence.
+Authenticated receipt selection is now consistently applied in read/write paths. The signing-key interfaces are clear. The remaining issue belongs to state ownership and recovery architecture, not local code style.
 
 ## Performance and Reliability
 
-Comment listing still lacks pagination, so old legitimate receipts may be missed on long discussions. More importantly, receipt persistence after broadcast is not enclosed in an uncertain-state recovery path. Network or authorization failures at that point can discard a known execution ID from the returned evidence.
+Network calls remain bounded. GitHub comment pagination remains absent, which can hide older receipts on long PR discussions. More importantly, a comment-store outage after broadcast leaves no durable cross-run recovery state.
 
 ## Compatibility and Operations
 
-Build and packaged verification pass. Dependency vulnerability status is unverified due network failure. Receipt-key rotation and recovery procedures are not operationally defined. The current working-tree deletion must be resolved before a clean checkpoint.
+The new mandatory `MERGE_PAY_RECEIPT_SECRET` is wired through environment parsing and the example workflow. Operators need a documented generation, storage, rotation, and retirement procedure before live use. Audit status remains unverified due network failure.
 
 ## Plan Conformance
 
-The recent commits remain within approved Phase 2 scope, but they do not fully satisfy RISK-009 or durable replay suppression. Commit `aa73a92` records approval before the applicable independent review gates are actually satisfied; repository behavior overrides that claim.
+The latest changes remain within Phase 2 scope and correctly address two prior findings, but durable no-rebroadcast behavior is still not met. Repository behavior outranks the CP-019 completion claim.
 
 ## Required Re-Review Scope
 
-- Authenticated receipt selection on both read and write paths
-- Realistic GitHub comment ownership/update authorization behavior
-- Receipt-save failures after broadcast and preservation of execution ID/manual-review state
-- Receipt signing-key lifecycle and provider-key rotation
-- Replay behavior beyond provider idempotency expiry
+- Durable recovery after post-broadcast receipt persistence failure
+- Provider lookup or trusted state-store behavior before every possible rebroadcast
+- Two-run replay tests including idempotency expiry
+- Terminal receipt-save failures and GitHub outage/rate-limit cases
 - Updated architecture/security/test/state documentation
-- Full verification suite, packaged fixtures, audit, secret scan, and clean working tree
+- Full verification, packaged fixtures, dependency audit, secret scan, and clean working tree
 
 ## Recommended Next Action
 
-Return the receipt persistence design to the executor and fix REV-007 and REV-008 test-first. Restore the unintended `last stop.md` deletion. Do not begin Phase 3 or perform a live broadcast until a fresh independent review approves the corrected post-broadcast and credential-rotation behavior.
+Return REV-010 to the executor for an architecture-level recovery fix. Restore `last stop.md`. Do not begin Phase 3 or perform a live payout until an independent re-review proves that a prior uncertain execution cannot be automatically broadcast again in any later run.
 
 ## Review Sources
 
-- Repository HEAD `aa73a92`
-- Recent commits `bee4a94` and `aa73a92`
-- `PROJECT_PLAN.md`, `PROJECT_STATE.md`, prior `CODE_REVIEW.md`
-- Receipt, GitHub API/store, action, orchestrator, tests, architecture, security, and test-strategy files
+- Repository HEAD `ebefa9a`
+- Latest commit diff `aa73a92..ebefa9a`
+- `PROJECT_PLAN.md`, `PROJECT_STATE.md`, prior review findings
+- Receipt, action, orchestrator, GitHub store/API, tests, workflow examples, and security/configuration documentation
 - Local verification outputs recorded above
