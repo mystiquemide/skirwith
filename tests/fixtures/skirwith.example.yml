@@ -1,7 +1,7 @@
 # Synthetic test fixture. Not a live deployment contract.
 
 version: 1
-repository: acme/mergepay-demo
+repository: acme/skirwith-demo
 chain:
   id: 11155111
   explorer: https://sepolia.etherscan.io
@@ -10,10 +10,10 @@ chain:
     symbol: USDC
     decimals: 6
 payout:
-  requiredLabel: mergepay-approved
+  requiredLabel: skirwith-approved
   maximum: "25"
   amounts:
-    mergepay-5: "5"
+    skirwith-5: "5"
 recipients:
   alice: "0x05619d1a133623b322a8f366ea9594e4e586f26d"
 checks:

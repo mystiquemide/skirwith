@@ -1,5 +1,5 @@
 import type { RepositoryIdentity } from "../domain/types.js";
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 
 export interface NormalizedPullRequestEvent {
   repository: RepositoryIdentity;
@@ -13,8 +13,8 @@ export interface NormalizedPullRequestEvent {
 
 const MERGE_SHA_RE = /^[0-9a-f]{40}$/;
 
-function invalid(message: string): MergePayError {
-  return new MergePayError({
+function invalid(message: string): SkirwithError {
+  return new SkirwithError({
     code: "GITHUB_INVALID_EVENT",
     category: "github",
     message,

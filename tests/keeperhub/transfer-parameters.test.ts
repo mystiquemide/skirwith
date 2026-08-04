@@ -5,14 +5,14 @@ import type { CanonicalPaymentRequest } from "../../src/domain/types.js";
 
 const CANONICAL: CanonicalPaymentRequest = {
   version: 1,
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: "0123456789abcdef0123456789abcdef01234567",
   recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d",
   amountAtomic: "2500000",
   chainId: 11155111,
   tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
-  purpose: "mergepay:payout",
+  purpose: "skirwith:payout",
 };
 
 describe("buildTransferParameters", () => {

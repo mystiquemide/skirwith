@@ -1,4 +1,4 @@
-import type { MergePayConfig } from "../config/schema.js";
+import type { SkirwithConfig } from "../config/schema.js";
 import { loadConfig } from "../config/load-config.js";
 import type { NormalizedPullRequestEvent } from "./event.js";
 import type { GitHubApi } from "./api.js";
@@ -23,7 +23,7 @@ export class GithubStateFetcher {
       this.api.fetchConfigFile(this.owner, this.name, defaultBranch),
     ]);
 
-    const config: MergePayConfig = loadConfig(configYaml, {
+    const config: SkirwithConfig = loadConfig(configYaml, {
       expectedRepository: event.repository.fullName,
     });
 

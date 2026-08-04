@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GithubRestApi } from "../../src/github/api.js";
-import { MergePayError } from "../../src/domain/errors.js";
+import { SkirwithError } from "../../src/domain/errors.js";
 import { FakeHttpTransport } from "../fakes/fakes.js";
 import type { HttpResponse } from "../../src/transport/http.js";
 
@@ -24,11 +24,11 @@ function makeApi(responder: (url: string) => HttpResponse): {
 describe("GithubRestApi", () => {
   it("fetches the default branch", async () => {
     const { api } = makeApi((url) =>
-      url.endsWith("/repos/acme/mergepay-demo")
+      url.endsWith("/repos/acme/skirwith-demo")
         ? json(200, { default_branch: "main" })
         : json(500, {}),
     );
-    await expect(api.fetchDefaultBranch("acme", "mergepay-demo")).resolves.toBe("main");
+    await expect(api.fetchDefaultBranch("acme", "skirwith-demo")).resolves.toBe("main");
   });
 
   it("fetches and normalizes pull request state", async () => {
@@ -40,28 +40,28 @@ describe("GithubRestApi", () => {
             merge_commit_sha: MERGE_SHA.toUpperCase(),
             base: { ref: "main" },
             user: { login: "alice" },
-            labels: [{ name: "mergepay-approved" }, { name: "mergepay-5" }],
+            labels: [{ name: "skirwith-approved" }, { name: "skirwith-5" }],
           })
         : json(500, {}),
     );
-    const pr = await api.fetchPullRequest("acme", "mergepay-demo", 42);
+    const pr = await api.fetchPullRequest("acme", "skirwith-demo", 42);
     expect(pr.number).toBe(42);
     expect(pr.merged).toBe(true);
     expect(pr.mergeSha).toBe(MERGE_SHA);
     expect(pr.baseBranch).toBe("main");
     expect(pr.authorLogin).toBe("alice");
-    expect(pr.labels).toEqual(["mergepay-approved", "mergepay-5"]);
+    expect(pr.labels).toEqual(["skirwith-approved", "skirwith-5"]);
   });
 
   it("fetches and base64-decodes the trusted config file", async () => {
-    const configYaml = "version: 1\nrepository: acme/mergepay-demo\n";
+    const configYaml = "version: 1\nrepository: acme/skirwith-demo\n";
     const encoded = Buffer.from(configYaml, "utf8").toString("base64");
     const { api } = makeApi((url) =>
-      url.includes("/contents/.github%2Fmergepay.yml")
+      url.includes("/contents/.github%2Fskirwith.yml")
         ? json(200, { content: encoded, encoding: "base64" })
         : json(500, {}),
     );
-    await expect(api.fetchConfigFile("acme", "mergepay-demo", "main")).resolves.toBe(configYaml);
+    await expect(api.fetchConfigFile("acme", "skirwith-demo", "main")).resolves.toBe(configYaml);
   });
 
   it("maps check runs to passed states", async () => {
@@ -76,7 +76,7 @@ describe("GithubRestApi", () => {
           })
         : json(500, {}),
     );
-    const checks = await api.fetchCheckStates("acme", "mergepay-demo", MERGE_SHA);
+    const checks = await api.fetchCheckStates("acme", "skirwith-demo", MERGE_SHA);
     expect(checks).toEqual([
       { name: "CI / test", passed: true },
       { name: "Lint", passed: false },
@@ -90,12 +90,12 @@ describe("GithubRestApi", () => {
         ? {
             ...json(200, [{ id: 10, body: "hello", created_at: "2026-08-03T00:00:00.000Z" }]),
             headers: {
-              link: '<https://api.github.com/repos/acme/mergepay-demo/issues/42/comments?per_page=100&page=2>; rel="next"',
+              link: '<https://api.github.com/repos/acme/skirwith-demo/issues/42/comments?per_page=100&page=2>; rel="next"',
             },
           }
         : json(500, {}),
     );
-    const page = await api.listIssueCommentsPage("acme", "mergepay-demo", 42, 1);
+    const page = await api.listIssueCommentsPage("acme", "skirwith-demo", 42, 1);
     expect(page.comments).toEqual([
       { id: 10, body: "hello", createdAt: "2026-08-03T00:00:00.000Z" },
     ]);
@@ -109,7 +109,7 @@ describe("GithubRestApi", () => {
         ? json(200, [{ id: 10, body: "hi", created_at: "2026-08-03T00:00:00.000Z" }])
         : json(500, {}),
     );
-    const page = await api.listIssueCommentsPage("acme", "mergepay-demo", 42, 2);
+    const page = await api.listIssueCommentsPage("acme", "skirwith-demo", 42, 2);
     expect(page.hasMore).toBe(false);
     expect(page.nextPage).toBeUndefined();
   });
@@ -122,22 +122,22 @@ describe("GithubRestApi", () => {
       return json(201, { id: 10 });
     };
     const api = new GithubRestApi({ token: "ghp_test", transport, baseUrl: BASE });
-    await api.createIssueComment("acme", "mergepay-demo", 42, "body-one");
-    await api.updateIssueComment("acme", "mergepay-demo", 10, "body-two");
+    await api.createIssueComment("acme", "skirwith-demo", 42, "body-one");
+    await api.updateIssueComment("acme", "skirwith-demo", 10, "body-two");
     expect(seen[0]).toMatchObject({
       method: "POST",
-      url: `${BASE}/repos/acme/mergepay-demo/issues/42/comments`,
+      url: `${BASE}/repos/acme/skirwith-demo/issues/42/comments`,
       body: JSON.stringify({ body: "body-one" }),
     });
     expect(seen[1]).toMatchObject({
       method: "PATCH",
-      url: `${BASE}/repos/acme/mergepay-demo/issues/comments/10`,
+      url: `${BASE}/repos/acme/skirwith-demo/issues/comments/10`,
     });
   });
 
   it("maps a non-2xx response to a safe GitHub error", async () => {
     const { api } = makeApi(() => json(404, { message: "Not Found" }));
-    await expect(api.fetchDefaultBranch("acme", "mergepay-demo")).rejects.toMatchObject({
+    await expect(api.fetchDefaultBranch("acme", "skirwith-demo")).rejects.toMatchObject({
       code: "GITHUB_FETCH_FAILED",
       category: "github",
     });
@@ -146,8 +146,8 @@ describe("GithubRestApi", () => {
   it("maps malformed JSON to a safe GitHub error", async () => {
     const { api, transport } = makeApi(() => json(200, {}));
     transport.responder = () => ({ status: 200, headers: {}, body: "not-json" });
-    await expect(api.fetchDefaultBranch("acme", "mergepay-demo")).rejects.toBeInstanceOf(
-      MergePayError,
+    await expect(api.fetchDefaultBranch("acme", "skirwith-demo")).rejects.toBeInstanceOf(
+      SkirwithError,
     );
   });
 });

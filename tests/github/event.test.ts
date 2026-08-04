@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizePullRequestClosedEvent } from "../../src/github/event.js";
-import { MergePayError } from "../../src/domain/errors.js";
+import { SkirwithError } from "../../src/domain/errors.js";
 
 const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
 
@@ -14,11 +14,11 @@ function validEvent(overrides: Record<string, unknown> = {}): Record<string, unk
       merge_commit_sha: MERGE_SHA,
       base: { ref: "main" },
       user: { login: "alice" },
-      labels: [{ name: "mergepay-approved" }, { name: "mergepay-5" }],
+      labels: [{ name: "skirwith-approved" }, { name: "skirwith-5" }],
     },
     repository: {
       owner: { login: "acme" },
-      name: "mergepay-demo",
+      name: "skirwith-demo",
     },
     ...overrides,
   };
@@ -29,27 +29,27 @@ describe("normalizePullRequestClosedEvent", () => {
     const event = normalizePullRequestClosedEvent(validEvent());
     expect(event.repository).toEqual({
       owner: "acme",
-      name: "mergepay-demo",
-      fullName: "acme/mergepay-demo",
+      name: "skirwith-demo",
+      fullName: "acme/skirwith-demo",
     });
     expect(event.pullRequestNumber).toBe(42);
     expect(event.baseBranch).toBe("main");
     expect(event.mergeSha).toBe(MERGE_SHA);
     expect(event.authorLogin).toBe("alice");
-    expect(event.labels).toEqual(["mergepay-approved", "mergepay-5"]);
+    expect(event.labels).toEqual(["skirwith-approved", "skirwith-5"]);
     expect(event.merged).toBe(true);
   });
 
   it("rejects a non-closed action", () => {
     expect(() => normalizePullRequestClosedEvent(validEvent({ action: "opened" }))).toThrow(
-      MergePayError,
+      SkirwithError,
     );
   });
 
   it("rejects a payload without a pull_request", () => {
     const payload = validEvent();
     delete payload.pull_request;
-    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(MergePayError);
+    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(SkirwithError);
   });
 
   it("accepts a closed unmerged event with an empty merge sha", () => {
@@ -72,7 +72,7 @@ describe("normalizePullRequestClosedEvent", () => {
         merge_commit_sha: "not-a-sha",
       },
     });
-    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(MergePayError);
+    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(SkirwithError);
   });
 
   it("rejects an invalid pull request number", () => {
@@ -82,7 +82,7 @@ describe("normalizePullRequestClosedEvent", () => {
         number: 0,
       },
     });
-    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(MergePayError);
+    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(SkirwithError);
   });
 
   it("rejects a payload without labels", () => {
@@ -92,7 +92,7 @@ describe("normalizePullRequestClosedEvent", () => {
         labels: "not-a-list",
       },
     });
-    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(MergePayError);
+    expect(() => normalizePullRequestClosedEvent(payload)).toThrow(SkirwithError);
   });
 
   it("fails with a stable safe error code", () => {
@@ -100,7 +100,7 @@ describe("normalizePullRequestClosedEvent", () => {
       normalizePullRequestClosedEvent(validEvent({ action: "opened" }));
       throw new Error("expected normalizePullRequestClosedEvent to throw");
     } catch (error) {
-      const publicError = (error as MergePayError).toPublic();
+      const publicError = (error as SkirwithError).toPublic();
       expect(publicError.code).toBe("GITHUB_INVALID_EVENT");
     }
   });

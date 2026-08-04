@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import * as core from "@actions/core";
 import { parseRuntimeSecrets } from "./action-inputs.js";
-import { MergePayError } from "./domain/errors.js";
+import { SkirwithError } from "./domain/errors.js";
 import type { EvidenceRecord } from "./domain/types.js";
 import { SettlementOrchestrator } from "./execution/orchestrator.js";
 import type { SettlementInput } from "./execution/orchestrator.js";
@@ -35,7 +35,7 @@ export type RunResult =
 
 function fail(error: unknown): RunResult {
   const safe =
-    error instanceof MergePayError
+    error instanceof SkirwithError
       ? error.toPublic()
       : { code: "INTERNAL_ERROR", message: "An unexpected error occurred." };
   return { ok: false, error: safe };
@@ -58,7 +58,7 @@ function displayFor(input: SettlementInput): SettlementDisplay {
 export async function run(deps: RunDependencies): Promise<RunResult> {
   if (deps.githubToken.length === 0 || deps.keeperhubApiKey.length === 0) {
     return fail(
-      new MergePayError({
+      new SkirwithError({
         code: "CONFIG_SEMANTIC_INVALID",
         category: "configuration",
         message: "Missing required GitHub token or KeeperHub API key.",
@@ -67,7 +67,7 @@ export async function run(deps: RunDependencies): Promise<RunResult> {
   }
   if (deps.receiptSecret.length === 0) {
     return fail(
-      new MergePayError({
+      new SkirwithError({
         code: "CONFIG_SEMANTIC_INVALID",
         category: "configuration",
         message: "Missing required receipt signing secret.",
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
   }
   const evidence = result.evidence;
   console.log(
-    `mergepay status=${evidence.status} policy=${evidence.policy.result} broadcast=${evidence.broadcastMade} ` +
+    `skirwith status=${evidence.status} policy=${evidence.policy.result} broadcast=${evidence.broadcastMade} ` +
       `executionId=${evidence.executionId ?? "none"} tx=${evidence.transactionHash ?? "none"} ` +
       `error=${evidence.error ? `${evidence.error.code}` : "none"}`,
   );

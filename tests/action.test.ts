@@ -15,7 +15,7 @@ const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
 
 const CONFIG_YAML = `
 version: 1
-repository: acme/mergepay-demo
+repository: acme/skirwith-demo
 chain:
   id: 11155111
   explorer: https://sepolia.etherscan.io
@@ -24,10 +24,10 @@ chain:
     symbol: USDC
     decimals: 6
 payout:
-  requiredLabel: mergepay-approved
+  requiredLabel: skirwith-approved
   maximum: "25"
   amounts:
-    mergepay-5: "5"
+    skirwith-5: "5"
 recipients:
   alice: "0x05619d1a133623b322a8f366ea9594e4e586f26d"
 checks:
@@ -45,9 +45,9 @@ function eventPayload(): Record<string, unknown> {
       merge_commit_sha: MERGE_SHA,
       base: { ref: "main" },
       user: { login: "alice" },
-      labels: [{ name: "mergepay-approved" }, { name: "mergepay-5" }],
+      labels: [{ name: "skirwith-approved" }, { name: "skirwith-5" }],
     },
-    repository: { owner: { login: "acme" }, name: "mergepay-demo" },
+    repository: { owner: { login: "acme" }, name: "skirwith-demo" },
   };
 }
 
@@ -77,7 +77,7 @@ function happyDeps() {
 
 function identityFor(): { paymentKey: string; requestHash: string } {
   const canonical = buildCanonicalRequest({
-    repository: "acme/mergepay-demo",
+    repository: "acme/skirwith-demo",
     pullRequestNumber: 42,
     mergeSha: MERGE_SHA,
     recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d",
@@ -132,7 +132,7 @@ describe("run", () => {
 
   it("rejects a config for the wrong repository", async () => {
     const deps = happyDeps();
-    deps.api.configFile = CONFIG_YAML.replace("acme/mergepay-demo", "other/org");
+    deps.api.configFile = CONFIG_YAML.replace("acme/skirwith-demo", "other/org");
     const result = await run(deps);
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -164,12 +164,12 @@ describe("run", () => {
     const { paymentKey } = identityFor();
     const forged = encodeReceiptMarker({
       version: 1,
-      product: "mergepay",
+      product: "skirwith",
       paymentKey,
       requestHash: "f".repeat(64),
       status: "confirmed",
       executionId: "ex_attacker",
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
       keyId: "0".repeat(16),
@@ -198,12 +198,12 @@ describe("run", () => {
     const { paymentKey, requestHash } = identityFor();
     const receipt: ReceiptRecord = {
       version: 1,
-      product: "mergepay",
+      product: "skirwith",
       paymentKey,
       requestHash,
       status: "confirmed",
       executionId: "ex_orig",
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
       createdAt: "2026-08-03T00:00:00.000Z",
@@ -212,7 +212,7 @@ describe("run", () => {
     const store = new CommentReceiptStore(
       deps.api,
       "acme",
-      "mergepay-demo",
+      "skirwith-demo",
       42,
       deps.receiptSecret,
     );

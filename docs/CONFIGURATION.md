@@ -1,6 +1,6 @@
 # Configuration Contract
 
-The trusted file is `.github/mergepay.yml` on the default branch. It is never loaded from the pull-request head.
+The trusted file is `.github/skirwith.yml` on the default branch. It is never loaded from the pull-request head.
 
 ```yaml
 version: 1
@@ -13,11 +13,11 @@ chain:
     symbol: USDC
     decimals: 6
 payout:
-  requiredLabel: mergepay-approved
+  requiredLabel: skirwith-approved
   maximum: "25"
   amounts:
-    mergepay-5: "5"
-    mergepay-10: "10"
+    skirwith-5: "5"
+    skirwith-10: "10"
 recipients:
   contributor-login: "0x0000000000000000000000000000000000000000"
 checks:

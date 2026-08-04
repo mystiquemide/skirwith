@@ -2,7 +2,7 @@
 
 ## Review Metadata
 
-- Project: MergePay
+- Project: Skirwith
 - Review date: 2026-08-04 (Africa/Lagos)
 - Reviewer: Independent Codex review
 - Review target: Latest commit `f883b81`, remediation of REV-010
@@ -13,7 +13,7 @@
 - Plan phase or checkpoint: Phase 2 exit gate / CP-022
 - Files reviewed: All files changed by `f883b81`, affected receipt/orchestrator/action callers, relevant tests and documentation, plan, and observable repository state
 - Files excluded: Live GitHub/KeeperHub execution and Phase 3 real transaction evidence
-- Environment: Node.js/npm workspace `/home/mide/mergepay`; `master` synchronized with `origin/master`; local deletion of `last stop.md`
+- Environment: Node.js/npm workspace `/home/mide/skirwith`; `master` synchronized with `origin/master`; local deletion of `last stop.md`
 - Overall confidence: High for the local Phase 2 implementation; Medium for dependency and live-integration evidence
 
 ## Verdict

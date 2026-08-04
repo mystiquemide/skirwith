@@ -1,4 +1,4 @@
-name: "MergePay"
+name: "Skirwith"
 description: >-
   Pay a maintainer-approved contributor after a genuinely merged pull request
   via KeeperHub on a testnet. Requires GITHUB_TOKEN and KEEPERHUB_API_KEY in

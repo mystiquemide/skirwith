@@ -24,7 +24,7 @@ function makeEvent(
   overrides: Partial<NormalizedPullRequestEvent> = {},
 ): NormalizedPullRequestEvent {
   return {
-    repository: { owner: "acme", name: "mergepay-demo", fullName: "acme/mergepay-demo" },
+    repository: { owner: "acme", name: "skirwith-demo", fullName: "acme/skirwith-demo" },
     pullRequestNumber: 42,
     baseBranch: "main",
     mergeSha: MERGE_SHA,
@@ -67,7 +67,7 @@ function receiptFor(input: SettlementInput, overrides: Partial<ReceiptRecord> = 
   const { paymentKey, requestHash } = identityFor(input);
   return {
     version: 1,
-    product: "mergepay",
+    product: "skirwith",
     paymentKey,
     requestHash,
     status: "confirmed",
@@ -407,7 +407,7 @@ describe("SettlementOrchestrator.settle", () => {
 
     await orchestrator.settle(makeInput());
 
-    expect(provider.lastBroadcastKey).toMatch(/^mergepay:[a-f0-9]{64}$/);
+    expect(provider.lastBroadcastKey).toMatch(/^skirwith:[a-f0-9]{64}$/);
   });
 
   it("serializes a duplicate evidence record without secrets", async () => {

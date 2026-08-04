@@ -1,4 +1,4 @@
-# MergePay Agent Orchestration Plan
+# Skirwith Agent Orchestration Plan
 
 This document governs the later implementation session. The orchestrator decomposes, routes, gates, and integrates. It does not write shipped production code.
 

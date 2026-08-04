@@ -43,9 +43,9 @@ Assumptions pending live confirmation: the poll hint is treated as seconds, the 
 
 ## Smoke-Test Order
 
-Simulation-only first; then minimal native-token transfer if needed; then minimal stablecoin transfer; then final MergePay payout. Preserve at least two confirmed transactions as backup evidence.
+Simulation-only first; then minimal native-token transfer if needed; then minimal stablecoin transfer; then final Skirwith payout. Preserve at least two confirmed transactions as backup evidence.
 
 ## Claims Boundary
 
-Do not claim MCP execution, gas sponsorship, private routing, x402, MPP, mainnet readiness, or token support until the exact MergePay path visibly demonstrates it.
+Do not claim MCP execution, gas sponsorship, private routing, x402, MPP, mainnet readiness, or token support until the exact Skirwith path visibly demonstrates it.
 

@@ -6,7 +6,7 @@ import {
   resolveRecipient,
 } from "../../src/policy/evaluate-policy.js";
 import { REASON_CODES } from "../../src/policy/reason-codes.js";
-import type { MergePayConfig } from "../../src/config/schema.js";
+import type { SkirwithConfig } from "../../src/config/schema.js";
 import {
   FIXTURE_AMOUNT_LABEL,
   FIXTURE_AUTHOR,
@@ -107,13 +107,13 @@ describe("evaluatePolicy", () => {
     assertBlocked(
       "blocked-ambiguous-payout",
       evaluatePolicy(
-        makePolicyInput({ labels: [FIXTURE_REQUIRED_LABEL, FIXTURE_AMOUNT_LABEL, "mergepay-10"] }),
+        makePolicyInput({ labels: [FIXTURE_REQUIRED_LABEL, FIXTURE_AMOUNT_LABEL, "skirwith-10"] }),
       ),
     );
   });
 
   it("blocks a zero payout amount", () => {
-    const config: MergePayConfig = {
+    const config: SkirwithConfig = {
       ...FIXTURE_CONFIG,
       payout: { ...FIXTURE_CONFIG.payout, amounts: { [FIXTURE_AMOUNT_LABEL]: "0" } },
     };
@@ -121,7 +121,7 @@ describe("evaluatePolicy", () => {
   });
 
   it("blocks an amount above the configured maximum", () => {
-    const config: MergePayConfig = {
+    const config: SkirwithConfig = {
       ...FIXTURE_CONFIG,
       payout: { ...FIXTURE_CONFIG.payout, amounts: { [FIXTURE_AMOUNT_LABEL]: "30" } },
     };
@@ -140,7 +140,7 @@ describe("evaluatePolicy", () => {
   });
 
   it("approves without a checks reason when checks are not required", () => {
-    const config: MergePayConfig = {
+    const config: SkirwithConfig = {
       ...FIXTURE_CONFIG,
       checks: { required: false, names: [] },
     };
@@ -176,7 +176,7 @@ describe("resolvePayoutAmount", () => {
 
   it("returns undefined when more than one label matches", () => {
     expect(
-      resolvePayoutAmount(FIXTURE_CONFIG, [FIXTURE_AMOUNT_LABEL, "mergepay-10"]),
+      resolvePayoutAmount(FIXTURE_CONFIG, [FIXTURE_AMOUNT_LABEL, "skirwith-10"]),
     ).toBeUndefined();
   });
 });

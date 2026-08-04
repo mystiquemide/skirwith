@@ -13,7 +13,7 @@ const NOW = "2026-08-03T21:00:00.000Z";
 describe("buildEvidence", () => {
   it("builds a versioned evidence record with injected timestamps", () => {
     const record = buildEvidence({
-      paymentKey: "mergepay:abc",
+      paymentKey: "skirwith:abc",
       requestHash: "def",
       policy: POLICY,
       simulation: "passed",
@@ -25,7 +25,7 @@ describe("buildEvidence", () => {
       nowIso: () => NOW,
     });
     expect(record.version).toBe(1);
-    expect(record.paymentKey).toBe("mergepay:abc");
+    expect(record.paymentKey).toBe("skirwith:abc");
     expect(record.requestHash).toBe("def");
     expect(record.policy).toEqual(POLICY);
     expect(record.simulation).toBe("passed");
@@ -56,7 +56,7 @@ describe("buildEvidence", () => {
 describe("serializeEvidence", () => {
   it("serializes to stable pretty JSON", () => {
     const record = buildEvidence({
-      paymentKey: "mergepay:abc",
+      paymentKey: "skirwith:abc",
       requestHash: "def",
       policy: POLICY,
       simulation: "not-run",

@@ -7,7 +7,7 @@
     "merge_commit_sha": "",
     "base": { "ref": "main" },
     "user": { "login": "alice" },
-    "labels": [{ "name": "mergepay-approved" }, { "name": "mergepay-5" }]
+    "labels": [{ "name": "skirwith-approved" }, { "name": "skirwith-5" }]
   },
-  "repository": { "owner": { "login": "acme" }, "name": "mergepay-demo" }
+  "repository": { "owner": { "login": "acme" }, "name": "skirwith-demo" }
 }

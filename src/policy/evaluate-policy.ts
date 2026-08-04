@@ -1,4 +1,4 @@
-import type { MergePayConfig } from "../config/schema.js";
+import type { SkirwithConfig } from "../config/schema.js";
 import { isZeroAmount, toAtomicUnits } from "../domain/decimal.js";
 import type {
   ChainTokenConfig,
@@ -18,11 +18,11 @@ export interface PolicyEvaluationInput {
   passedChecks: readonly string[];
   expectedBaseBranch: string;
   chainToken: ChainTokenConfig;
-  config: MergePayConfig;
+  config: SkirwithConfig;
 }
 
 export function resolveRecipient(
-  config: MergePayConfig,
+  config: SkirwithConfig,
   authorLogin: string,
 ): HexAddress | undefined {
   const wallet = config.recipients[authorLogin];
@@ -30,7 +30,7 @@ export function resolveRecipient(
 }
 
 export function resolvePayoutAmount(
-  config: MergePayConfig,
+  config: SkirwithConfig,
   labels: readonly string[],
 ): { label: string; amount: string } | undefined {
   const matches = labels.filter((label) => Object.hasOwn(config.payout.amounts, label));
@@ -45,7 +45,7 @@ export function resolvePayoutAmount(
   return { label, amount };
 }
 
-export function isChainTokenAllowed(config: MergePayConfig, candidate: ChainTokenConfig): boolean {
+export function isChainTokenAllowed(config: SkirwithConfig, candidate: ChainTokenConfig): boolean {
   const allowed = config.chain;
   return (
     candidate.chainId === allowed.id &&

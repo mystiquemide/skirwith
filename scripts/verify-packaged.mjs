@@ -12,7 +12,7 @@ function loadJson(relative) {
   return JSON.parse(readFileSync(join(root, relative), "utf8"));
 }
 
-const configYaml = readFileSync(join(root, "tests/fixtures/mergepay.example.yml"), "utf8");
+const configYaml = readFileSync(join(root, "tests/fixtures/skirwith.example.yml"), "utf8");
 const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
 
 function makeApi({ merged = true } = {}) {
@@ -23,7 +23,7 @@ function makeApi({ merged = true } = {}) {
       baseBranch: "main",
       mergeSha: merged ? MERGE_SHA : "",
       authorLogin: "alice",
-      labels: ["mergepay-approved", "mergepay-5"],
+      labels: ["skirwith-approved", "skirwith-5"],
       merged,
     }),
     fetchConfigFile: async () => configYaml,

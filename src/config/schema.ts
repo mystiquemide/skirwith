@@ -23,7 +23,7 @@ export interface ChecksConfig {
   names: readonly string[];
 }
 
-export interface MergePayConfig {
+export interface SkirwithConfig {
   version: 1;
   repository: string;
   chain: ChainConfig;

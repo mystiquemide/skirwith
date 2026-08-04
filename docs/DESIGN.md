@@ -1,7 +1,7 @@
-# MergePay Landing Page — Design System (SR-71 Handoff)
+# Skirwith Landing Page — Design System (SR-71 Handoff)
 
 Reference: jcsuzanne.com editorial-index aesthetic.
-Target: static GitHub Pages landing page for MergePay (a GitHub Action that pays approved contributors after a merged PR, via KeeperHub on Sepolia).
+Target: static GitHub Pages landing page for Skirwith (a GitHub Action that pays approved contributors after a merged PR, via KeeperHub on Sepolia).
 Build method: one section at a time. One prompt per section. Review gate between sections. Never modify an approved section.
 
 ## What to Steal from the Reference
@@ -19,10 +19,10 @@ Build method: one section at a time. One prompt per section. Review gate between
 
 ## What to Reject
 
-- Dense 35-row index (MergePay has 7 transactions).
+- Dense 35-row index (Skirwith has 7 transactions).
 - Licensed Suisse Intl (use Inter, free).
-- Personal-portfolio framing (MergePay is a product).
-- No explicit CTA in the reference (MergePay must have a clear setup CTA).
+- Personal-portfolio framing (Skirwith is a product).
+- No explicit CTA in the reference (Skirwith must have a clear setup CTA).
 
 ## Palette (exact hex)
 
@@ -67,15 +67,15 @@ Inter is the free Swiss-style grotesque. It stands in for Suisse Intl. Monospace
 
 ## Section Wireframe
 
-1. **Nav** — fixed top bar. Left: wordmark `MergePay`. Right: Proof, Setup, Safety, Docs (text links). No hamburger; links fit at 375px or wrap.
-2. **Hero** — white canvas. Big wordmark `MergePay`. One line: `Pay approved contributors after a merged pull request.` Sub-line: `MergePay is a GitHub Action. It uses KeeperHub on Ethereum Sepolia. Replays never pay twice. Refusals happen before any broadcast.` Two text-link CTAs: `Set it up` and `View the acceptance repo`.
+1. **Nav** — fixed top bar. Left: wordmark `Skirwith`. Right: Proof, Setup, Safety, Docs (text links). No hamburger; links fit at 375px or wrap.
+2. **Hero** — white canvas. Big wordmark `Skirwith`. One line: `Pay approved contributors after a merged pull request.` Sub-line: `Skirwith is a GitHub Action. It uses KeeperHub on Ethereum Sepolia. Replays never pay twice. Refusals happen before any broadcast.` Two text-link CTAs: `Set it up` and `View the acceptance repo`.
 3. **How it works** — small section label `How it works`. A short vertical sequence of steps as plain lines, thin rules between: Merged PR, Fresh GitHub state, Policy decision, Signed reservation, KeeperHub simulation, One broadcast, Receipt comment. One muted line under it.
 4. **Live proof** — section label `Live proof`. A one-line summary: `7 confirmed transactions, verified on-chain on Sepolia.` Then the transaction index as rows: PR, Amount, Execution id (mono), Transaction hash (mono, link), Status. Statuses: confirmed (green), pending (amber). A muted note under the table for the pending rows. Link to PHASE3-EVIDENCE.md.
 5. **Proof numbers** — three small stat lines (7 confirmed, 1 replay with no second transaction, 2 refusal types, 0 double payments). Rendered as plain rows, not cards.
 6. **Safety** — section label `Safety design`. A plain list of six rules as rows.
 7. **Setup** — section label `Set it up`. Prerequisites as a short list. Steps 1-5 as numbered plain rows. The config YAML and workflow YAML in `pre` blocks, monospace. One muted line: `You do not need a personal access token. GitHub Actions provides GITHUB_TOKEN automatically.`
 8. **Documentation** — text links to the repo docs: Architecture, Security, Configuration, KeeperHub integration, Test strategy, Phase 3 evidence.
-9. **Footer** — thin rule. One muted line: `MergePay is a testnet proof of concept for the KeeperHub Agents Onchain hackathon. It makes no production or mainnet claim.` Link to the repo.
+9. **Footer** — thin rule. One muted line: `Skirwith is a testnet proof of concept for the KeeperHub Agents Onchain hackathon. It makes no production or mainnet claim.` Link to the repo.
 
 ## Build Order
 

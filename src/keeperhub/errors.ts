@@ -1,4 +1,4 @@
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 import type { ErrorCode } from "../domain/errors.js";
 
 export interface ProviderErrorInput {
@@ -10,7 +10,7 @@ export interface ProviderErrorInput {
   retryAfterMs?: number;
 }
 
-export class ProviderError extends MergePayError {
+export class ProviderError extends SkirwithError {
   readonly statusCode?: number;
   readonly kind?: string;
   readonly retryAfterMs?: number;

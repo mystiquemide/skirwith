@@ -141,13 +141,13 @@ describe("KeeperHubClient.broadcastTransfer", () => {
     );
     const client = makeClient(transport);
 
-    const broadcast = await client.broadcastTransfer(PARAMS, "mergepay:abc");
+    const broadcast = await client.broadcastTransfer(PARAMS, "skirwith:abc");
 
     expect(broadcast.executionId).toBe("ex_1");
     expect(broadcast.status).toBe("running");
     const call = transport.calls[0];
     expect(call?.headers?.authorization).toBe("Bearer kh_test_synthetic_key");
-    expect(call?.headers?.["idempotency-key"]).toBe("mergepay:abc");
+    expect(call?.headers?.["idempotency-key"]).toBe("skirwith:abc");
     const body = JSON.parse(call?.body ?? "{}") as Record<string, unknown>;
     expect(body).not.toHaveProperty("simulate");
     expect(body.amount).toBe("2.5");
@@ -157,7 +157,7 @@ describe("KeeperHubClient.broadcastTransfer", () => {
     const transport = new FakeTransport();
     transport.enqueue(jsonResponse(409, { error: "idempotency_conflict" }));
     const client = makeClient(transport);
-    const error = await client.broadcastTransfer(PARAMS, "mergepay:abc").catch((e: unknown) => e);
+    const error = await client.broadcastTransfer(PARAMS, "skirwith:abc").catch((e: unknown) => e);
     expect(error).toMatchObject({
       code: "PROVIDER_BROADCAST_FAILED",
       category: "provider",
@@ -169,7 +169,7 @@ describe("KeeperHubClient.broadcastTransfer", () => {
     const transport = new FakeTransport();
     transport.enqueue(jsonResponse(409, { error: "idempotency_in_progress" }));
     const client = makeClient(transport);
-    const error = await client.broadcastTransfer(PARAMS, "mergepay:abc").catch((e: unknown) => e);
+    const error = await client.broadcastTransfer(PARAMS, "skirwith:abc").catch((e: unknown) => e);
     expect((error as { code?: string }).code).toBe("PROVIDER_BROADCAST_FAILED");
     expect((error as { kind?: string }).kind).toBe("idempotency_in_progress");
   });
@@ -178,7 +178,7 @@ describe("KeeperHubClient.broadcastTransfer", () => {
     const transport = new FakeTransport();
     transport.enqueue(jsonResponse(429, { error: "rate_limited" }, { "retry-after": "30" }));
     const client = makeClient(transport);
-    const error = await client.broadcastTransfer(PARAMS, "mergepay:abc").catch((e: unknown) => e);
+    const error = await client.broadcastTransfer(PARAMS, "skirwith:abc").catch((e: unknown) => e);
     expect((error as { code?: string }).code).toBe("PROVIDER_RATE_LIMITED");
     expect((error as { retryAfterMs?: number }).retryAfterMs).toBe(30_000);
   });
@@ -187,7 +187,7 @@ describe("KeeperHubClient.broadcastTransfer", () => {
     const transport = new FakeTransport();
     transport.enqueue(jsonResponse(403, { error: "Daily spending cap exceeded" }));
     const client = makeClient(transport);
-    await expect(client.broadcastTransfer(PARAMS, "mergepay:abc")).rejects.toMatchObject({
+    await expect(client.broadcastTransfer(PARAMS, "skirwith:abc")).rejects.toMatchObject({
       code: "PROVIDER_FORBIDDEN",
     });
   });

@@ -1,6 +1,6 @@
-# Trusted MergePay configuration.
+# Trusted Skirwith configuration.
 #
-# Commit this file as `.github/mergepay.yml` on the default branch of the
+# Commit this file as `.github/skirwith.yml` on the default branch of the
 # consumer repository. It is fetched through the GitHub API at the
 # default-branch ref and is never loaded from pull-request head content.
 #
@@ -11,7 +11,7 @@
 # exceed the token decimals; excess precision is rejected.
 
 version: 1
-repository: acme/mergepay-demo
+repository: acme/skirwith-demo
 chain:
   id: 11155111
   explorer: https://sepolia.etherscan.io
@@ -20,11 +20,11 @@ chain:
     symbol: USDC
     decimals: 6
 payout:
-  requiredLabel: mergepay-approved
+  requiredLabel: skirwith-approved
   maximum: "25"
   amounts:
-    mergepay-5: "5"
-    mergepay-10: "10"
+    skirwith-5: "5"
+    skirwith-10: "10"
 recipients:
   alice: "0x05619d1a133623b322a8f366ea9594e4e586f26d"
 checks:

@@ -12,7 +12,7 @@ export interface SettlementDisplay {
 
 export function renderActionSummary(evidence: EvidenceRecord, display: SettlementDisplay): string {
   const lines = [
-    "## MergePay settlement",
+    "## Skirwith settlement",
     `- Status: \`${evidence.status}\``,
     `- Policy: ${evidence.policy.result}`,
     `- Broadcast made: ${evidence.broadcastMade ? "yes" : "no"}`,

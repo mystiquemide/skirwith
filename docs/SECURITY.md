@@ -39,7 +39,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 
 ## Trusted Workflow
 
-The example consumer workflow (`docs/examples/mergepay-workflow.yml`) runs on `pull_request` closed events, never `pull_request_target`, so PR head code is never checked out or executed. It pins the action reference to a release commit SHA, uses minimum permissions (contents read, checks read, pull-requests write), and serializes runs per PR with `concurrency` and `cancel-in-progress: false`. The trusted `.github/mergepay.yml` config is fetched through the GitHub API at the default-branch ref; contributor-controlled content cannot alter policy, recipient, amount, chain, or token.
+The example consumer workflow (`docs/examples/skirwith-workflow.yml`) runs on `pull_request` closed events, never `pull_request_target`, so PR head code is never checked out or executed. It pins the action reference to a release commit SHA, uses minimum permissions (contents read, checks read, pull-requests write), and serializes runs per PR with `concurrency` and `cancel-in-progress: false`. The trusted `.github/skirwith.yml` config is fetched through the GitHub API at the default-branch ref; contributor-controlled content cannot alter policy, recipient, amount, chain, or token.
 
 ## Residual Risks
 

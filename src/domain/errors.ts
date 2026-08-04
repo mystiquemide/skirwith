@@ -27,21 +27,21 @@ export type ErrorCode =
   | "SECURITY_REDACTION_FAILED"
   | "INTERNAL_ERROR";
 
-export interface MergePayErrorInput {
+export interface SkirwithErrorInput {
   code: ErrorCode;
   category: ErrorCategory;
   message: string;
   cause?: unknown;
 }
 
-export class MergePayError extends Error {
+export class SkirwithError extends Error {
   readonly code: ErrorCode;
   readonly category: ErrorCategory;
   override readonly cause?: unknown;
 
-  constructor(input: MergePayErrorInput) {
+  constructor(input: SkirwithErrorInput) {
     super(input.message);
-    this.name = "MergePayError";
+    this.name = "SkirwithError";
     this.code = input.code;
     this.category = input.category;
     if (input.cause !== undefined) {

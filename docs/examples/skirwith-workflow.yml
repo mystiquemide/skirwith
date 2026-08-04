@@ -1,7 +1,7 @@
-# Trusted MergePay settlement workflow.
+# Trusted Skirwith settlement workflow.
 #
 # Add this workflow to a consumer repository that also has a trusted
-# `.github/mergepay.yml` config on the default branch (see mergepay.yml in
+# `.github/skirwith.yml` config on the default branch (see skirwith.yml in
 # this directory) and the secrets: GITHUB_TOKEN (auto), KEEPERHUB_API_KEY,
 # and MERGE_PAY_RECEIPT_SECRET (dedicated receipt-signing secret).
 #
@@ -16,7 +16,7 @@
 # - The concurrency group serializes runs for the same PR and never cancels an
 #   in-flight settlement.
 
-name: MergePay settlement
+name: Skirwith settlement
 
 on:
   pull_request:
@@ -28,7 +28,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: mergepay-${{ github.event.pull_request.number }}
+  group: skirwith-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Replace the placeholder with the release commit SHA of the action.
-      - name: Run MergePay settlement
+      - name: Run Skirwith settlement
         uses: mystiquemide/mergepay@<release-sha>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

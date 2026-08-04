@@ -5,18 +5,18 @@ import type { ReceiptRecord } from "../../src/evidence/receipt.js";
 
 const MAC = "a".repeat(64);
 const KEY_ID = keyIdFor("kh_test_synthetic_secret");
-const KEY = `mergepay:${"a".repeat(64)}`;
+const KEY = `skirwith:${"a".repeat(64)}`;
 
 const RECEIPT: ReceiptRecord = {
   version: 1,
-  product: "mergepay",
+  product: "skirwith",
   paymentKey: KEY,
   requestHash: "d".repeat(64),
   status: "confirmed",
   executionId: "ex_1",
   transactionHash: `0x${"a".repeat(64)}`,
   transactionLink: "https://explorer/tx/0x123",
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: "0123456789abcdef0123456789abcdef01234567",
   createdAt: "2026-08-03T00:00:00.000Z",
@@ -26,7 +26,7 @@ const RECEIPT: ReceiptRecord = {
 describe("renderReceiptComment", () => {
   it("renders readable receipt text plus a decodable signed marker", () => {
     const body = renderReceiptComment(RECEIPT, MAC, KEY_ID);
-    expect(body).toContain("## MergePay receipt");
+    expect(body).toContain("## Skirwith receipt");
     expect(body).toContain("Status: `confirmed`");
     expect(body).toContain(`Payment key: \`${KEY}\``);
     expect(body).toContain("Execution ID: `ex_1`");

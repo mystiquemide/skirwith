@@ -3,7 +3,7 @@ import type { ExecutionStatus } from "../domain/types.js";
 
 export interface ReceiptRecord {
   version: 1;
-  product: "mergepay";
+  product: "skirwith";
   paymentKey: string;
   requestHash: string;
   status: ExecutionStatus;
@@ -19,7 +19,7 @@ export interface ReceiptRecord {
 
 export interface ReceiptMarkerPayload {
   version: 1;
-  product: "mergepay";
+  product: "skirwith";
   paymentKey: string;
   requestHash: string;
   status: ExecutionStatus;
@@ -41,7 +41,7 @@ export interface ReceiptSigningKey {
   secret: string;
 }
 
-const MARKER_RE = /<!-- mergepay:(\{[\s\S]*?\}) -->/;
+const MARKER_RE = /<!-- skirwith:(\{[\s\S]*?\}) -->/;
 
 const VALID_STATUSES: ReadonlySet<string> = new Set([
   "blocked",
@@ -52,7 +52,7 @@ const VALID_STATUSES: ReadonlySet<string> = new Set([
   "manual-review",
 ]);
 
-const PAYMENT_KEY_RE = /^mergepay:[0-9a-f]{64}$/;
+const PAYMENT_KEY_RE = /^skirwith:[0-9a-f]{64}$/;
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 const MERGE_SHA_RE = /^[0-9a-f]{40}$/;
 const TX_HASH_RE = /^0x[0-9a-fA-F]+$/;
@@ -74,7 +74,7 @@ export function isReceiptMarker(value: unknown): value is ReceiptMarker {
   const marker = value as Record<string, unknown>;
   return (
     marker.version === 1 &&
-    marker.product === "mergepay" &&
+    marker.product === "skirwith" &&
     typeof marker.paymentKey === "string" &&
     PAYMENT_KEY_RE.test(marker.paymentKey) &&
     typeof marker.requestHash === "string" &&
@@ -147,7 +147,7 @@ export function verifyReceiptMarker(
 }
 
 export function encodeReceiptMarker(marker: ReceiptMarker): string {
-  return `<!-- mergepay:${JSON.stringify(pruneUndefined(marker))} -->`;
+  return `<!-- skirwith:${JSON.stringify(pruneUndefined(marker))} -->`;
 }
 
 export function decodeReceiptMarker(text: string): ReceiptMarker | undefined {

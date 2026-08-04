@@ -1,4 +1,4 @@
-# MergePay End-to-End Execution Plan
+# Skirwith End-to-End Execution Plan
 
 Last planned: August 3, 2026 (Africa/Lagos)
 
@@ -21,7 +21,7 @@ Build and submit a GitHub JavaScript Action that turns a trusted merged pull req
 - Chain: one KeeperHub-supported EVM testnet, selected only after live capability discovery.
 - Asset: one verified stablecoin for final proof; native token is allowed only for the first integration smoke test.
 - Policy: deterministic code only, with no LLM payout decisions.
-- Configuration: maintainer-controlled `.github/mergepay.yml` loaded from the trusted default branch.
+- Configuration: maintainer-controlled `.github/skirwith.yml` loaded from the trusted default branch.
 - Recipient: maintainer-controlled GitHub-login-to-wallet mapping.
 - Amount: fixed label-to-amount mapping from trusted configuration.
 - Limits: per-payment maximum plus KeeperHub organization limits. No custom daily limit in v0.1.
@@ -33,11 +33,11 @@ Build and submit a GitHub JavaScript Action that turns a trusted merged pull req
 ## Planned Code Map
 
 ```text
-mergepay/
+skirwith/
 ├── .github/
 │   ├── workflows/ci.yml
-│   ├── workflows/mergepay-example.yml
-│   └── mergepay.example.yml
+│   ├── workflows/skirwith-example.yml
+│   └── skirwith.example.yml
 ├── src/
 │   ├── action.ts
 │   ├── cli.ts
@@ -72,7 +72,7 @@ mergepay/
 │   ├── execution/
 │   ├── security/
 │   └── fixtures/
-├── examples/mergepay.yml
+├── examples/skirwith.yml
 ├── docs/
 ├── action.yml
 ├── package.json
@@ -456,7 +456,7 @@ Task 59: Implement GitHub receipt discovery test-first
 Owner: Backend
 Complexity: M
 Depends on: 26, 39, 40
-Done when: Existing MergePay comments are found by a versioned hidden marker and parsed without trusting arbitrary visible comment text.
+Done when: Existing Skirwith comments are found by a versioned hidden marker and parsed without trusting arbitrary visible comment text.
 
 Task 60: Implement receipt integrity validation test-first
 Owner: Security / Backend
@@ -512,7 +512,7 @@ Task 68: Implement GitHub comment create-or-update behavior test-first
 Owner: Backend
 Complexity: M
 Depends on: 26, 67
-Done when: The action creates one MergePay receipt or safely updates its own matching receipt without modifying unrelated comments.
+Done when: The action creates one Skirwith receipt or safely updates its own matching receipt without modifying unrelated comments.
 
 Task 69: Implement action entrypoint test-first **CRITICAL PATH**
 Owner: Backend

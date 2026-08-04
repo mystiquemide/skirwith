@@ -1,4 +1,4 @@
-# MergePay Implementation Handoff
+# Skirwith Implementation Handoff
 
 This is the execution handoff for a future orchestrator. The current repository is planning-only. The orchestrator must not write production code.
 
@@ -242,6 +242,6 @@ Reviewer focus: proof placement, claim/evidence consistency, accessibility, publ
 ## First Handoff Message
 
 ```text
-You are the implementation orchestrator for MergePay. This repository is planning-only. Read AGENTS.md, docs/ORCHESTRATION.md, docs/PLAN.md, docs/PRD.md, docs/ARCHITECTURE.md, docs/SECURITY.md, docs/CONFIGURATION.md, docs/KEEPERHUB-INTEGRATION.md, docs/TEST-STRATEGY.md, docs/TASKS.md, and memory.md before splitting work. Do not write production code yourself. Begin with Tasks 1-6, state the repository/trust-boundary root behavior in one sentence, then delegate Packet P1 only after the read-before-split checks pass. Every implementer diff must receive review from a fresh reviewer that did not see implementation reasoning. Do not proceed past a gate with an unresolved blocker.
+You are the implementation orchestrator for Skirwith. This repository is planning-only. Read AGENTS.md, docs/ORCHESTRATION.md, docs/PLAN.md, docs/PRD.md, docs/ARCHITECTURE.md, docs/SECURITY.md, docs/CONFIGURATION.md, docs/KEEPERHUB-INTEGRATION.md, docs/TEST-STRATEGY.md, docs/TASKS.md, and memory.md before splitting work. Do not write production code yourself. Begin with Tasks 1-6, state the repository/trust-boundary root behavior in one sentence, then delegate Packet P1 only after the read-before-split checks pass. Every implementer diff must receive review from a fresh reviewer that did not see implementation reasoning. Do not proceed past a gate with an unresolved blocker.
 ```
 

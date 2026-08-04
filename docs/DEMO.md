@@ -5,7 +5,7 @@ Target duration: under three minutes.
 ## Sequence
 
 1. Show the confirmed GitHub receipt first.
-2. Show trusted `.github/mergepay.yml` with redacted wallet addresses.
+2. Show trusted `.github/skirwith.yml` with redacted wallet addresses.
 3. Show the approved merged PR and passing checks.
 4. Show policy approval and canonical payment key.
 5. Show KeeperHub simulation.

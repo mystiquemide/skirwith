@@ -1,6 +1,6 @@
 # Reference Teardown — jcsuzanne.com
 
-Reference for the MergePay landing page rebuild.
+Reference for the Skirwith landing page rebuild.
 
 ## 1. Platform and Technical Facts
 
@@ -113,11 +113,11 @@ No cards, no gradient panels, no shadow boxes, no rounded-pill buttons.
 | Bio | Welcome paragraph, role, location | human trust |
 | Stack | Tool list (WordPress, VueJS, Tailwind, etc.) | capability |
 
-## 9. What to Steal for MergePay
+## 9. What to Steal for Skirwith
 
 1. Giant text monogram/wordmark hero on white.
-2. A full-page editorial index as the proof surface (the transaction list becomes MergePay's "Selected Works").
-3. Row pattern: loud name + quiet metadata. For MergePay: PR + amount + tx hash + status.
+2. A full-page editorial index as the proof surface (the transaction list becomes Skirwith's "Selected Works").
+3. Row pattern: loud name + quiet metadata. For Skirwith: PR + amount + tx hash + status.
 4. Near-monochrome palette with one accent.
 5. One grotesque type family, tight display tracking, muted small meta.
 6. Thin rules and whitespace instead of cards.
@@ -128,14 +128,14 @@ No cards, no gradient panels, no shadow boxes, no rounded-pill buttons.
 
 ## 10. What to Reject
 
-- WordPress/PHP stack (MergePay is a static GitHub Pages page).
-- The dense 35-row index for MergePay (7 transactions; keep it readable).
+- WordPress/PHP stack (Skirwith is a static GitHub Pages page).
+- The dense 35-row index for Skirwith (7 transactions; keep it readable).
 - Suisse Intl is a licensed font. Use a free Swiss-style grotesque instead (Inter or Space Grotesk).
 - Client-name authority does not apply. Replace it with on-chain evidence authority.
-- Do not copy the personal-portfolio framing. MergePay is a product, not a person.
+- Do not copy the personal-portfolio framing. Skirwith is a product, not a person.
 
 ## 11. Critical Review
 
 Strengths: typographic confidence, instant identity, proof-by-volume, zero decoration, fast and calm.
 Weaknesses: no clear single CTA; contact is implicit; mobile navigation is a minimal three-link bar; no visible social proof beyond names; relies on the viewer already knowing the clients.
-For MergePay: the editorial index pattern is the right transplant, but MergePay must add an explicit setup CTA and use transactions (not names) as the proof.
+For Skirwith: the editorial index pattern is the right transplant, but Skirwith must add an explicit setup CTA and use transactions (not names) as the proof.

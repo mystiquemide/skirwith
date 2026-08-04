@@ -1,1 +1,1 @@
-export const PAYMENT_PURPOSE = "mergepay:payout";
+export const PAYMENT_PURPOSE = "skirwith:payout";

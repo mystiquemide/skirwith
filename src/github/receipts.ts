@@ -5,7 +5,7 @@ import {
   verifyReceiptMarker,
 } from "../evidence/receipt.js";
 import type { ReceiptRecord, ReceiptSigningKey } from "../evidence/receipt.js";
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 import { renderReceiptComment } from "../output/receipt-comment.js";
 import type { GitHubApi } from "./api.js";
 import type { ReceiptStore } from "./receipt-store.js";
@@ -41,8 +41,8 @@ export class CommentReceiptStore implements ReceiptStore {
     this.maxCommentPages = maxCommentPages;
   }
 
-  private paginationError(): MergePayError {
-    return new MergePayError({
+  private paginationError(): SkirwithError {
+    return new SkirwithError({
       code: "GITHUB_FETCH_FAILED",
       category: "github",
       message: `Comment pagination exceeded ${this.maxCommentPages} pages; receipt discovery failed closed.`,
@@ -118,7 +118,7 @@ export class CommentReceiptStore implements ReceiptStore {
     const mac = signReceiptMarker(
       {
         version: 1,
-        product: "mergepay",
+        product: "skirwith",
         paymentKey: record.paymentKey,
         requestHash: record.requestHash,
         status: record.status,

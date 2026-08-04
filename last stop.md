@@ -572,7 +572,7 @@ Demo strength: 8
 Quick recommendation for winning
 Pick #1 or #3. Both are extremely demoable (trigger → decision → live tx hash + audit log in under 60 seconds), use multiple KeeperHub surfaces, solve an obvious real pain, and stay tiny so reliability stays high. Ship the agent, link the GitHub + one real mainnet/Base tx, and record a 90-second video that shows the full loop. That combination matches the judging emphasis better than anything flashy.  grok idea , KeeperHub already gives you webhook and onchain-event triggers, conditions, contract writes, token transfers, simulation, retries and detailed run logs. MCP handles agent access, while x402 and MPP can handle paid workflow calls. That means your product should be a thin, useful workflow around execution, not another agent platform. ([docs.keeperhub.com][1])
 
-## 1. MergePay
+## 1. Skirwith
 
 A GitHub Action that automatically pays a contributor when their pull request is merged.
 
@@ -703,7 +703,7 @@ The useful product is the automated cleanup, not an allowance dashboard. The age
 
 ## My pick
 
-Build **MergePay**.
+Build **Skirwith**.
 
 It has the cleanest path to a working submission:
 
@@ -715,7 +715,7 @@ It has the cleanest path to a working submission:
 * Can compete for both the main prize and onboarding bounty.
 * Easy to package as a GitHub Action, reusable workflow template and five-minute tutorial.
 
-The earlier KeeperHub hackathon rewarded production seriousness, reproducibility and real x402 or MCP execution. The winning project had live execution, extensive tests and documented integration issues. MergePay lets you show those same qualities without building a massive protocol. ([KeeperHub][3])
+The earlier KeeperHub hackathon rewarded production seriousness, reproducibility and real x402 or MCP execution. The winning project had live execution, extensive tests and documented integration issues. Skirwith lets you show those same qualities without building a massive protocol. ([KeeperHub][3])
 
 Your scope should stop at:
 
@@ -801,7 +801,7 @@ No token. No DAO platform. No freelance marketplace. No custom chat agent. No an
 Scout Step 5 x: Candidate concepts generated and consolidated from all submitted research.
 The strongest concepts are not the ones with the most KeeperHub features. They are the ones with a single trigger, a bounded policy, one meaningful action, and an undeniable execution proof.
 Rank	Concept	Core flow	Originality
-1	MergePay	GitHub PR merged → validate checks and bounty → pay contributor in USDC via KeeperHub → post receipt	8
+1	Skirwith	GitHub PR merged → validate checks and bounty → pay contributor in USDC via KeeperHub → post receipt	8
 2	Policy Gate	Agent proposes transfer → enforce policy and allowlist → execute approved action through KeeperHub → create evidence	6
 3	Retry Guy	Failed transaction → diagnose error → alter execution parameters → retry safely via KeeperHub → show recovery trail	8
 4	Gas Tank	Wallet falls below gas threshold → calculate refill → execute bounded top-up via KeeperHub → restore operational balance	6
@@ -818,7 +818,7 @@ Eliminated or deprioritized
 - Universal allowance auto-approver: Excellent failure demo, but automatically granting approvals creates a serious security objection. It should not be the default product behavior.
 Top strategic insight
 The best combined direction is:
-MergePay as the user-facing workflow, with Policy Gate and Retry Guy as the reliability layer.
+Skirwith as the user-facing workflow, with Policy Gate and Retry Guy as the reliability layer.
 This gives one focused product rather than three unrelated features:
 1. A GitHub merge is the external trigger.
 2. A deterministic policy checks recipient, bounty amount, labels, approvals, and daily limits.
@@ -856,21 +856,21 @@ Scout Step 6: Validating the top five concepts against existing products, market
 Scout Step 6 x: Top concepts validated against market alternatives, technical constraints, and failure modes.
 Competitive comparison
 Concept	Direct alternatives	Differentiation
-MergePay	GitHub Actions, crypto payout scripts, bounty platforms, DAO payroll tools	Payment is triggered by a verified merge and leaves the receipt inside the developer workflow
+Skirwith	GitHub Actions, crypto payout scripts, bounty platforms, DAO payroll tools	Payment is triggered by a verified merge and leaves the receipt inside the developer workflow
 Policy Gate	Safe policies, OpenZeppelin Defender, wallet guardians, custom spend controls	Agent intent is evaluated before KeeperHub execution with readable policy evidence
 Retry Guy	KeeperHub native retries, relayers, Defender Relayers, RPC retry wrappers	Independent diagnosis and recovery layer
 Gas Tank	Keeper bots, smart-account paymasters, wallet automation	Operational gas refueling for agent fleets
 Approval Janitor	Revoke.cash, wallet security tools, Defender Monitor	Autonomous policy-controlled revocation through KeeperHub
 Panic Button	Stop-loss bots, DeFi automation, risk guardians	Private emergency unwind through KeeperHub
 Market and timing assessment
-- GitHub Actions provides the exact merged-PR trigger needed for MergePay, including a documented pull_request.closed plus merged == true flow.
+- GitHub Actions provides the exact merged-PR trigger needed for Skirwith, including a documented pull_request.closed plus merged == true flow.
 - Existing blockchain automation products prove demand for monitored execution, relayers, transaction proposals, and action workflows.
 - OpenZeppelin Defender is being phased out for new signups and scheduled for shutdown on July 1, 2026, which creates a migration and replacement window for execution tooling.
 - KeeperHub’s own open issues show that onboarding, schema clarity, authentication, idempotency, and failure recovery are active problems rather than invented ones.
-- MergePay has a narrow initial user and distribution path: open-source maintainers, DAO contributors, hackathon organizers, and bounty programs.
+- Skirwith has a narrow initial user and distribution path: open-source maintainers, DAO contributors, hackathon organizers, and bounty programs.
 - The initial market is not large enough to justify a standalone payroll company by itself. The credible startup expansion is broader: event-driven, policy-controlled payments for developer and agent workflows.
 Differentiation verdict
-MergePay is differentiated if it remains:
+Skirwith is differentiated if it remains:
 - GitHub-native
 - Triggered by verified repository events
 - Policy-controlled
@@ -893,24 +893,24 @@ Critical failure modes
 - KeeperHub schema/auth friction: Build a direct integration seam and a deterministic local provider so the product remains testable while credentials or platform setup are pending.
 - Misrepresenting mock execution: The final demo must show a real KeeperHub transaction and the README must clearly separate local fixtures from live execution.
 VC-style verdict
-- MergePay: GREEN for hackathon MVP; YELLOW for standalone startup
+- Skirwith: GREEN for hackathon MVP; YELLOW for standalone startup
 - Policy Gate: YELLOW
 - Retry Guy: YELLOW
 - Gas Tank: YELLOW
 - Approval Janitor: YELLOW/RED until allowance discovery and safety controls are proven
 - Panic Button: YELLOW/RED because of crowded competition and irreversible-fund risk
 Recommended product
-Build MergePay, positioned as:
+Build Skirwith, positioned as:
 The GitHub Action that turns verified merged work into policy-controlled, auditable stablecoin payments through KeeperHub.
-Pair it with a small reusable KeeperHub onboarding starter template, but submit MergePay as the main BUIDL. This maximizes the probability of both a Grand Prize placement and the onboarding bounty without creating two unrelated products.
+Pair it with a small reusable KeeperHub onboarding starter template, but submit Skirwith as the main BUIDL. This maximizes the probability of both a Grand Prize placement and the onboarding bounty without creating two unrelated products.
 Acknowledge for Scout Step 7: Lock the final recommendation and MVP plan.
 ▣  Build · gpt-5.6-sol · 3m 12s
 go
 Scout Step 7 x: Final recommendation and MVP plan locked.
 Final Recommendation
-Project: MergePay
+Project: Skirwith
 Positioning:
-MergePay turns verified GitHub contributions into policy-controlled, auditable stablecoin payments. When an approved pull request merges, MergePay validates the repository rules, simulates the payout, and executes it through KeeperHub.
+Skirwith turns verified GitHub contributions into policy-controlled, auditable stablecoin payments. When an approved pull request merges, Skirwith validates the repository rules, simulates the payout, and executes it through KeeperHub.
 Primary hackathon story:
 Merged PR → policy check → KeeperHub simulation → real USDC transfer → GitHub receipt
 Why this is the strongest choice
@@ -925,9 +925,9 @@ Why this is the strongest choice
 MVP Scope
 Required
 - GitHub Action triggered only when a pull request is merged
-- Repository configuration file, for example .github/mergepay.yml
+- Repository configuration file, for example .github/skirwith.yml
 - Maintainer-controlled contributor-to-wallet mapping
-- Explicit payout label such as mergepay-bounty: 25
+- Explicit payout label such as skirwith-bounty: 25
 - Maximum payout amount
 - Daily payout limit
 - One supported token: USDC
@@ -961,20 +961,20 @@ Explicitly out of scope
 - LLM-based judgment of code quality
 - Payroll, accounting, or marketplace features
 Demo Script
- 1. Show .github/mergepay.yml with a USDC bounty, wallet mapping, and policy limits.
+ 1. Show .github/skirwith.yml with a USDC bounty, wallet mapping, and policy limits.
  2. Open a pull request containing a small code change.
  3. Apply the approved bounty label.
  4. Merge the pull request.
- 5. GitHub Actions starts MergePay.
- 6. MergePay displays the policy decision and simulation result.
+ 5. GitHub Actions starts Skirwith.
+ 6. Skirwith displays the policy decision and simulation result.
  7. KeeperHub executes the real stablecoin transfer.
  8. The workflow polls execution status.
  9. The pull request receives a comment with the transaction and audit links.
 10. Show the confirmed transaction on the block explorer.
 Failure branch for the pitch
-Run a second PR with an amount above the configured maximum. MergePay should block the payout, explain the violated policy, and prove that no transaction was submitted.
+Run a second PR with an amount above the configured maximum. Skirwith should block the payout, explain the violated policy, and prove that no transaction was submitted.
 Bounty Strategy
-Submit MergePay for the main prize and include a separate onboarding package:
+Submit Skirwith for the main prize and include a separate onboarding package:
 - Reusable GitHub Action
 - Starter repository
 - One-command configuration guide
@@ -986,7 +986,7 @@ Recommended Architecture
 GitHub pull_request.closed
         |
         v
-MergePay GitHub Action
+Skirwith GitHub Action
         |
         +--> Load trusted repository policy
         +--> Resolve maintainer-controlled wallet
@@ -1005,13 +1005,13 @@ GitHub receipt comment + block explorer
 Boilerplate Assignment
 This is a Web3 application requiring KeeperHub, wallet configuration, RPC-compatible execution, and transaction status handling.
 This project needs: boilerplate-web3
-The next General step is Step 3: load The Look for brand identity and UX direction. Before that, approve or reject the MergePay direction.
+The next General step is Step 3: load The Look for brand identity and UX direction. Before that, approve or reject the Skirwith direction.
 ▣  Build · gpt-5.6-sol · 35.0s
 we are not using boilerplate but a clean new private repo
 ▣  Plan · gpt-5.6-sol · interrupted
 we are not using boilerplate but a clean new private repo
 Scout Step 7 x: Repository strategy corrected.
-We will not clone or use a boilerplate. We will create a clean new private GitHub repository for MergePay and build only the required MVP surface.
+We will not clone or use a boilerplate. We will create a clean new private GitHub repository for Skirwith and build only the required MVP surface.
 Repository plan
 - New private repository under mystiquemide
 - Fresh project structure
@@ -1177,8 +1177,8 @@ The general web and X searches were blocked by search-provider verification, so 
 Approve Kredyx for final validation, or request another naming batch.
 ▣  Plan · gpt-5.6-sol · 2m 1s
 let us use merge pay ,we will find a name later
-Scout Step 5.5 x: MergePay will remain the temporary working name. Final naming and collision validation are deferred until later.
-No repository or files have been created. The next General step is Step 3: load The Look and develop MergePay’s brand, UX flow, and visual direction.
+Scout Step 5.5 x: Skirwith will remain the temporary working name. Final naming and collision validation are deferred until later.
+No repository or files have been created. The next General step is Step 3: load The Look and develop Skirwith’s brand, UX flow, and visual direction.
 ▣  Plan · gpt-5.6-sol · 15.4s
 go
 →Skill "hackathon-brand-design"
@@ -1187,9 +1187,9 @@ go
 continue
 ▣  Plan · gpt-5.6-sol · interrupted
 continue
-Step 3 x: The Look has defined MergePay’s brand and UX direction.
+Step 3 x: The Look has defined Skirwith’s brand and UX direction.
 A. Brand Core
-Product: MergePay
+Product: Skirwith
 Audience:
 - Open-source maintainers
 - DAO contributors
@@ -1200,7 +1200,7 @@ Audience:
 Core promise:
 Verified work becomes verified payment.
 Emotional hook:
-MergePay removes the awkward gap between “your contribution was accepted” and “you actually got paid.”
+Skirwith removes the awkward gap between “your contribution was accepted” and “you actually got paid.”
 Brand personality:
 - Trustworthy
 - Precise
@@ -1209,9 +1209,9 @@ Brand personality:
 - Transparent
 - Operational rather than speculative
 Positioning:
-MergePay is a GitHub-native payment rail for rewarding verified contributions with policy-controlled, auditable stablecoin settlement through KeeperHub.
+Skirwith is a GitHub-native payment rail for rewarding verified contributions with policy-controlled, auditable stablecoin settlement through KeeperHub.
 B. Naming Direction
-Keep MergePay as the working name during the hackathon.
+Keep Skirwith as the working name during the hackathon.
 The name is immediately understandable and communicates the core trigger:
 - Merge represents verified contribution completion
 - Pay represents the resulting settlement
@@ -1239,7 +1239,7 @@ Symbol concept:
 - The checked square represents both merged code and approved payment
 - Use the symbol independently as the GitHub Action icon and favicon
 Wordmark:
-- Lowercase mergepay for approachability
+- Lowercase skirwith for approachability
 - Medium-weight geometric sans-serif
 - Tight spacing
 - No italic treatment
@@ -1308,7 +1308,7 @@ Show a compact policy editor:
 - Wallet mappings
 - Duplicate protection status
 Use plain language:
-MergePay will only pay labeled pull requests that pass the configured policy.
+Skirwith will only pay labeled pull requests that pass the configured policy.
 3. Execution activity
 Show a vertical execution timeline:
 - Merge detected
@@ -1342,7 +1342,7 @@ Hero
 Headline:
 Pay contributors when the work is merged.
 Supporting copy:
-MergePay connects verified GitHub contributions to policy-controlled stablecoin payments through KeeperHub.
+Skirwith connects verified GitHub contributions to policy-controlled stablecoin payments through KeeperHub.
 Primary CTA:
 View the workflow
 Secondary CTA:
@@ -1365,7 +1365,7 @@ Use four large numbered stages:
 4. Post the proof back to GitHub
 Reliability section
 Show a blocked payment beside a successful payment.
-This demonstrates that MergePay is not blindly moving funds. It can refuse unsafe actions and prove why.
+This demonstrates that Skirwith is not blindly moving funds. It can refuse unsafe actions and prove why.
 KeeperHub integration section
 Make the integration explicit:
 - KeeperHub MCP/API execution
@@ -1381,7 +1381,7 @@ Slide 1: The problem
 A merged pull request beside a pending payout spreadsheet.
 Slide 2: The insight
 The merge event already proves the work was accepted. The missing layer is safe settlement.
-Slide 3: MergePay
+Slide 3: Skirwith
 Show the four-stage execution rail.
 Slide 4: KeeperHub integration
 Show the policy, simulation, execution, status, and audit trail path.
@@ -1393,11 +1393,11 @@ Final wow moment:
 The merged pull request receives a live comment containing the confirmed transaction and audit trail link. Then show a second payout blocked by policy with no transaction submitted.
 J. Image Generation Prompts
 Logo prompt
-Minimal vector logo for MergePay, a GitHub-native stablecoin payment rail for verified software contributions. Create a compact merge-junction symbol that resolves into a checked square, paired with a lowercase geometric sans-serif wordmark. Ink black, GitHub green, settlement blue, white background. Flat vector design, precise geometry, developer infrastructure feel, no coins, no gradients, no mascots, no 3D, no em dashes.
+Minimal vector logo for Skirwith, a GitHub-native stablecoin payment rail for verified software contributions. Create a compact merge-junction symbol that resolves into a checked square, paired with a lowercase geometric sans-serif wordmark. Ink black, GitHub green, settlement blue, white background. Flat vector design, precise geometry, developer infrastructure feel, no coins, no gradients, no mascots, no 3D, no em dashes.
 Mascot prompt
-Simple editorial mascot for MergePay, a small rectangular receipt courier carrying a verified payment receipt. The silhouette combines a GitHub merge junction with a stamped transaction receipt. Ink black, GitHub green, settlement blue, flat vector illustration, restrained enterprise developer-tool aesthetic, four reusable poses: reviewing, approved, paid, blocked. No floating coins, no gradients, no 3D, no em dashes.
+Simple editorial mascot for Skirwith, a small rectangular receipt courier carrying a verified payment receipt. The silhouette combines a GitHub merge junction with a stamped transaction receipt. Ink black, GitHub green, settlement blue, flat vector illustration, restrained enterprise developer-tool aesthetic, four reusable poses: reviewing, approved, paid, blocked. No floating coins, no gradients, no 3D, no em dashes.
 Hero prompt
-Editorial product illustration for MergePay showing a single precise execution rail from merged pull request to policy approval to KeeperHub settlement to contributor payment receipt. Paper background, dark ink lines, GitHub green verification node, blue settlement node, compact technical labels, flat vector style, no gradients, no generic AI imagery, no crypto speculation imagery, no em dashes.
+Editorial product illustration for Skirwith showing a single precise execution rail from merged pull request to policy approval to KeeperHub settlement to contributor payment receipt. Paper background, dark ink lines, GitHub green verification node, blue settlement node, compact technical labels, flat vector style, no gradients, no generic AI imagery, no crypto speculation imagery, no em dashes.
 K. Final Creative Recommendation
 Build the product interface around the execution timeline, not a traditional analytics dashboard.
 Build first:
@@ -1415,7 +1415,7 @@ Avoid building:
 - Decorative blockchain visualizations
 - Broad payroll features
 The fastest judge impression should be:
-“I merged code, MergePay verified the policy, KeeperHub settled the payment, and GitHub received the proof.”
+“I merged code, Skirwith verified the policy, KeeperHub settled the payment, and GitHub received the proof.”
 ▣  Plan · gpt-5.6-sol · 52.9s
 make sense , what is next?
 Step 3 x: The Look approved
@@ -1428,7 +1428,7 @@ Before creating the private repository or writing code, we verify the credential
 - GitHub repository and Actions permissions
 - Any optional model API key, only if we use an LLM
 - Explorer access for the final transaction link
-We will not require OpenAI or Anthropic unless the implementation genuinely needs an LLM. The core MergePay policy engine can be deterministic, which is safer and easier to verify.
+We will not require OpenAI or Anthropic unless the implementation genuinely needs an LLM. The core Skirwith policy engine can be deterministic, which is safer and easier to verify.
 Reply go to begin Step 4.
 ▣  Plan · gpt-5.6-sol · 16.2s
 go
@@ -1462,7 +1462,7 @@ Missing or not detected
 - A project repository does not exist yet
 - Recordly and CapCut were not detected in the current PATH
 Important
-We do not need an LLM API key for the core MergePay MVP. The payment policy engine should be deterministic. We do need KeeperHub access before creating or testing a real payout.
+We do not need an LLM API key for the core Skirwith MVP. The payment policy engine should be deterministic. We do need KeeperHub access before creating or testing a real payout.
 Configure one of these:
 1. Create a KeeperHub organization API key beginning with kh_ and make it available as KEEPERHUB_API_KEY.
 2. Use KeeperHub OAuth through the MCP server:
@@ -1480,7 +1480,7 @@ Step 4: Get the KeeperHub API key
 2. Select or create your KeeperHub organization.
 3. Open Settings → API Keys → Organisation.
 4. Click Create API key.
-5. Name it something recognizable, such as mergepay-development.
+5. Name it something recognizable, such as skirwith-development.
 6. Copy the generated key. It should begin with kh_. It may only be displayed once.
 7. Store it locally as KEEPERHUB_API_KEY. Do not paste the key into this chat, commit it, or place it in the future repository’s tracked files.
 For your current Linux/WSL terminal session:
@@ -1524,7 +1524,7 @@ Step 4 x: KeeperHub key presence confirmed by you. I will not inspect or expose 
 The next step is repository setup, but Plan Mode is currently active, so I will only prepare the implementation plan and make no repository or file changes.
 # Todos
 [•] Confirm private repository name and GitHub organization
-[ ] Create clean private MergePay repository
+[ ] Create clean private Skirwith repository
 [ ] Bootstrap minimal GitHub Action and deterministic policy engine
 [ ] Integrate KeeperHub execution behind a provider boundary
 [ ] Add tests, documentation, architecture diagram, and onboarding guide
@@ -1534,7 +1534,7 @@ The next implementation sequence is:
 1. Confirm repository target
 - GitHub owner: mystiquemide
 - Visibility: private
-- Suggested repository: mergepay
+- Suggested repository: skirwith
 - No boilerplate
 2. Create the clean repository
 - Initialize a minimal TypeScript project
@@ -1542,7 +1542,7 @@ The next implementation sequence is:
 - Configure GitHub Actions permissions
 - Keep the first commit limited to project foundation
 3. Build the deterministic payment engine
-- Parse .github/mergepay.yml
+- Parse .github/skirwith.yml
 - Validate repository, label, recipient, token, chain, amount, and daily limit
 - Generate a deterministic payment key
 - Block unsafe payments without submitting a transaction
@@ -1574,7 +1574,7 @@ Create the private repository mystiquemide/mergepay?
 ▣  Plan · gpt-5.6-sol · 42.4s
 let us plan everything first ...use master forge team 
 →Skill "Codex-master-forge"
-I’ll keep this read-only and turn the approved MergePay direction into a complete Master Forge execution plan first. I’m checking the current workspace and the KeeperHub integration constraints, then I’ll present the phase gates, deliverables, and decisions that need approval before any repository or file is created.
+I’ll keep this read-only and turn the approved Skirwith direction into a complete Master Forge execution plan first. I’m checking the current workspace and the KeeperHub integration constraints, then I’ll present the phase gates, deliverables, and decisions that need approval before any repository or file is created.
 →Read . [limit=2000, offset=1]
 %WebFetch https://docs.keeperhub.com/getting-started/quickstart
 %WebFetch https://docs.keeperhub.com/api/direct-execution
@@ -1582,9 +1582,9 @@ I’ll keep this read-only and turn the approved MergePay direction into a compl
 Step 7 in progress: Master Forge is loaded. I am switching to its Phase 1 planning gate and will define the product, architecture boundaries, security model, delivery sequence, and verification criteria before any repository or file changes.Step 7 x: Master Forge Phase 1 planning complete
 No repository, files, commits, or configuration have been changed.
 Product Definition
-Working name: MergePay
+Working name: Skirwith
 One-line product:
-MergePay pays verified GitHub contributors automatically after an approved pull request is merged, using deterministic policy checks and KeeperHub execution.
+Skirwith pays verified GitHub contributors automatically after an approved pull request is merged, using deterministic policy checks and KeeperHub execution.
 Primary user:
 - Open-source maintainer or DAO operator managing contributor rewards
 Core user journey:
@@ -1592,11 +1592,11 @@ Configure policy
   -> Contributor opens pull request
   -> Maintainer reviews and labels bounty
   -> Pull request is merged
-  -> MergePay verifies the event
+  -> Skirwith verifies the event
   -> Policy engine approves or blocks payment
   -> KeeperHub simulates the transfer
   -> KeeperHub executes the real transfer
-  -> MergePay posts proof back to GitHub
+  -> Skirwith posts proof back to GitHub
 The product is not:
 - A payroll dashboard
 - A natural-language wallet
@@ -1622,13 +1622,13 @@ Planner
 Architect
 - Define the GitHub Action runtime and provider boundary
 - Design configuration, policy, idempotency, execution, and receipt contracts
-- Document the trust boundary between GitHub, MergePay, and KeeperHub
+- Document the trust boundary between GitHub, Skirwith, and KeeperHub
 - Produce the architecture diagram and ADRs
 Designer
 - Keep GitHub as the primary interface
 - Design policy results, execution timeline, success receipt, and blocked payment states
 - Avoid building a dashboard unless the workflow proves a dashboard is necessary
-- Define the visual language from the approved MergePay brand direction
+- Define the visual language from the approved Skirwith brand direction
 Frontend Specialist
 - Only build a lightweight web surface if required for onboarding or live demo visibility
 - Prefer GitHub comments and Actions summaries as the primary product UI
@@ -1694,17 +1694,17 @@ This avoids wasting the first integration attempt on an unverified token address
 Repository
 - Owner: mystiquemide
 - Visibility: private
-- Suggested repository name: mergepay
+- Suggested repository name: skirwith
 - Clean repository, no boilerplate
 - Main branch protected after initial setup
 - Feature work performed on branches
 - No commit or repository creation during the current planning phase
 Proposed Repository Structure
-mergepay/
+skirwith/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml
-│   │   └── mergepay-example.yml
+│   │   └── skirwith-example.yml
 │   └── ISSUE_TEMPLATE/
 ├── action.yml
 ├── src/
@@ -1730,7 +1730,7 @@ mergepay/
 │   ├── keeperhub/
 │   └── fixtures/
 ├── examples/
-│   └── mergepay.yml
+│   └── skirwith.yml
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── SECURITY.md
@@ -1745,7 +1745,7 @@ mergepay/
 ├── vitest.config.ts
 └── memory.md
 Configuration Contract
-Proposed .github/mergepay.yml:
+Proposed .github/skirwith.yml:
 version: 1
 
 chain:
@@ -1757,7 +1757,7 @@ chain:
 
 payout:
   amount: "25"
-  label: "mergepay-bounty"
+  label: "skirwith-bounty"
   maxPerPayment: "50"
   dailyLimit: "250"
 
@@ -1851,8 +1851,8 @@ If the direct event payload is insufficient, use a trusted follow-up workflow th
 Core Acceptance Criteria
 Successful payout
 - A maintainer merges a pull request with the required label
-- MergePay identifies the correct repository and PR
-- MergePay resolves the configured wallet address
+- Skirwith identifies the correct repository and PR
+- Skirwith resolves the configured wallet address
 - Policy evaluation returns approved
 - KeeperHub simulation succeeds
 - KeeperHub broadcast succeeds
@@ -2037,10 +2037,10 @@ These need to be confirmed before architecture approval:
 1. Repository name: Is the private repository mystiquemide/mergepay?
 2. Initial payout asset: Should we use a confirmed KeeperHub-supported Sepolia ERC-20 stablecoin, or start with native Sepolia ETH and add stablecoin payout after the smoke test?
 3. Demo recipient: Which test wallet address will receive the payout? Do not send it in chat if you prefer to keep it private. It can be configured locally later.
-4. Repository policy format: Do you approve maintainer-controlled .github/mergepay.yml as the configuration source?
+4. Repository policy format: Do you approve maintainer-controlled .github/skirwith.yml as the configuration source?
 5. Web UI: Do you approve GitHub Actions and PR comments as the primary interface, with no dashboard in the MVP?
 6. AI usage: Do you approve a deterministic engine with no LLM dependency?
-Recommended answers: mergepay, confirmed Sepolia stablecoin after native smoke test, private test recipient, yes, yes, yes.
+Recommended answers: skirwith, confirmed Sepolia stablecoin after native smoke test, private test recipient, yes, yes, yes.
 Master Forge Gate
 This is the Phase 1 approval point.
 Reply with one of:
@@ -2055,7 +2055,7 @@ No files, repository, commits, or system configuration will be changed during th
 Phase 2 Architecture Plan
 - Define the clean private repository structure for mystiquemide/mergepay
 - Specify the GitHub Action entrypoint and trusted merged-PR event flow
-- Define the .github/mergepay.yml configuration contract
+- Define the .github/skirwith.yml configuration contract
 - Define policy evaluation outputs and reason codes
 - Define deterministic payment-key and duplicate-prevention behavior
 - Define the KeeperHub Direct Execution API adapter
@@ -2092,7 +2092,7 @@ Architecture approval recorded. I will keep the current folder untouched during 
 →Read Cline [limit=200, offset=1]
 →Read /mnt/c/Users/Prince [limit=200, offset=1]
 →Read .config [limit=200, offset=1]
-✱Glob "**/mergepay*" in /mnt/c/Users/Prince 
+✱Glob "**/skirwith*" in /mnt/c/Users/Prince 
 the file is in wsl already
 I will locate the existing WSL project folder without creating or changing anything, then align the approved architecture to its actual tree.
 $ pwd; ls -la; ls -la /home; ls -la /workspace 2>/dev/null || true; ls -la /projects 2>/dev/null || true
@@ -2108,11 +2108,11 @@ drwxr-x---  9 mide mide 4096 Aug  3 14:35 .cache
 drwxr-xr-x 11 mide mide 4096 Aug  3 14:44 .claude
 …
 Click to expand
-Step 8 x: Architecture approved. The existing WSL project folder is confirmed at /home/mide/mergepay.
+Step 8 x: Architecture approved. The existing WSL project folder is confirmed at /home/mide/skirwith.
 Planning mode remains active, so no files, repository metadata, packages, commits, or configuration will be created yet.
 Final Execution Plan
 1. Inspect project folder
-- Confirm /home/mide/mergepay is empty or identify any existing contents.
+- Confirm /home/mide/skirwith is empty or identify any existing contents.
 - Preserve any files already present.
 - Check whether it is already a Git repository.
 2. Create planning artifacts
@@ -2131,7 +2131,7 @@ Final Execution Plan
 - .gitignore, .env.example, action.yml, and CI.
 - No frontend framework or database.
 4. Implement domain contracts
-- Trusted .github/mergepay.yml schema.
+- Trusted .github/skirwith.yml schema.
 - Merged pull-request event parser.
 - Structured policy decision with reason codes.
 - Stable payment key.
@@ -2154,7 +2154,7 @@ Final Execution Plan
 - Post blocked or confirmed receipt comments.
 - Write a clear GitHub Actions job summary.
 8. Implement duplicate protection
-- Detect an existing MergePay receipt for the payment key.
+- Detect an existing Skirwith receipt for the payment key.
 - Reuse the same KeeperHub key only for an identical request whose state is uncertain.
 - Never retry a failed transaction with altered parameters under the same key.
 - Surface idempotency conflicts for manual review.
@@ -2191,8 +2191,8 @@ Final Execution Plan
 - Repository hygiene and secret scan.
 - DoraHacks submission checklist.
 Decisions Locked
-- Project folder: /home/mide/mergepay
-- Working name: MergePay
+- Project folder: /home/mide/skirwith
+- Working name: Skirwith
 - Clean repository with no boilerplate
 - TypeScript and Node.js
 - GitHub Actions and PR comments as the MVP interface
@@ -3113,10 +3113,10 @@ missing proof
 weak differentiation
 
 Then explain how to eliminate those weaknesses before submission. 
-MergePay — Win Plan
+Skirwith — Win Plan
 1. Executive Verdict
 BUILD BUT CUT SCOPE
-MergePay has a strong hackathon shape: one trigger, one policy decision, one real payment, one verifiable result. It is easier to understand than a generic DeFi agent and naturally demonstrates KeeperHub as an execution layer.
+Skirwith has a strong hackathon shape: one trigger, one policy decision, one real payment, one verifiable result. It is easier to understand than a generic DeFi agent and naturally demonstrates KeeperHub as an execution layer.
 However, the project currently has zero implementation proof. It is only PRD-approved, the repository has not been initialized, no KeeperHub transaction has been executed, and the GitHub event/security model is not yet proven.
 The biggest risk is not engineering difficulty. It is credibility.
 A judge may ask:
@@ -3129,7 +3129,7 @@ A judge may ask:
 - Does the demo prove the blocked path, or only describe it?
 If any answer is unclear, the project becomes another polished automation concept instead of a finalist submission.
 Critical strategic correction:
-Do not pitch MergePay as “AI-powered.” The core product should be deterministic. Use the phrase:
+Do not pitch Skirwith as “AI-powered.” The core product should be deterministic. Use the phrase:
 Verified GitHub work becomes policy-controlled payment, settled through KeeperHub.
 Do not build:
 - A dashboard-first product
@@ -3204,24 +3204,24 @@ GitHub repository	Private folder exists locally	Public submission repository and
 Transaction submission link	None	Direct explorer link
 Onboarding bounty	Strong conceptual fit	Starter template, teardown, or merged PR
 Main judging risk
-The current plan contains many intended features, but judges score what they can verify. Until the real transaction exists, MergePay has almost no score on the most important criterion.
+The current plan contains many intended features, but judges score what they can verify. Until the real transaction exists, Skirwith has almost no score on the most important criterion.
 4. Positioning Rewrite
 Judge-facing positioning
-MergePay is a GitHub Action that pays a maintainer-approved contributor after a pull request is merged. It verifies the merge, enforces repository payout policy, simulates the exact transfer, and sends the payment through KeeperHub. The result is a confirmed onchain transaction and a receipt posted back to the pull request.
+Skirwith is a GitHub Action that pays a maintainer-approved contributor after a pull request is merged. It verifies the merge, enforces repository payout policy, simulates the exact transfer, and sends the payment through KeeperHub. The result is a confirmed onchain transaction and a receipt posted back to the pull request.
 Fifteen-second explanation
-A merged pull request proves the work was accepted. MergePay turns that event into a bounded stablecoin payout. KeeperHub handles the actual transaction, while MergePay handles policy, duplicate prevention, and proof back to GitHub.
+A merged pull request proves the work was accepted. Skirwith turns that event into a bounded stablecoin payout. KeeperHub handles the actual transaction, while Skirwith handles policy, duplicate prevention, and proof back to GitHub.
 Problem framing
 Do not say:
 Teams struggle with contributor payments.
 Say:
-A maintainer can merge a pull request in seconds, but paying the contributor still requires a separate spreadsheet, wallet operation, or treasury workflow. MergePay connects the acceptance event to a controlled settlement path.
+A maintainer can merge a pull request in seconds, but paying the contributor still requires a separate spreadsheet, wallet operation, or treasury workflow. Skirwith connects the acceptance event to a controlled settlement path.
 This is specific without inventing a personal story.
 Founder story
 No concrete founder incident has been provided. Do not fabricate one.
 Until a real incident is supplied, use an honest product-origin story:
-On August 3, 2026, while building for the KeeperHub Agents Onchain Hackathon, we noticed that the hackathon’s core problem was not deciding what an agent should do. It was proving that the resulting transaction was safe, executed, and observable. We chose a contributor payout because GitHub already provides a verifiable acceptance event: a merged pull request. MergePay tests whether that event can trigger a bounded, simulated, and KeeperHub-settled payment without relying on a second manual workflow.
+On August 3, 2026, while building for the KeeperHub Agents Onchain Hackathon, we noticed that the hackathon’s core problem was not deciding what an agent should do. It was proving that the resulting transaction was safe, executed, and observable. We chose a contributor payout because GitHub already provides a verifiable acceptance event: a merged pull request. Skirwith tests whether that event can trigger a bounded, simulated, and KeeperHub-settled payment without relying on a second manual workflow.
 If a real prior incident exists, replace this with the exact date, amount, token, chain, and consequence. Do not invent a loss story.
-What MergePay intentionally does not include
+What Skirwith intentionally does not include
 - No AI code review, because GitHub review and checks already establish the acceptance signal.
 - No natural-language wallet control, because payout authorization must be deterministic.
 - No multi-chain support, because one verified chain is stronger than four unverified chains.
@@ -3242,7 +3242,7 @@ Required assets:
 - Confirmed transaction link
 - Demo video link
 Required wording:
-MergePay pays a maintainer-approved contributor after a pull request is merged. It evaluates policy, simulates the exact transfer, executes through KeeperHub, and posts the transaction proof back to GitHub.
+Skirwith pays a maintainer-approved contributor after a pull request is merged. It evaluates policy, simulates the exact transfer, executes through KeeperHub, and posts the transaction proof back to GitHub.
 Do not put a long marketing paragraph first.
 2. Live proof
 Purpose: Immediately prove that this is not vaporware.
@@ -3288,7 +3288,7 @@ Include:
 - Error handling
 - Why KeeperHub is load-bearing
 Maximum length: 400 words.
-Do not claim private routing, gas sponsorship, x402, or MPP unless the actual MergePay flow visibly uses and proves them.
+Do not claim private routing, gas sponsorship, x402, or MPP unless the actual Skirwith flow visibly uses and proves them.
 6. Security model
 Purpose: Address the obvious attack questions.
 Include:
@@ -3316,7 +3316,7 @@ Include:
 Maximum length: 500 words.
 8. Configuration reference
 Purpose: Define every setting.
-Include a complete .github/mergepay.yml example and field table.
+Include a complete .github/skirwith.yml example and field table.
 9. Test evidence
 Purpose: Prove engineering quality.
 Include:
@@ -3438,7 +3438,7 @@ Choose one of these now:
 - More reliable.
 - Adds credentials, deployment, and operational complexity.
 - Not recommended before the first real transaction.
-Recommendation: Remove MergePay’s custom daily limit from the first version and rely on:
+Recommendation: Remove Skirwith’s custom daily limit from the first version and rely on:
 - Per-payment cap
 - Fixed repository policy
 - KeeperHub organization spending cap
@@ -3482,17 +3482,17 @@ The GitHub Actions trust boundary is more dangerous than the payment code. If th
 Maximum length: 2 minutes 30 seconds, leaving 30 seconds of tolerance.
 The demo must show one successful payment and one blocked payment. Do not spend time on a landing page.
 Time	Screen	Narration
-0:00–0:08	Final GitHub receipt comment	“MergePay turns an accepted pull request into a bounded onchain payment.”
+0:00–0:08	Final GitHub receipt comment	“Skirwith turns an accepted pull request into a bounded onchain payment.”
 0:08–0:18	Repository config	“The maintainer controls the token, recipient mapping, required label, and payout cap.”
 0:18–0:32	Pull request	“This pull request has passed checks and carries the maintainer’s bounty label.”
 0:32–0:40	Merge action	“When the maintainer merges, the action starts.”
-0:40–0:55	Actions summary	“MergePay verifies the merge, recipient, amount, and policy before touching KeeperHub.”
+0:40–0:55	Actions summary	“Skirwith verifies the merge, recipient, amount, and policy before touching KeeperHub.”
 0:55–1:08	Simulation output	“The exact transfer is simulated first. This catches a bad recipient, balance, or contract failure before broadcast.”
-1:08–1:22	KeeperHub execution status	“MergePay submits the same request with a unique idempotency key and polls KeeperHub until terminal.”
+1:08–1:22	KeeperHub execution status	“Skirwith submits the same request with a unique idempotency key and polls KeeperHub until terminal.”
 1:22–1:36	Explorer	“This is the authoritative transaction proof.”
 1:36–1:48	GitHub receipt comment	“The contributor receives proof where the work was accepted.”
 1:48–2:02	Oversized payout PR	“Now the amount exceeds policy.”
-2:02–2:12	Blocked Actions summary	“MergePay blocks it before simulation or broadcast. No transaction exists.”
+2:02–2:12	Blocked Actions summary	“Skirwith blocks it before simulation or broadcast. No transaction exists.”
 2:12–2:24	Duplicate rerun	“Running the successful event again resolves to the same payment key and does not pay twice.”
 2:24–2:30	Final split screen	“Verified work in. Policy-controlled settlement out.”
 Judge emotion by scene
@@ -3528,7 +3528,7 @@ Fixes
 9. Frontend Identity
 Verdict
 The current proposed visual direction is better than a generic dashboard, but it still risks becoming a standard developer-tool timeline with green checks.
-MergePay should not look like:
+Skirwith should not look like:
 - A template SaaS dashboard
 - A crypto trading terminal
 - An AI agent chat interface
@@ -3594,19 +3594,19 @@ Post 1: Problem and scope
 - Lesson: One trusted event can drive a bounded payout
 - CTA: Follow the first KeeperHub transaction test
 Post 2: First KeeperHub simulation
-- Hook: “Before MergePay sends funds, KeeperHub simulates the exact transfer.”
+- Hook: “Before Skirwith sends funds, KeeperHub simulates the exact transfer.”
 - Proof: Redacted simulation response showing wouldRevert: false
 - Media: Terminal or Actions summary
 - Lesson: Simulation is part of the payment lifecycle, not an afterthought
 - CTA: Review the integration or starter template
 Post 3: First real transaction
-- Hook: “MergePay just paid a contributor from a merged pull request.”
+- Hook: “Skirwith just paid a contributor from a merged pull request.”
 - Proof: Explorer transaction link
 - Media: GitHub receipt comment plus explorer confirmation
 - Lesson: The complete path is real
 - CTA: Try the reproducible testnet workflow
 Post 4: Blocked payout
-- Hook: “The most important payment MergePay makes is sometimes no payment.”
+- Hook: “The most important payment Skirwith makes is sometimes no payment.”
 - Proof: Oversized bounty blocked before broadcast
 - Media: Blocked Actions summary
 - Lesson: A bounded agent should prove refusal, not only success
@@ -3618,7 +3618,7 @@ Post 5: Duplicate prevention
 - Lesson: Event-driven payments need replay protection
 - CTA: Review the idempotency implementation
 Post 6: Submission
-- Hook: “MergePay: verified GitHub work to KeeperHub-settled payment.”
+- Hook: “Skirwith: verified GitHub work to KeeperHub-settled payment.”
 - Proof: Video, repository, transaction, and architecture links
 - Media: 20-second final clip
 - Lesson: The system is intentionally narrow so every step is verifiable
@@ -3754,11 +3754,11 @@ Remove or defer these immediately:
 4. Multi-chain support
 - One confirmed chain beats several speculative integrations.
 5. Private routing claims
-- Do not claim this unless MergePay can demonstrate that the execution path uses it.
+- Do not claim this unless Skirwith can demonstrate that the execution path uses it.
 6. Gas sponsorship claims
 - Do not claim sponsorship unless the actual transaction and KeeperHub response prove it.
 7. x402 and MPP claims
-- These are not necessary for MergePay’s core payment transaction. Use them only if they are genuinely integrated and visible.
+- These are not necessary for Skirwith’s core payment transaction. Use them only if they are genuinely integrated and visible.
 8. Mascot-heavy UX
 - It will consume time without improving the critical judging score.
 9. Natural-language payment commands
@@ -3770,7 +3770,7 @@ Remove or defer these immediately:
 12. Unverified personal founder story
 - Never fabricate an incident.
 13. “Agent” language without autonomous decision evidence
-- MergePay is currently an event-driven policy automation. Either demonstrate meaningful agent behavior or describe it accurately.
+- Skirwith is currently an event-driven policy automation. Either demonstrate meaningful agent behavior or describe it accurately.
 14. Daily budget enforcement
 - Remove unless persistent state is implemented and tested.
 15. Automatic retries
@@ -3803,7 +3803,7 @@ Build these in this order:
 12. Three-minute video
 - Record only after the live transaction and blocked run are repeatable.
 15. The Card No One Else Holds
-The strongest proof MergePay can produce is not merely a transaction hash.
+The strongest proof Skirwith can produce is not merely a transaction hash.
 It is a three-state, independently verifiable execution record for the same GitHub workflow:
 1. A real merged pull request produces one confirmed KeeperHub transaction.
 2. A second run of the same event produces no second payment because the payment key is already settled.
@@ -3822,7 +3822,7 @@ Strategic conclusion: build the smallest system that can produce this evidence s
 ▣  Plan · gpt-5.6-sol · 3m 9s
 good let us keep going
 Step 9: Converting the adversarial review into a final build specification. I will inspect the existing WSL folder read-only, resolve the remaining architecture contradictions, and define the exact implementation sequence without creating or modifying files.
-→Read mergepay [limit=500, offset=1]
+→Read skirwith [limit=500, offset=1]
 %WebFetch https://docs.keeperhub.com/api/chains
 %WebFetch https://docs.keeperhub.com/api/authentication
 %WebFetch https://docs.keeperhub.com/api/errors

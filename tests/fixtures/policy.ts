@@ -1,19 +1,19 @@
-import type { MergePayConfig } from "../../src/config/schema.js";
+import type { SkirwithConfig } from "../../src/config/schema.js";
 import type { ChainTokenConfig } from "../../src/domain/types.js";
 import type { PolicyEvaluationInput } from "../../src/policy/evaluate-policy.js";
 
 // Synthetic test fixture. Values are not live deployment credentials; they
 // mirror the frozen v0.1 integration target for realistic policy fixtures.
 
-export const FIXTURE_REPOSITORY = "acme/mergepay-demo";
+export const FIXTURE_REPOSITORY = "acme/skirwith-demo";
 export const FIXTURE_BASE_BRANCH = "main";
 export const FIXTURE_AUTHOR = "alice";
-export const FIXTURE_REQUIRED_LABEL = "mergepay-approved";
-export const FIXTURE_AMOUNT_LABEL = "mergepay-5";
+export const FIXTURE_REQUIRED_LABEL = "skirwith-approved";
+export const FIXTURE_AMOUNT_LABEL = "skirwith-5";
 export const FIXTURE_TOKEN = "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238" as const;
 export const FIXTURE_RECIPIENT = "0x05619d1a133623b322a8f366ea9594e4e586f26d" as const;
 
-export const FIXTURE_CONFIG: MergePayConfig = {
+export const FIXTURE_CONFIG: SkirwithConfig = {
   version: 1,
   repository: FIXTURE_REPOSITORY,
   chain: {
@@ -30,7 +30,7 @@ export const FIXTURE_CONFIG: MergePayConfig = {
     maximum: "25",
     amounts: {
       [FIXTURE_AMOUNT_LABEL]: "5",
-      "mergepay-10": "10",
+      "skirwith-10": "10",
     },
   },
   recipients: {

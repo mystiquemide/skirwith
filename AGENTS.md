@@ -1,4 +1,4 @@
-# MergePay Developer Instructions
+# Skirwith Developer Instructions
 
 ## Mission
 

@@ -1,5 +1,5 @@
 import { isHexAddress, normalizeHexAddress } from "../security/validate.js";
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 import type { CanonicalPaymentRequest } from "../domain/types.js";
 
 const MERGE_SHA_RE = /^[0-9a-f]{40}$/;
@@ -16,8 +16,8 @@ export interface CanonicalRequestInput {
   purpose: string;
 }
 
-function invalid(field: string): MergePayError {
-  return new MergePayError({
+function invalid(field: string): SkirwithError {
+  return new SkirwithError({
     code: "CANONICAL_REQUEST_INVALID",
     category: "internal",
     message: `Canonical request field '${field}' is invalid.`,

@@ -6,14 +6,14 @@ import { derivePaymentKey } from "../../src/payment/payment-key.js";
 import type { CanonicalPaymentRequest } from "../../src/domain/types.js";
 
 const base = {
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: "0123456789abcdef0123456789abcdef01234567",
   recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d" as const,
   amountAtomic: "2500000",
   chainId: 11155111,
   tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238" as const,
-  purpose: "mergepay:payout",
+  purpose: "skirwith:payout",
 };
 
 describe("buildCanonicalRequest", () => {
@@ -27,10 +27,10 @@ describe("buildCanonicalRequest", () => {
   it("normalizes the repository and merge sha to lowercase hex", () => {
     const request = buildCanonicalRequest({
       ...base,
-      repository: "ACME/mergepay-demo",
+      repository: "ACME/skirwith-demo",
       mergeSha: "0123456789abcdef0123456789abcdef01234567",
     });
-    expect(request.repository).toBe("acme/mergepay-demo");
+    expect(request.repository).toBe("acme/skirwith-demo");
   });
 });
 
@@ -70,10 +70,10 @@ describe("derivePaymentIdentity", () => {
     const identity = derivePaymentIdentity(buildCanonicalRequest(base));
     expect(identity).toEqual({
       version: 1,
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       mergeSha: "0123456789abcdef0123456789abcdef01234567",
-      purpose: "mergepay:payout",
+      purpose: "skirwith:payout",
     });
   });
 });
@@ -81,7 +81,7 @@ describe("derivePaymentIdentity", () => {
 describe("derivePaymentKey", () => {
   it("is stable for the same request", () => {
     const key = derivePaymentKey(buildCanonicalRequest(base));
-    expect(key).toMatch(/^mergepay:/);
+    expect(key).toMatch(/^skirwith:/);
   });
 
   it("keeps the same key when material content changes, so conflicts are representable", () => {
@@ -105,7 +105,7 @@ describe("derivePaymentKey", () => {
       { pullRequestNumber: 43 },
       { repository: "other/org" },
       { mergeSha: "0123456789abcdef0123456789abcdef01234568" },
-      { purpose: "mergepay:reimbursement" },
+      { purpose: "skirwith:reimbursement" },
     ];
     for (const change of changedIdentity) {
       const b = derivePaymentKey(buildCanonicalRequest({ ...base, ...change }));
@@ -115,6 +115,6 @@ describe("derivePaymentKey", () => {
 
   it("is provider-safe (alphanumeric plus safe delimiters)", () => {
     const key = derivePaymentKey(buildCanonicalRequest(base));
-    expect(key).toMatch(/^mergepay:[a-f0-9]{64}$/);
+    expect(key).toMatch(/^skirwith:[a-f0-9]{64}$/);
   });
 });

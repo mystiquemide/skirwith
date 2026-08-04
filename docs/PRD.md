@@ -1,8 +1,8 @@
-# MergePay Product Requirements
+# Skirwith Product Requirements
 
 ## Product
 
-MergePay is a GitHub JavaScript Action that pays a maintainer-approved contributor after a pull request is merged. It verifies trusted GitHub state, evaluates deterministic repository policy, simulates the exact transfer, executes it through KeeperHub, polls to a terminal state, and posts evidence back to GitHub.
+Skirwith is a GitHub JavaScript Action that pays a maintainer-approved contributor after a pull request is merged. It verifies trusted GitHub state, evaluates deterministic repository policy, simulates the exact transfer, executes it through KeeperHub, polls to a terminal state, and posts evidence back to GitHub.
 
 ## Problem
 
@@ -20,7 +20,7 @@ Connect a trustworthy GitHub acceptance event to a bounded onchain payment while
 
 ## Core User Story
 
-As a maintainer, when I merge an eligible pull request, I want MergePay to pay the configured contributor exactly once and leave a clear receipt, without allowing contributor-controlled code or text to choose the recipient, amount, asset, or chain.
+As a maintainer, when I merge an eligible pull request, I want Skirwith to pay the configured contributor exactly once and leave a clear receipt, without allowing contributor-controlled code or text to choose the recipient, amount, asset, or chain.
 
 ## Functional Requirements
 
@@ -65,7 +65,7 @@ As a maintainer, when I merge an eligible pull request, I want MergePay to pay t
 
 ### Duplicate handling
 
-- Locate an existing structured MergePay receipt.
+- Locate an existing structured Skirwith receipt.
 - Validate its payment key and request hash.
 - Resume polling pending executions.
 - Return the original confirmed execution for a replay.
@@ -75,7 +75,7 @@ As a maintainer, when I merge an eligible pull request, I want MergePay to pay t
 ### Output
 
 - GitHub job summary for every outcome.
-- One create-or-update PR receipt owned by MergePay.
+- One create-or-update PR receipt owned by Skirwith.
 - Machine-readable action outputs.
 - Versioned secret-free evidence record.
 

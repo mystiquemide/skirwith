@@ -16,7 +16,7 @@ import type { ExecutionStatus } from "../../src/domain/types.js";
 
 const SECRET = "kh_test_synthetic_secret";
 const PREVIOUS_SECRET = "kh_test_previous_secret";
-const KEY = `mergepay:${"a".repeat(64)}`;
+const KEY = `skirwith:${"a".repeat(64)}`;
 
 const ACTIVE: ReceiptSigningKey = { id: keyIdFor(SECRET), secret: SECRET };
 const PREVIOUS: ReceiptSigningKey = { id: keyIdFor(PREVIOUS_SECRET), secret: PREVIOUS_SECRET };
@@ -24,14 +24,14 @@ const PREVIOUS: ReceiptSigningKey = { id: keyIdFor(PREVIOUS_SECRET), secret: PRE
 function payload(overrides: Partial<ReceiptMarkerPayload> = {}): ReceiptMarkerPayload {
   return {
     version: 1,
-    product: "mergepay",
+    product: "skirwith",
     paymentKey: KEY,
     requestHash: "d".repeat(64),
     status: "confirmed",
     executionId: "ex_1",
     transactionHash: `0x${"a".repeat(64)}`,
     transactionLink: "https://explorer/tx/0x123",
-    repository: "acme/mergepay-demo",
+    repository: "acme/skirwith-demo",
     pullRequestNumber: 42,
     mergeSha: "0123456789abcdef0123456789abcdef01234567",
     ...overrides,
@@ -112,7 +112,7 @@ describe("encodeReceiptMarker / decodeReceiptMarker", () => {
   it("round-trips a signed marker through the hidden comment block", () => {
     const marker = signed();
     const encoded = encodeReceiptMarker(marker);
-    expect(encoded).toMatch(/^<!-- mergepay:\{.*-->$/);
+    expect(encoded).toMatch(/^<!-- skirwith:\{.*-->$/);
     expect(decodeReceiptMarker(encoded)).toEqual(marker);
   });
 
@@ -127,26 +127,26 @@ describe("encodeReceiptMarker / decodeReceiptMarker", () => {
   });
 
   it("returns undefined for a malformed marker", () => {
-    expect(decodeReceiptMarker("<!-- mergepay:not-json -->")).toBeUndefined();
+    expect(decodeReceiptMarker("<!-- skirwith:not-json -->")).toBeUndefined();
   });
 
   it("rejects a marker with a missing or malformed mac or key id", () => {
     const marker = signed();
     const withoutMac = { ...marker } as Record<string, unknown>;
     delete withoutMac.mac;
-    expect(decodeReceiptMarker(`<!-- mergepay:${JSON.stringify(withoutMac)} -->`)).toBeUndefined();
+    expect(decodeReceiptMarker(`<!-- skirwith:${JSON.stringify(withoutMac)} -->`)).toBeUndefined();
     expect(
-      decodeReceiptMarker(`<!-- mergepay:${JSON.stringify({ ...marker, mac: "zz" })} -->`),
+      decodeReceiptMarker(`<!-- skirwith:${JSON.stringify({ ...marker, mac: "zz" })} -->`),
     ).toBeUndefined();
     expect(
-      decodeReceiptMarker(`<!-- mergepay:${JSON.stringify({ ...marker, keyId: "zz" })} -->`),
+      decodeReceiptMarker(`<!-- skirwith:${JSON.stringify({ ...marker, keyId: "zz" })} -->`),
     ).toBeUndefined();
   });
 
   it("rejects a marker with malformed identity fields", () => {
     const bad = [
-      { paymentKey: "mergepay:not-a-hash" },
-      { paymentKey: "not-mergepay:0000" },
+      { paymentKey: "skirwith:not-a-hash" },
+      { paymentKey: "not-skirwith:0000" },
       { requestHash: "zz".repeat(32) },
       { mergeSha: "not-a-sha" },
       { pullRequestNumber: 0 },

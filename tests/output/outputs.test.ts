@@ -12,7 +12,7 @@ const POLICY: PolicyDecision = {
 describe("buildActionOutputs", () => {
   it("exposes the documented outputs for a confirmed payout", () => {
     const evidence = buildEvidence({
-      paymentKey: "mergepay:abc",
+      paymentKey: "skirwith:abc",
       requestHash: "def",
       policy: POLICY,
       simulation: "passed",
@@ -26,7 +26,7 @@ describe("buildActionOutputs", () => {
     expect(buildActionOutputs(evidence)).toEqual({
       status: "confirmed",
       "policy-result": "approved",
-      "payment-key": "mergepay:abc",
+      "payment-key": "skirwith:abc",
       "request-hash": "def",
       "execution-id": "ex_1",
       "transaction-hash": "0x123",
@@ -38,7 +38,7 @@ describe("buildActionOutputs", () => {
 
   it("exposes duplicate and no-broadcast flags", () => {
     const evidence = buildEvidence({
-      paymentKey: "mergepay:abc",
+      paymentKey: "skirwith:abc",
       requestHash: "def",
       policy: POLICY,
       simulation: "not-run",

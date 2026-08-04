@@ -3,9 +3,9 @@ import { resolveExistingReceipt } from "../../src/execution/duplicate-resolver.j
 import type { ReceiptRecord } from "../../src/evidence/receipt.js";
 
 const CURRENT = {
-  paymentKey: "mergepay:abc",
+  paymentKey: "skirwith:abc",
   requestHash: "hash-a",
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: "0123456789abcdef0123456789abcdef01234567",
 };
@@ -13,7 +13,7 @@ const CURRENT = {
 function receipt(overrides: Partial<ReceiptRecord> = {}): ReceiptRecord {
   return {
     version: 1,
-    product: "mergepay",
+    product: "skirwith",
     paymentKey: CURRENT.paymentKey,
     requestHash: CURRENT.requestHash,
     status: "confirmed",

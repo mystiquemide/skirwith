@@ -9,5 +9,5 @@
     "user": { "login": "alice" },
     "labels": []
   },
-  "repository": { "owner": { "login": "acme" }, "name": "mergepay-demo" }
+  "repository": { "owner": { "login": "acme" }, "name": "skirwith-demo" }
 }

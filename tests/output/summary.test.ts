@@ -14,7 +14,7 @@ const NOW = "2026-08-03T22:00:00.000Z";
 describe("renderActionSummary", () => {
   it("renders the confirmed state with payment and transaction evidence", () => {
     const evidence = buildEvidence({
-      paymentKey: "mergepay:abc",
+      paymentKey: "skirwith:abc",
       requestHash: "def",
       policy: POLICY,
       simulation: "passed",
@@ -26,7 +26,7 @@ describe("renderActionSummary", () => {
       nowIso: () => NOW,
     });
     const summary = renderActionSummary(evidence, {
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d",
       amount: "2.5",
@@ -39,7 +39,7 @@ describe("renderActionSummary", () => {
     expect(summary).toContain("Recipient: `0x05619d1a133623b322a8f366ea9594e4e586f26d`");
     expect(summary).toContain("Amount: 2.5 USDC");
     expect(summary).toContain("Chain: 11155111");
-    expect(summary).toContain("Payment key: `mergepay:abc`");
+    expect(summary).toContain("Payment key: `skirwith:abc`");
     expect(summary).toContain("[0x123](https://explorer/tx/0x123)");
   });
 
@@ -54,7 +54,7 @@ describe("renderActionSummary", () => {
       nowIso: () => NOW,
     });
     const summary = renderActionSummary(evidence, {
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
     });
     expect(summary).toContain("Status: `blocked`");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FetchHttpTransport } from "../../src/keeperhub/transport.js";
 import type { HttpRequest, HttpResponse } from "../../src/keeperhub/transport.js";
-import { MergePayError } from "../../src/domain/errors.js";
+import { SkirwithError } from "../../src/domain/errors.js";
 
 type FetchInput = string | URL | Request;
 
@@ -95,7 +95,7 @@ describe("FetchHttpTransport", () => {
         headers: {},
         timeoutMs: 20,
       }),
-    ).rejects.toBeInstanceOf(MergePayError);
+    ).rejects.toBeInstanceOf(SkirwithError);
     await expect(
       transport.request({
         method: "GET",

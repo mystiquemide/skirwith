@@ -4,5 +4,5 @@ import type { CanonicalPaymentRequest } from "../domain/types.js";
 
 export function derivePaymentKey(request: CanonicalPaymentRequest): string {
   const identityHash = hashPaymentIdentity(derivePaymentIdentity(request));
-  return `mergepay:${identityHash}`;
+  return `skirwith:${identityHash}`;
 }

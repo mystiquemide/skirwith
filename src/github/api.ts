@@ -1,4 +1,4 @@
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 import type { HttpTransport } from "../transport/http.js";
 
 export interface PullRequestState {
@@ -52,8 +52,8 @@ export interface GithubRestApiOptions {
   timeoutMs?: number;
 }
 
-function githubError(message: string, cause?: unknown): MergePayError {
-  return new MergePayError({
+function githubError(message: string, cause?: unknown): SkirwithError {
+  return new SkirwithError({
     code: "GITHUB_FETCH_FAILED",
     category: "github",
     message,
@@ -130,7 +130,7 @@ export class GithubRestApi implements GitHubApi {
 
   async fetchConfigFile(owner: string, name: string, ref: string): Promise<string> {
     const parsed = (await this.get(
-      `/repos/${encodePath(owner)}/${encodePath(name)}/contents/.github%2Fmergepay.yml?ref=${encodePath(ref)}`,
+      `/repos/${encodePath(owner)}/${encodePath(name)}/contents/.github%2Fskirwith.yml?ref=${encodePath(ref)}`,
     )) as Record<string, unknown>;
     if (typeof parsed.content !== "string") {
       throw githubError("GitHub config contents response is missing 'content'.");

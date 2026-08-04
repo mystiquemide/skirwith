@@ -3,7 +3,7 @@ import type { ReceiptRecord } from "../evidence/receipt.js";
 
 export function renderReceiptComment(record: ReceiptRecord, mac: string, keyId: string): string {
   const lines = [
-    "## MergePay receipt",
+    "## Skirwith receipt",
     `- Status: \`${record.status}\``,
     `- Payment key: \`${record.paymentKey}\``,
     `- Request hash: \`${record.requestHash}\``,
@@ -22,7 +22,7 @@ export function renderReceiptComment(record: ReceiptRecord, mac: string, keyId: 
   }
   const marker = encodeReceiptMarker({
     version: 1,
-    product: "mergepay",
+    product: "skirwith",
     paymentKey: record.paymentKey,
     requestHash: record.requestHash,
     status: record.status,

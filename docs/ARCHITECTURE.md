@@ -1,12 +1,12 @@
-# MergePay Architecture
+# Skirwith Architecture
 
 ## System Context
 
-MergePay sits between GitHub and KeeperHub. GitHub supplies a trusted merge event and repository state. MergePay converts trusted state into a deterministic payment decision. KeeperHub simulates and executes the transfer. The block explorer provides authoritative chain evidence. GitHub remains the operator interface and audit surface.
+Skirwith sits between GitHub and KeeperHub. GitHub supplies a trusted merge event and repository state. Skirwith converts trusted state into a deterministic payment decision. KeeperHub simulates and executes the transfer. The block explorer provides authoritative chain evidence. GitHub remains the operator interface and audit surface.
 
 ```text
 Maintainer -> GitHub merge/config/labels
-GitHub -> MergePay Action -> KeeperHub Direct API -> EVM testnet
+GitHub -> Skirwith Action -> KeeperHub Direct API -> EVM testnet
    ^            |                   |                  |
    |            +-- summary/receipt +-- execution ID   +-- tx proof
    +---------------------------------------------------------- evidence
@@ -18,7 +18,7 @@ GitHub -> MergePay Action -> KeeperHub Direct API -> EVM testnet
 
 Runs on the base repository's closed-PR event. It has minimum GitHub permissions and the KeeperHub secret. It does not check out or execute contributor code.
 
-### MergePay action bundle
+### Skirwith action bundle
 
 NCC-generated Node.js bundle. It parses context, fetches trusted config/state, evaluates policy, creates the canonical request, resolves duplicates, calls KeeperHub, and publishes evidence.
 
@@ -102,7 +102,7 @@ type PaymentIdentity = {
 
 type ReceiptMarker = {
   version: 1;
-  product: "mergepay";
+  product: "skirwith";
   paymentKey: string;
   requestHash: string;
   status: ExecutionStatus;

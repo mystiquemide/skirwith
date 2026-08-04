@@ -1,4 +1,4 @@
-# MergePay Planning Index
+# Skirwith Planning Index
 
 Use these documents in this order when execution begins:
 

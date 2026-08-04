@@ -13,17 +13,17 @@ import { FakeGitHubApi } from "../fakes/fakes.js";
 const SECRET = "kh_test_synthetic_secret";
 const PREVIOUS_SECRET = "kh_test_previous_secret";
 const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
-const KEY = `mergepay:${"a".repeat(64)}`;
-const OTHER_KEY = `mergepay:${"b".repeat(64)}`;
+const KEY = `skirwith:${"a".repeat(64)}`;
+const OTHER_KEY = `skirwith:${"b".repeat(64)}`;
 
 const RECEIPT: ReceiptRecord = {
   version: 1,
-  product: "mergepay",
+  product: "skirwith",
   paymentKey: KEY,
   requestHash: "d".repeat(64),
   status: "confirmed",
   executionId: "ex_1",
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: MERGE_SHA,
   createdAt: "2026-08-03T00:00:00.000Z",
@@ -33,21 +33,21 @@ const RECEIPT: ReceiptRecord = {
 function signedMarkerBody(paymentKey: string, status: ExecutionStatus = "confirmed"): string {
   const payload: ReceiptMarkerPayload = {
     version: 1,
-    product: "mergepay",
+    product: "skirwith",
     paymentKey,
     requestHash: "d".repeat(64),
     status,
-    repository: "acme/mergepay-demo",
+    repository: "acme/skirwith-demo",
     pullRequestNumber: 42,
     mergeSha: MERGE_SHA,
   };
   const key = { id: keyIdFor(SECRET), secret: SECRET };
   const mac = signReceiptMarker(payload, key);
-  return `<!-- mergepay:${JSON.stringify({ ...payload, keyId: key.id, mac })} -->`;
+  return `<!-- skirwith:${JSON.stringify({ ...payload, keyId: key.id, mac })} -->`;
 }
 
 function makeStore(api: FakeGitHubApi, previousSecret?: string): CommentReceiptStore {
-  return new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET, previousSecret);
+  return new CommentReceiptStore(api, "acme", "skirwith-demo", 42, SECRET, previousSecret);
 }
 
 describe("CommentReceiptStore", () => {
@@ -66,11 +66,11 @@ describe("CommentReceiptStore", () => {
     const api = new FakeGitHubApi();
     const payload: ReceiptMarkerPayload = {
       version: 1,
-      product: "mergepay",
+      product: "skirwith",
       paymentKey: KEY,
       requestHash: "d".repeat(64),
       status: "confirmed",
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
     };
@@ -79,7 +79,7 @@ describe("CommentReceiptStore", () => {
     api.comments = [
       {
         id: 1,
-        body: `<!-- mergepay:${JSON.stringify({ ...payload, keyId: previousKey.id, mac })} -->`,
+        body: `<!-- skirwith:${JSON.stringify({ ...payload, keyId: previousKey.id, mac })} -->`,
         createdAt: "2026-08-03T00:00:00.000Z",
       },
     ];
@@ -106,11 +106,11 @@ describe("CommentReceiptStore", () => {
   it("ignores a marker signed with a different secret", async () => {
     const payload: ReceiptMarkerPayload = {
       version: 1,
-      product: "mergepay",
+      product: "skirwith",
       paymentKey: KEY,
       requestHash: "d".repeat(64),
       status: "confirmed",
-      repository: "acme/mergepay-demo",
+      repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
     };
@@ -120,7 +120,7 @@ describe("CommentReceiptStore", () => {
     api.comments = [
       {
         id: 1,
-        body: `<!-- mergepay:${JSON.stringify({ ...payload, keyId: attackerKey.id, mac })} -->`,
+        body: `<!-- skirwith:${JSON.stringify({ ...payload, keyId: attackerKey.id, mac })} -->`,
         createdAt: "2026-08-03T00:00:00.000Z",
       },
     ];
@@ -135,7 +135,7 @@ describe("CommentReceiptStore", () => {
       { id: 1, body: signedMarkerBody(OTHER_KEY), createdAt: "2026-08-03T00:00:00.000Z" },
     ];
     const store = makeStore(api);
-    const missingKey = `mergepay:${"c".repeat(64)}`;
+    const missingKey = `skirwith:${"c".repeat(64)}`;
 
     await expect(store.findByPaymentKey(missingKey)).resolves.toBeUndefined();
   });
@@ -204,7 +204,7 @@ describe("CommentReceiptStore", () => {
       { id: 2, body: "two", createdAt: "2026-08-03T00:00:00.000Z" },
       { id: 3, body: "three", createdAt: "2026-08-03T00:00:00.000Z" },
     ];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET, undefined, 2);
+    const store = new CommentReceiptStore(api, "acme", "skirwith-demo", 42, SECRET, undefined, 2);
 
     await expect(store.findByPaymentKey(KEY)).rejects.toMatchObject({
       code: "GITHUB_FETCH_FAILED",

@@ -1,4 +1,4 @@
-# MergePay Project Memory
+# Skirwith Project Memory
 
 Last updated: August 3, 2026 (Africa/Lagos)
 
@@ -35,11 +35,11 @@ url = "https://app.keeperhub.com/mcp"
 
 ## Product decision
 
-Project name: MergePay
+Project name: Skirwith
 
 Positioning:
 
-> MergePay turns verified GitHub contributions into policy-controlled, auditable stablecoin payments through KeeperHub.
+> Skirwith turns verified GitHub contributions into policy-controlled, auditable stablecoin payments through KeeperHub.
 
 Core flow:
 
@@ -70,7 +70,7 @@ This success/duplicate/refusal evidence set is the project's central differentia
 Required:
 
 - GitHub Action triggered only for a genuinely merged pull request.
-- Trusted `.github/mergepay.yml` configuration.
+- Trusted `.github/skirwith.yml` configuration.
 - Maintainer-controlled contributor-to-wallet mapping.
 - Maintainer-controlled bounty labels mapped to fixed amounts.
 - One chain and one asset for the MVP.
@@ -108,16 +108,16 @@ Provisional configuration shape:
 chain: base-sepolia
 token: USDC
 maximum_payout: "25"
-required_label: mergepay-approved
+required_label: skirwith-approved
 require_checks: true
 
 contributors:
   alice: "0x..."
 
 bounties:
-  mergepay-5: "5"
-  mergepay-10: "10"
-  mergepay-25: "25"
+  skirwith-5: "5"
+  skirwith-10: "10"
+  skirwith-25: "25"
 ```
 
 This schema is not yet final. Chain and token must be confirmed using live KeeperHub capabilities. Amounts and wallet addresses must never be accepted from arbitrary PR text.
@@ -128,7 +128,7 @@ This schema is not yet final. Chain and token must be confirmed using live Keepe
 - Preferred candidate: Base Sepolia, if KeeperHub supports the complete simulation and execution path.
 - Fallback candidate: Ethereum Sepolia or the best-supported KeeperHub testnet.
 - Confirm the KeeperHub execution wallet, available test funds, supported token contract, and correct explorer.
-- If test USDC blocks the first smoke test, prove the integration with a native-token transfer first, then move to USDC for the final MergePay proof.
+- If test USDC blocks the first smoke test, prove the integration with a native-token transfer first, then move to USDC for the final Skirwith proof.
 - Never claim USDC support until the exact token contract and transfer are verified.
 
 ## Required wallets and secrets
@@ -198,7 +198,7 @@ The agreed order is:
 - Do not add a database for v0.1.
 - Duplicate protection combines a canonical payment key, canonical request hash comparison, KeeperHub idempotency/execution lookup, and a versioned structured marker in the GitHub receipt.
 - Do not automatically rebroadcast after an uncertain or terminal failure. Resume or inspect the original execution and require manual review when state cannot be proven.
-- Load `.github/mergepay.yml` from the trusted default-branch commit through the GitHub API, never from contributor-controlled checkout content.
+- Load `.github/skirwith.yml` from the trusted default-branch commit through the GitHub API, never from contributor-controlled checkout content.
 - The secret-bearing workflow must not check out or execute pull-request code.
 - The public site is optional and starts only after the live success, replay, and refusal evidence set is complete.
 
@@ -242,7 +242,7 @@ Suggested site navigation:
 The public documentation should cover:
 
 - Quick start and installation.
-- `.github/mergepay.yml` configuration.
+- `.github/skirwith.yml` configuration.
 - GitHub secret setup.
 - Supported chain and token.
 - Payment lifecycle.
@@ -272,7 +272,7 @@ Target length: under three minutes.
 Show:
 
 1. Final successful GitHub receipt first.
-2. Trusted MergePay configuration.
+2. Trusted Skirwith configuration.
 3. Approved and passing PR.
 4. Real merge event.
 5. Policy decision.

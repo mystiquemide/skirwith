@@ -1,6 +1,6 @@
-import type { MergePayConfig } from "../config/schema.js";
+import type { SkirwithConfig } from "../config/schema.js";
 import { toAtomicUnits } from "../domain/decimal.js";
-import { MergePayError } from "../domain/errors.js";
+import { SkirwithError } from "../domain/errors.js";
 import type {
   ChainTokenConfig,
   EvidenceRecord,
@@ -28,7 +28,7 @@ import { resolveExistingReceipt } from "./duplicate-resolver.js";
 
 export interface SettlementInput {
   event: NormalizedPullRequestEvent;
-  config: MergePayConfig;
+  config: SkirwithConfig;
   expectedBaseBranch: string;
   passedChecks: readonly string[];
   chainToken: ChainTokenConfig;
@@ -153,7 +153,7 @@ export class SettlementOrchestrator {
   }
 
   private safeError(error: unknown): { code: string; message: string } {
-    if (error instanceof MergePayError) {
+    if (error instanceof SkirwithError) {
       return error.toPublic();
     }
     return { code: "INTERNAL_ERROR", message: "An unexpected error occurred." };
@@ -302,7 +302,7 @@ export class SettlementOrchestrator {
     // an execution may have been submitted and must never rebroadcast.
     const reservation: ReceiptRecord = {
       version: 1,
-      product: "mergepay",
+      product: "skirwith",
       paymentKey,
       requestHash,
       status: "pending",

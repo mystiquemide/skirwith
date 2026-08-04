@@ -1,4 +1,4 @@
-# MergePay Project Plan
+# Skirwith Project Plan
 
 ## Document Control
 
@@ -10,11 +10,11 @@
 - Research depth: Standard, with live-provider validation still required
 - Planning confidence: 84/100 (Medium)
 - Intended audience: Future execution orchestrator and implementation/review agents
-- Source request summary: Convert the existing MergePay hackathon concept into a complete implementation-ready plan while preserving planning-only boundaries.
+- Source request summary: Convert the existing Skirwith hackathon concept into a complete implementation-ready plan while preserving planning-only boundaries.
 
 ## Executive Summary
 
-MergePay is a GitHub JavaScript Action that pays a maintainer-approved contributor after a genuinely merged pull request. It obtains trusted GitHub state and default-branch configuration, evaluates a deterministic payout policy, simulates the exact transfer through KeeperHub, broadcasts once, polls to terminal status, and posts an auditable receipt to GitHub.
+Skirwith is a GitHub JavaScript Action that pays a maintainer-approved contributor after a genuinely merged pull request. It obtains trusted GitHub state and default-branch configuration, evaluates a deterministic payout policy, simulates the exact transfer through KeeperHub, broadcasts once, polls to terminal status, and posts an auditable receipt to GitHub.
 
 The smallest coherent proof is three states for the same workflow: one confirmed payment, replay suppression with no second payment, and policy refusal before broadcast. The project is for the Agents on Chain hackathon and must produce a public repository, demo video, and real KeeperHub transaction evidence.
 
@@ -35,7 +35,7 @@ The smallest coherent proof is three states for the same workflow: one confirmed
 
 ## Problem Statement
 
-Merging a pull request proves accepted work, but settlement remains a separate manual wallet or treasury action. That creates delay, recipient mistakes, duplicate payments, and weak evidence. MergePay connects the acceptance event to a bounded settlement path without allowing contributor-controlled content to choose payment parameters.
+Merging a pull request proves accepted work, but settlement remains a separate manual wallet or treasury action. That creates delay, recipient mistakes, duplicate payments, and weak evidence. Skirwith connects the acceptance event to a bounded settlement path without allowing contributor-controlled content to choose payment parameters.
 
 ## Target Users or Audience
 
@@ -49,7 +49,7 @@ Merging a pull request proves accepted work, but settlement remains a separate m
 
 - Trusted `pull_request.closed` with `merged === true` handling.
 - Fresh GitHub API verification of repository, branch, PR, merge SHA, labels, and required checks.
-- Trusted default-branch `.github/mergepay.yml` loading.
+- Trusted default-branch `.github/skirwith.yml` loading.
 - Maintainer-controlled GitHub-login-to-wallet mapping.
 - Maintainer-controlled label-to-fixed-amount mapping.
 - One KeeperHub-supported testnet and one verified stablecoin.
@@ -171,7 +171,7 @@ The trusted base repository workflow and GitHub API state are separated from con
 ### Data ownership
 
 - GitHub owns merge/check/label/config/comment state.
-- MergePay owns normalized decisions, canonical identity, and evidence projection during a run.
+- Skirwith owns normalized decisions, canonical identity, and evidence projection during a run.
 - KeeperHub owns execution state and provider audit identity.
 - The chain owns final transfer and receipt.
 - No database is used in v0.1.

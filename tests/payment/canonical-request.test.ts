@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { buildCanonicalRequest } from "../../src/payment/canonical-request.js";
-import { MergePayError } from "../../src/domain/errors.js";
+import { SkirwithError } from "../../src/domain/errors.js";
 
 const base = {
-  repository: "acme/mergepay-demo",
+  repository: "acme/skirwith-demo",
   pullRequestNumber: 42,
   mergeSha: "0123456789abcdef0123456789abcdef01234567",
   recipient: "0x05619d1a133623b322a8f366ea9594e4e586f26d",
   amountAtomic: "2500000",
   chainId: 11155111,
   tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
-  purpose: "mergepay:payout",
+  purpose: "skirwith:payout",
 };
 
 const invalidCases: Array<{ name: string; input: Record<string, unknown> }> = [
@@ -40,7 +40,7 @@ describe("buildCanonicalRequest validation boundary", () => {
   it("builds a canonical request from valid input", () => {
     const request = buildCanonicalRequest(base);
     expect(request.version).toBe(1);
-    expect(request.repository).toBe("acme/mergepay-demo");
+    expect(request.repository).toBe("acme/skirwith-demo");
     expect(request.pullRequestNumber).toBe(42);
     expect(request.amountAtomic).toBe("2500000");
   });
@@ -49,11 +49,11 @@ describe("buildCanonicalRequest validation boundary", () => {
     const upperHex = (address: string) => `0x${address.slice(2).toUpperCase()}`;
     const request = buildCanonicalRequest({
       ...base,
-      repository: "ACME/MergePay-Demo",
+      repository: "ACME/Skirwith-Demo",
       recipient: upperHex(base.recipient),
       tokenAddress: upperHex(base.tokenAddress),
     });
-    expect(request.repository).toBe("acme/mergepay-demo");
+    expect(request.repository).toBe("acme/skirwith-demo");
     expect(request.recipient).toBe(base.recipient.toLowerCase());
     expect(request.tokenAddress).toBe(base.tokenAddress.toLowerCase());
   });
@@ -62,7 +62,7 @@ describe("buildCanonicalRequest validation boundary", () => {
     const upperHex = (address: string) => `0x${address.slice(2).toUpperCase()}`;
     const a = buildCanonicalRequest({
       ...base,
-      repository: "ACME/mergepay-demo",
+      repository: "ACME/skirwith-demo",
       recipient: upperHex(base.recipient),
       tokenAddress: upperHex(base.tokenAddress),
     });
@@ -72,7 +72,7 @@ describe("buildCanonicalRequest validation boundary", () => {
 
   for (const { name, input } of invalidCases) {
     it(`rejects invalid input: ${name}`, () => {
-      expect(() => buildCanonicalRequest({ ...base, ...input })).toThrow(MergePayError);
+      expect(() => buildCanonicalRequest({ ...base, ...input })).toThrow(SkirwithError);
     });
   }
 
@@ -81,8 +81,8 @@ describe("buildCanonicalRequest validation boundary", () => {
       buildCanonicalRequest({ ...base, recipient: "not-an-address" });
       throw new Error("expected buildCanonicalRequest to throw");
     } catch (error) {
-      expect(error).toBeInstanceOf(MergePayError);
-      const publicError = (error as MergePayError).toPublic();
+      expect(error).toBeInstanceOf(SkirwithError);
+      const publicError = (error as SkirwithError).toPublic();
       expect(publicError.code).toBe("CANONICAL_REQUEST_INVALID");
       expect(publicError.message).toMatch(/recipient/i);
     }
