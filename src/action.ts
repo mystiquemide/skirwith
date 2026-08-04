@@ -141,6 +141,12 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
+  const evidence = result.evidence;
+  console.log(
+    `mergepay status=${evidence.status} policy=${evidence.policy.result} broadcast=${evidence.broadcastMade} ` +
+      `executionId=${evidence.executionId ?? "none"} tx=${evidence.transactionHash ?? "none"} ` +
+      `error=${evidence.error ? `${evidence.error.code}` : "none"}`,
+  );
   for (const [key, value] of Object.entries(result.outputs)) {
     core.setOutput(key, value);
   }
