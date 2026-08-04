@@ -27,7 +27,8 @@ describe("renderReceiptComment", () => {
   it("renders readable receipt text plus a decodable signed marker", () => {
     const body = renderReceiptComment(RECEIPT, MAC, KEY_ID);
     expect(body).toContain("## Skirwith receipt");
-    expect(body).toContain("Status: `confirmed`");
+    expect(body).toContain("Status: Confirmed (`confirmed`)");
+    expect(body).toContain("Next step: No action needed");
     expect(body).toContain(`Payment key: \`${KEY}\``);
     expect(body).toContain("Execution ID: `ex_1`");
     expect(body).toContain(`[0x${"a".repeat(64)}](https://explorer/tx/0x123)`);
@@ -42,7 +43,8 @@ describe("renderReceiptComment", () => {
     void transactionHash;
     void transactionLink;
     const body = renderReceiptComment({ ...pendingBase, status: "pending" }, MAC, KEY_ID);
-    expect(body).toContain("Status: `pending`");
+    expect(body).toContain("Status: Waiting for confirmation (`pending`)");
+    expect(body).toContain("Next step: Do not re-run yet");
     expect(body).not.toContain("Transaction:");
   });
 });

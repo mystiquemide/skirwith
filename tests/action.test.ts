@@ -99,7 +99,7 @@ describe("run", () => {
     expect(result.evidence.status).toBe("confirmed");
     expect(result.evidence.broadcastMade).toBe(true);
     expect(result.outputs["broadcast-made"]).toBe("true");
-    expect(result.summary).toContain("Status: `confirmed`");
+    expect(result.summary).toContain("Outcome: Confirmed (`confirmed`)");
     expect(result.summary).toContain("Recipient: `0x05619d1a133623b322a8f366ea9594e4e586f26d`");
 
     expect(deps.api.comments).toHaveLength(1);

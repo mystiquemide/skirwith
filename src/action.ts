@@ -41,6 +41,16 @@ function fail(error: unknown): RunResult {
   return { ok: false, error: safe };
 }
 
+// Bootstrap paths must not print raw unknown errors from a secret-bearing
+// action. Non-Skirwith failures collapse to a safe message; anything with a
+// stable code keeps its public message and nothing more.
+function safeErrorMessage(error: unknown): string {
+  if (error instanceof SkirwithError) {
+    return `${error.code}: ${error.toPublic().message}`;
+  }
+  return "INTERNAL_ERROR: An unexpected error occurred.";
+}
+
 function displayFor(input: SettlementInput): SettlementDisplay {
   const recipient = resolveRecipient(input.config, input.event.authorLogin);
   const resolved = resolvePayoutAmount(input.config, input.event.labels);
@@ -118,8 +128,10 @@ async function main(): Promise<void> {
   let payload: unknown;
   try {
     payload = JSON.parse(readFileSync(eventPath, "utf8"));
-  } catch (error) {
-    console.error(error);
+  } catch {
+    console.error(
+      "GITHUB_EVENT_PARSE_FAILED: The GitHub event payload could not be read from GITHUB_EVENT_PATH.",
+    );
     process.exitCode = 1;
     return;
   }
@@ -155,7 +167,7 @@ async function main(): Promise<void> {
 
 if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
   main().catch((error: unknown) => {
-    console.error(error);
+    console.error(safeErrorMessage(error));
     process.exitCode = 1;
   });
 }

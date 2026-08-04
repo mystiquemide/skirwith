@@ -1,4 +1,5 @@
 import type { EvidenceRecord } from "../domain/types.js";
+import { describeOutcome } from "./status-copy.js";
 
 export interface SettlementDisplay {
   repository: string;
@@ -11,11 +12,19 @@ export interface SettlementDisplay {
 }
 
 export function renderActionSummary(evidence: EvidenceRecord, display: SettlementDisplay): string {
+  const copy = describeOutcome({
+    status: evidence.status,
+    broadcastMade: evidence.broadcastMade,
+    errorCode: evidence.error?.code,
+    reasons: evidence.policy.reasons.map((reason) => reason.code),
+  });
   const lines = [
     "## Skirwith settlement",
-    `- Status: \`${evidence.status}\``,
+    `- Outcome: ${copy.outcome} (\`${evidence.status}\`)`,
+    `- Broadcast: ${copy.broadcast}`,
+    `- What happened: ${copy.explanation}`,
+    `- Next step: ${copy.nextStep}`,
     `- Policy: ${evidence.policy.result}`,
-    `- Broadcast made: ${evidence.broadcastMade ? "yes" : "no"}`,
     `- Repository: ${display.repository}`,
     `- Pull request: #${display.pullRequestNumber}`,
   ];

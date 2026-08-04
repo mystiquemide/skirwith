@@ -1,10 +1,16 @@
 import { encodeReceiptMarker } from "../evidence/receipt.js";
 import type { ReceiptRecord } from "../evidence/receipt.js";
+import { describeOutcome } from "./status-copy.js";
 
 export function renderReceiptComment(record: ReceiptRecord, mac: string, keyId: string): string {
+  const copy = describeOutcome({
+    status: record.status,
+    broadcastMade: false,
+  });
   const lines = [
     "## Skirwith receipt",
-    `- Status: \`${record.status}\``,
+    `- Status: ${copy.outcome} (\`${record.status}\`)`,
+    `- Next step: ${copy.nextStep}`,
     `- Payment key: \`${record.paymentKey}\``,
     `- Request hash: \`${record.requestHash}\``,
     `- Repository: ${record.repository}`,

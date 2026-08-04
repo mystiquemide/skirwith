@@ -34,8 +34,8 @@ describe("renderActionSummary", () => {
       tokenSymbol: "USDC",
       tokenAddress: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
     });
-    expect(summary).toContain("Status: `confirmed`");
-    expect(summary).toContain("Broadcast made: yes");
+    expect(summary).toContain("Outcome: Confirmed (`confirmed`)");
+    expect(summary).toContain("Broadcast: Sent once");
     expect(summary).toContain("Recipient: `0x05619d1a133623b322a8f366ea9594e4e586f26d`");
     expect(summary).toContain("Amount: 2.5 USDC");
     expect(summary).toContain("Chain: 11155111");
@@ -57,8 +57,8 @@ describe("renderActionSummary", () => {
       repository: "acme/skirwith-demo",
       pullRequestNumber: 42,
     });
-    expect(summary).toContain("Status: `blocked`");
-    expect(summary).toContain("Broadcast made: no");
+    expect(summary).toContain("Outcome: Stopped before broadcast (`blocked`)");
+    expect(summary).toContain("Broadcast: Not attempted");
     expect(summary).not.toContain("Payment key");
   });
 });
