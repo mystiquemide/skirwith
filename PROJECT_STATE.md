@@ -79,6 +79,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Checkpoint Log
 
+Historical note: the `CODE_REVIEW.md` references below describe the review
+artifact that lived at the repository root during each checkpoint. That
+artifact is preserved and archived at `docs/reviews/CODE_REVIEW.md`; the
+references resolve to the archived location and are intentional historical
+records, not current root files.
+
 ### CP-000: Planning completed
 
 - Status: Complete
@@ -704,15 +710,15 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Requirements covered: Win-plan README blueprint, licensing, repository hygiene, and one-revision release identity.
 - Work completed: Restructured the README around verification (hero pitch, watch-and-verify evidence path, three-state proof table, why KeeperHub, security invariants, quickstart pinned to the release SHA, outcome guide, evidence and limitations, reproduction, repository map) and removed the generic "Who it is for" section and the untested "replays never pay twice" claim. Added the root `LICENSE` (MIT). Moved internal review documents (`CODE_REVIEW.md`, `ELITE_HACKATHON_AUDIT.md`, `COMBINED_PRODUCT_REPO_UX_HACKATHON_AUDIT.md`, `SKIRWITH_WIN_PLAN.md`) into `docs/reviews/` via `git mv`. Created annotated tag `v0.1.1` at commit `0f821cf4bade597f23cd594be222b4d59a3b33f7` and re-pointed every README, example workflow, landing page, submission archive, and verify-guide reference from `v0.1.0`/`594bcb9` to `v0.1.1`/the new SHA. Fixed stale project-state references (`docs/reviews/CODE_REVIEW.md` paths, current checkpoint).
 - Files or assets changed: `README.md`, `LICENSE` (new), `docs/reviews/` (moved CODE_REVIEW and the three audit/win-plan docs), `docs/SUBMISSION.md`, `docs/VERIFY.md`, `docs/examples/skirwith-workflow.yml`, `docs/index.html`, `PROJECT_STATE.md`; tag `v0.1.1` (annotated).
-- Commands or checks run: `git mv` for the review archive, `git tag -a v0.1.1`, `npm test` (242 tests), link existence checks across all referenced docs, `grep` for stale root-path references (none remaining).
-- Test results: 242/242 tests pass; all README/doc links resolve; no stale references to the moved review documents remain.
+- Commands or checks run: `git mv` for the review archive, `git tag -a v0.1.1`, full verification from a fresh `npm ci` in a clean worktree at HEAD (`npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:coverage`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm run audit`), link existence checks across all referenced docs, `grep` for stale root-path references (none remaining).
+- Test results: 242/242 tests pass; every command advertised in the README passes from a fresh `npm ci`, including `npm run test:coverage` (exit 0, `@vitest/coverage-v8` committed in `package.json` and `package-lock.json`); all README/doc links resolve; no stale references to the moved review documents remain.
 - Acceptance criteria verified: The README leads with verification; the release tag includes the judge-first README; internal review material is out of the primary repository path; the submission archive pins the exact release commit and records the pending `v1.0.0` final tag after the demo video.
-- Decisions: Re-tagged to `v0.1.1` at the current HEAD rather than rewriting `v0.1.0`; the final `v1.0.0` submission tag will be cut after the demo video and submission archive so the evaluated revision matches the release exactly.
+- Decisions: Re-tagged to `v0.1.1` at the current HEAD rather than rewriting `v0.1.0`; the final `v1.0.0` submission tag will be cut after the demo video and submission archive so the evaluated revision matches the release exactly. `docs/reviews/` contents are treated as preserved review evidence and are excluded from cleanup scope.
 - Deviations: None.
 - Amendments: `AMD-001` remains approved.
 - Risks introduced: Two release tags exist (`v0.1.0`, `v0.1.1`); docs reference `v0.1.1`, and the final submission tag supersedes both after the video.
 - Known issues: Demo video URL is still a pending slot in the submission archive; `REV-012` workspace deletion on the reviewer machine remains a user-side item.
-- Blockers: None.
+- Blockers: Two submission blockers remain. (1) Demo video URL is missing; the submission is incomplete without it. (2) The final evaluation revision is not yet frozen: `v1.0.0` must be cut after the video and submission archive so the demo, README, bundle, and submission reference one SHA. The previously reported broken coverage command is not a blocker: it was re-verified passing from a fresh `npm ci` at this checkpoint.
 - Next exact action: Record the demo video against `v0.1.1`, archive the URL in `docs/SUBMISSION.md`, cut the final `v1.0.0` submission tag so the evaluated SHA matches, and complete the DoraHacks submission form before 2026-08-13.
 
 ## Decisions Made During Execution
