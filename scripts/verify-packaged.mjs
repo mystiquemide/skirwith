@@ -28,7 +28,7 @@ function makeApi({ merged = true } = {}) {
     }),
     fetchConfigFile: async () => configYaml,
     fetchCheckStates: async () => [{ name: "CI / test", passed: true }],
-    listIssueComments: async () => [],
+    listIssueCommentsPage: async () => ({ comments: [], hasMore: false, nextPage: undefined }),
     createIssueComment: async () => {},
     updateIssueComment: async () => {},
   };

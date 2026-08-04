@@ -84,14 +84,34 @@ describe("GithubRestApi", () => {
     ]);
   });
 
-  it("lists issue comments", async () => {
+  it("lists a page of issue comments and follows the next-page link", async () => {
     const { api } = makeApi((url) =>
       url.includes("/issues/42/comments")
-        ? json(200, [{ id: 10, body: "hello", created_at: "2026-08-03T00:00:00.000Z" }])
+        ? {
+            ...json(200, [{ id: 10, body: "hello", created_at: "2026-08-03T00:00:00.000Z" }]),
+            headers: {
+              link: '<https://api.github.com/repos/acme/mergepay-demo/issues/42/comments?per_page=100&page=2>; rel="next"',
+            },
+          }
         : json(500, {}),
     );
-    const comments = await api.listIssueComments("acme", "mergepay-demo", 42);
-    expect(comments).toEqual([{ id: 10, body: "hello", createdAt: "2026-08-03T00:00:00.000Z" }]);
+    const page = await api.listIssueCommentsPage("acme", "mergepay-demo", 42, 1);
+    expect(page.comments).toEqual([
+      { id: 10, body: "hello", createdAt: "2026-08-03T00:00:00.000Z" },
+    ]);
+    expect(page.hasMore).toBe(true);
+    expect(page.nextPage).toBe(2);
+  });
+
+  it("marks the last page with no next link as terminal", async () => {
+    const { api } = makeApi((url) =>
+      url.includes("/issues/42/comments")
+        ? json(200, [{ id: 10, body: "hi", created_at: "2026-08-03T00:00:00.000Z" }])
+        : json(500, {}),
+    );
+    const page = await api.listIssueCommentsPage("acme", "mergepay-demo", 42, 2);
+    expect(page.hasMore).toBe(false);
+    expect(page.nextPage).toBeUndefined();
   });
 
   it("creates and updates issue comments with the expected methods", async () => {

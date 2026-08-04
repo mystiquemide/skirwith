@@ -12,6 +12,7 @@ import type {
   GitHubApi,
   CommentState,
   CheckState,
+  IssueCommentPage,
   PullRequestState,
 } from "../../src/github/api.js";
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/transport/http.js";
@@ -43,6 +44,7 @@ export class FakeGitHubApi implements GitHubApi {
   configFile = "";
   checkRuns: CheckState[] = [];
   comments: CommentState[] = [];
+  commentPageSize = 100;
   fetchError?: unknown;
   createIssueCommentError?: unknown;
   updateIssueCommentError?: unknown;
@@ -70,9 +72,23 @@ export class FakeGitHubApi implements GitHubApi {
     return this.checkRuns;
   }
 
-  async listIssueComments(): Promise<CommentState[]> {
+  async listIssueCommentsPage(
+    _owner: string,
+    _name: string,
+    _number: number,
+    page: number,
+  ): Promise<IssueCommentPage> {
     this.throwIfError();
-    return this.comments;
+    const start = (page - 1) * this.commentPageSize;
+    const slice = this.comments.slice(start, start + this.commentPageSize);
+    const hasMore = start + this.commentPageSize < this.comments.length;
+    return { comments: slice, hasMore, nextPage: hasMore ? page + 1 : undefined };
+  }
+
+  seedOwnedComment(body: string): void {
+    const id = this.nextCommentId++;
+    this.comments.push({ id, body, createdAt: "2026-08-03T00:00:00.000Z" });
+    this.ownedCommentIds.add(id);
   }
 
   async createIssueComment(

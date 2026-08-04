@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 3 - Live three-state acceptance
-- Current checkpoint: CP-023
+- Current checkpoint: CP-024
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 3 (Live three-state acceptance): Phase 2 exit gate closed (CP-022, approved for `f883b81`). Phase 3 is pending live KeeperHub credentials, a private acceptance repository with a merged PR, and explicit confirmation before any broadcast.
+- Phase 3 (Live three-state acceptance): Phase 2 exit gate closed (CP-022); the low-severity hardening item REV-013 (comment pagination) is fixed (CP-023); local readiness re-verified (222 tests, audit 0, packaged fixtures pass). Phase 3 live runs are pending the KeeperHub org `kh_` key, a private acceptance repository with a trusted config and a merged PR, and explicit confirmation before any broadcast.
 
 ### Blocked (resolved / narrowed)
 
@@ -524,6 +524,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Begin Phase 3 (CP-023) live three-state acceptance with real GitHub and KeeperHub evidence.
 
+### CP-023: REV-013 comment pagination fixed and Phase 3 readiness verified
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 hardening / Phase 3 readiness
+- Objective: Fix REV-013 (Low) so issue-comment receipt discovery is bounded and paginated, then re-verify local readiness for Phase 3.
+- Requirements covered: `FR-012`, `NFR-002`, REV-013.
+- Work completed: `src/github/api.ts` — replaced the single-page `listIssueComments` with `listIssueCommentsPage(owner, name, number, page)` returning `IssueCommentPage { comments, hasMore, nextPage }`, using `per_page=100` and parsing the `Link: rel="next"` header; malformed/non-list responses fail as `GITHUB_FETCH_FAILED`. `src/github/receipts.ts` — `CommentReceiptStore` now iterates comment pages with early-stop once the authenticated matching receipt is found (read) or updated (write), and fails closed (`GITHUB_FETCH_FAILED`) when pagination exceeds a configured page limit (default 10 pages); forged squatters are never updated. `FakeGitHubApi` gained `listIssueCommentsPage`, `commentPageSize`, and `seedOwnedComment` for multi-page tests.
+- Files or assets changed: `src/github/api.ts`, `src/github/receipts.ts`, tests (`api`, `receipts`), `tests/fakes/fakes.ts`, `scripts/verify-packaged.mjs`, `docs/TEST-STRATEGY.md`, `PROJECT_STATE.md`.
+- Commands or checks run: Focused vitest runs, `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm run audit`, grep secret scan.
+- Test results: 222 tests pass (was 218): page parsing and next-link handling, later-page receipt discovery and update, bounded pagination fail-closed. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; packaged fixtures pass; audit 0 vulnerabilities; secret scan clean.
+- Acceptance criteria verified: Receipts on later comment pages are found and updated; pagination beyond the configured limit fails closed; forged squatters are never edited; packaged bundle behaves identically.
+- Decisions: Early-stop pagination (stop once the authenticated receipt is found) chosen over full fetch to bound API calls on active PRs; a configurable page limit (default 10) fails closed rather than silently missing a receipt.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None; pagination adds at most bounded extra GET requests on long threads.
+- Known issues: `REV-012` remains a workspace-hygiene item on the reviewer machine only (`last stop.md` deleted in `/home/mide/mergepay`); this repository's copy is intact. Audit (0) and secret scan were reproduced in this environment.
+- Blockers: None.
+- Next exact action: Execute Phase 3 (CP-024) live three-state acceptance once the `kh_` key, acceptance repo, and explicit broadcast confirmation are available.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -622,6 +643,8 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-021 | Cross-run no-rebroadcast | Pass | Two-run action and orchestrator tests prove a second invocation of the same event performs zero broadcasts and zero simulations after a post-broadcast receipt failure |
 | CP-021 | Verification suite | Pass | `npm test` 218/218; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 | CP-022 | Independent Phase 2 re-review | Approve | `CODE_REVIEW.md`: REV-010 confirmed corrected; 0 blocker/critical/high/medium; 2 Low (REV-012 workspace deletion, REV-013 comment pagination); Phase 2 gate approved for `f883b81` |
+| CP-023 | Comment pagination (REV-013) | Pass | Bounded early-stop pagination with `Link` next-page parsing; later-page receipts found/updated; fail-closed page limit; forged squatters never edited |
+| CP-023 | Phase 3 local readiness | Pass | `npm test` 222/222; typecheck/lint/format clean; build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 
 ## Known Issues
 
@@ -642,7 +665,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Begin Phase 3 (CP-023) live three-state acceptance: obtain the live KeeperHub org `kh_` key and a private acceptance repository with a trusted config and a merged PR; run a simulation-only pass, then one confirmed USDC payout on Sepolia (chain 11155111, token `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, org wallet `0x05619d1a133623B322a8f366ea9594e4e586f26D`), then replay with no second transaction and a blocked no-broadcast refusal, with explicit confirmation before any broadcast. Keep at least one backup successful transaction.
+Execute Phase 3 (CP-024) live three-state acceptance with real GitHub and KeeperHub evidence once: (1) the KeeperHub org `kh_` Direct Execution key is provided to this environment, (2) a private acceptance repository exists with a trusted `.github/mergepay.yml` (frozen Sepolia config), a settlement workflow, and a merged PR, and (3) explicit confirmation is given before any broadcast. Sequence: simulation-only pass, one confirmed USDC payout on Sepolia (chain 11155111, token `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, org wallet `0x05619d1a133623B322a8f366ea9594e4e586f26D`), replay with no second transaction, blocked no-broadcast refusal, and at least one backup successful transaction.
 
 ## Checkpoint and Amendment Contract
 

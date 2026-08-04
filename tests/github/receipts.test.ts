@@ -168,6 +168,49 @@ describe("CommentReceiptStore", () => {
     expect(decodeReceiptMarker(api.comments[0]?.body ?? "")?.status).toBe("confirmed");
   });
 
+  it("finds a signed receipt on a later page of comments", async () => {
+    const api = new FakeGitHubApi();
+    api.commentPageSize = 2;
+    api.comments = [
+      { id: 1, body: "unrelated discussion", createdAt: "2026-08-03T00:00:00.000Z" },
+      { id: 2, body: signedMarkerBody(OTHER_KEY), createdAt: "2026-08-03T00:00:00.000Z" },
+      { id: 3, body: signedMarkerBody(KEY), createdAt: "2026-08-03T00:00:00.000Z" },
+    ];
+    const store = makeStore(api);
+
+    const found = await store.findByPaymentKey(KEY);
+    expect(found?.paymentKey).toBe(KEY);
+  });
+
+  it("updates an authenticated receipt found on a later page instead of creating a second", async () => {
+    const api = new FakeGitHubApi();
+    api.commentPageSize = 2;
+    api.comments = [{ id: 1, body: "unrelated", createdAt: "2026-08-03T00:00:00.000Z" }];
+    api.seedOwnedComment(signedMarkerBody(KEY, "pending"));
+    const store = makeStore(api);
+
+    await store.save(RECEIPT);
+
+    expect(api.comments).toHaveLength(2);
+    expect(api.comments[1]?.id).not.toBe(1);
+    expect(decodeReceiptMarker(api.comments[1]?.body ?? "")?.status).toBe("confirmed");
+  });
+
+  it("fails closed when pagination exceeds the configured page limit", async () => {
+    const api = new FakeGitHubApi();
+    api.commentPageSize = 1;
+    api.comments = [
+      { id: 1, body: "one", createdAt: "2026-08-03T00:00:00.000Z" },
+      { id: 2, body: "two", createdAt: "2026-08-03T00:00:00.000Z" },
+      { id: 3, body: "three", createdAt: "2026-08-03T00:00:00.000Z" },
+    ];
+    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET, undefined, 2);
+
+    await expect(store.findByPaymentKey(KEY)).rejects.toMatchObject({
+      code: "GITHUB_FETCH_FAILED",
+    });
+  });
+
   it("never updates a forged squatter; it creates a fresh signed receipt comment", async () => {
     const api = new FakeGitHubApi();
     api.comments = [

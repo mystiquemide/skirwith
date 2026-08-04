@@ -21,12 +21,23 @@ export interface CommentState {
   createdAt: string;
 }
 
+export interface IssueCommentPage {
+  comments: CommentState[];
+  hasMore: boolean;
+  nextPage?: number;
+}
+
 export interface GitHubApi {
   fetchPullRequest(owner: string, name: string, number: number): Promise<PullRequestState>;
   fetchDefaultBranch(owner: string, name: string): Promise<string>;
   fetchConfigFile(owner: string, name: string, ref: string): Promise<string>;
   fetchCheckStates(owner: string, name: string, mergeSha: string): Promise<CheckState[]>;
-  listIssueComments(owner: string, name: string, number: number): Promise<CommentState[]>;
+  listIssueCommentsPage(
+    owner: string,
+    name: string,
+    number: number,
+    page: number,
+  ): Promise<IssueCommentPage>;
   createIssueComment(owner: string, name: string, number: number, body: string): Promise<void>;
   updateIssueComment(owner: string, name: string, commentId: number, body: string): Promise<void>;
 }
@@ -52,6 +63,19 @@ function githubError(message: string, cause?: unknown): MergePayError {
 
 function encodePath(value: string): string {
   return encodeURIComponent(value);
+}
+
+function parseNextPageLink(linkHeader: string | undefined): number | undefined {
+  if (linkHeader === undefined) {
+    return undefined;
+  }
+  const match = /<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="next"/.exec(linkHeader);
+  const raw = match?.[1];
+  if (raw === undefined) {
+    return undefined;
+  }
+  const page = Number.parseInt(raw, 10);
+  return Number.isFinite(page) && page > 0 ? page : undefined;
 }
 
 export class GithubRestApi implements GitHubApi {
@@ -134,14 +158,21 @@ export class GithubRestApi implements GitHubApi {
     });
   }
 
-  async listIssueComments(owner: string, name: string, number: number): Promise<CommentState[]> {
-    const parsed = await this.get(
-      `/repos/${encodePath(owner)}/${encodePath(name)}/issues/${number}/comments`,
-    );
-    if (!Array.isArray(parsed)) {
-      throw githubError("GitHub comments response is not a list.");
-    }
-    return parsed.map((entry) => {
+  async listIssueCommentsPage(
+    owner: string,
+    name: string,
+    number: number,
+    page: number,
+  ): Promise<IssueCommentPage> {
+    const response = await this.transport.request({
+      method: "GET",
+      url: `${this.baseUrl}/repos/${encodePath(owner)}/${encodePath(name)}/issues/${number}/comments?per_page=100&page=${page}`,
+      headers: this.headers(),
+      timeoutMs: this.timeoutMs,
+    });
+    this.ensureSuccess(response);
+    const parsed = this.parseJsonArray(response.body, "GitHub comments response");
+    const comments = parsed.map((entry) => {
       const record = entry as Record<string, unknown>;
       if (
         typeof record.id !== "number" ||
@@ -152,6 +183,8 @@ export class GithubRestApi implements GitHubApi {
       }
       return { id: record.id, body: record.body, createdAt: record.created_at };
     });
+    const nextPage = parseNextPageLink(response.headers.link);
+    return { comments, hasMore: nextPage !== undefined, nextPage };
   }
 
   async createIssueComment(
@@ -219,6 +252,19 @@ export class GithubRestApi implements GitHubApi {
     } catch (error) {
       throw githubError("GitHub returned a malformed JSON response.", error);
     }
+  }
+
+  private parseJsonArray(body: string, context: string): unknown[] {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(body);
+    } catch (error) {
+      throw githubError(`${context} is malformed JSON.`, error);
+    }
+    if (!Array.isArray(parsed)) {
+      throw githubError(`${context} is not a list.`);
+    }
+    return parsed;
   }
 
   private ensureSuccess(response: { status: number; body: string }): void {

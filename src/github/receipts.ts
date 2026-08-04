@@ -5,9 +5,12 @@ import {
   verifyReceiptMarker,
 } from "../evidence/receipt.js";
 import type { ReceiptRecord, ReceiptSigningKey } from "../evidence/receipt.js";
+import { MergePayError } from "../domain/errors.js";
 import { renderReceiptComment } from "../output/receipt-comment.js";
 import type { GitHubApi } from "./api.js";
 import type { ReceiptStore } from "./receipt-store.js";
+
+const DEFAULT_MAX_COMMENT_PAGES = 10;
 
 export class CommentReceiptStore implements ReceiptStore {
   private readonly api: GitHubApi;
@@ -16,6 +19,7 @@ export class CommentReceiptStore implements ReceiptStore {
   private readonly pullRequestNumber: number;
   private readonly activeKey: ReceiptSigningKey;
   private readonly verificationKeys: readonly ReceiptSigningKey[];
+  private readonly maxCommentPages: number;
 
   constructor(
     api: GitHubApi,
@@ -24,6 +28,7 @@ export class CommentReceiptStore implements ReceiptStore {
     pullRequestNumber: number,
     activeSecret: string,
     previousSecret?: string,
+    maxCommentPages: number = DEFAULT_MAX_COMMENT_PAGES,
   ) {
     this.api = api;
     this.owner = owner;
@@ -33,15 +38,45 @@ export class CommentReceiptStore implements ReceiptStore {
     this.verificationKeys = previousSecret
       ? [this.activeKey, { id: keyIdFor(previousSecret), secret: previousSecret }]
       : [this.activeKey];
+    this.maxCommentPages = maxCommentPages;
+  }
+
+  private paginationError(): MergePayError {
+    return new MergePayError({
+      code: "GITHUB_FETCH_FAILED",
+      category: "github",
+      message: `Comment pagination exceeded ${this.maxCommentPages} pages; receipt discovery failed closed.`,
+    });
+  }
+
+  private async *iterateComments(): AsyncGenerator<{
+    id: number;
+    body: string;
+    createdAt: string;
+  }> {
+    let page = 1;
+    for (;;) {
+      const pageResult = await this.api.listIssueCommentsPage(
+        this.owner,
+        this.name,
+        this.pullRequestNumber,
+        page,
+      );
+      for (const comment of pageResult.comments) {
+        yield comment;
+      }
+      if (!pageResult.hasMore || pageResult.nextPage === undefined) {
+        return;
+      }
+      if (page >= this.maxCommentPages) {
+        throw this.paginationError();
+      }
+      page = pageResult.nextPage;
+    }
   }
 
   async findByPaymentKey(paymentKey: string): Promise<ReceiptRecord | undefined> {
-    const comments = await this.api.listIssueComments(
-      this.owner,
-      this.name,
-      this.pullRequestNumber,
-    );
-    for (const comment of comments) {
+    for await (const comment of this.iterateComments()) {
       const marker = decodeReceiptMarker(comment.body);
       if (marker === undefined || marker.paymentKey !== paymentKey) {
         continue;
@@ -65,22 +100,21 @@ export class CommentReceiptStore implements ReceiptStore {
   }
 
   async save(record: ReceiptRecord): Promise<void> {
-    const comments = await this.api.listIssueComments(
-      this.owner,
-      this.name,
-      this.pullRequestNumber,
-    );
     // Update only a comment we can authenticate as our own receipt. A forged
     // or unverified squatter must never become the update target; create a
     // fresh action-owned receipt comment instead.
-    const existing = comments.find((comment) => {
+    let existing: { id: number } | undefined;
+    for await (const comment of this.iterateComments()) {
       const marker = decodeReceiptMarker(comment.body);
-      return (
+      if (
         marker !== undefined &&
         marker.paymentKey === record.paymentKey &&
         verifyReceiptMarker(marker, this.verificationKeys)
-      );
-    });
+      ) {
+        existing = { id: comment.id };
+        break;
+      }
+    }
     const mac = signReceiptMarker(
       {
         version: 1,
