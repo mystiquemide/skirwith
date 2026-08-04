@@ -178,9 +178,13 @@ See [docs/SECURITY.md](docs/SECURITY.md).
 - The run reports a config error. Check the config against
   [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
+For every outcome, follow the state-by-state
+[docs/RECOVERY.md](docs/RECOVERY.md). To confirm the project claims from public
+evidence, follow [docs/VERIFY.md](docs/VERIFY.md).
+
 ## Development
 
-Requirements: Node 20, 22, or 24 (the action runtime is Node 24), npm.
+Requirements: Node 24 (the action runtime), npm.
 
 ```bash
 npm install

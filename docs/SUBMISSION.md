@@ -38,6 +38,34 @@ uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
 - Confirm blocked and duplicate evidence is present, not merely described:
   `docs/PHASE3-EVIDENCE.md` refusal and replay rows.
 
+## Accessibility Checklist (docs site)
+
+Recorded 2026-08-04 without browser automation; interactive and visual behavior
+must be re-confirmed manually before submission.
+
+- Language and metadata: `lang="en"`, viewport meta, description meta present.
+- Structure: `<nav>`, `<main>`, `<section>` landmarks; single `h1`; labeled
+  `<h2>` subsections; `<table>` with `<thead>`/`<th>`.
+- Keyboard reachability: all interactive elements (nav links, CTA links,
+  theme toggle) are native focusable anchors/buttons; no custom tabindex or
+  click-only handlers.
+- Theme toggle: dynamic `aria-label` ("Switch to light theme" / "Switch to dark
+  theme") matches the current state; prefers `prefers-color-scheme` default of
+  dark, stored per user in `localStorage`.
+- Color contrast (WCAG 2.1, computed from the theme palette):
+  - Body text `ink` on `canvas`: 15.75:1 dark, 17.74:1 light (AAA).
+  - Muted/label text: 7.89:1 dark, 4.83:1 light (AA).
+  - Accent, ok, warn, bad status colors: 6.93:1 to 11.49:1 dark, 3.77:1 to
+    5.17:1 light. The light-theme `ok` (green) status color is 3.77:1, below AA
+    for normal text; it is used only for large status words in a table and is a
+    known minor limitation.
+  - Faint step-number text was raised to 5.20:1 dark and 4.83:1 light (AA) on
+    2026-08-04.
+- Not yet verified in a real browser: full keyboard tab order, 200% zoom,
+  mobile layout, reduced-motion behavior, and screen-reader output. No automated
+  site test exists; a static-page accessibility smoke test is a post-hackathon
+  follow-up.
+
 ## Honest Disclosures
 
 State testnet/mainnet status, one-chain/one-token scope, maintainer-controlled

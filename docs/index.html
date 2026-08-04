@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Skirwith: Pay approved contributors after a merged pull request</title>
-<meta name="description" content="Skirwith is a GitHub Action. It pays an approved contributor after a merged pull request through KeeperHub on a testnet." />
+<title>Skirwith: Pay approved contributors after a verified merge, once</title>
+<meta name="description" content="Skirwith is a GitHub Action. It pays an approved contributor once after a verified merged pull request through KeeperHub on a testnet, with replay suppression and refusal before broadcast." />
 <script>
 (function () {
   var saved = null;
@@ -21,7 +21,7 @@
     --surface: #0f1522;
     --ink: #e5e9f0;
     --muted: #9aa7bd;
-    --faint: #5b667a;
+    --faint: #7a8699;
     --rule: #1d2738;
     --accent: #60a5fa;
     --accent-soft: rgba(96,165,250,0.18);
@@ -35,7 +35,7 @@
     --surface: #ffffff;
     --ink: #111827;
     --muted: #6b7280;
-    --faint: #9ca3af;
+    --faint: #6b7280;
     --rule: #e5e7eb;
     --accent: #2563eb;
     --accent-soft: #dbeafe;
@@ -149,7 +149,7 @@
       <a href="#safety">Safety</a>
       <a href="#docs">Docs</a>
     </div>
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Light</button>
+    <button class="theme-toggle" id="themeToggle" aria-label="Switch to light theme">Light</button>
   </div>
 </nav>
 
@@ -157,16 +157,17 @@
 
   <div class="hero">
     <h1>Skirwith</h1>
-    <p class="tagline">Pay approved contributors after a merged pull request.</p>
+    <p class="tagline">Pay approved contributors after a verified merge. Once.</p>
     <p class="lead">
       Skirwith is a GitHub Action. It pays an approved contributor after a
-      merged pull request (PR). It uses KeeperHub on Ethereum Sepolia. Policy
-      controls the payout. Replays never pay twice. Refusals happen before any
-      broadcast.
+      merged pull request (PR) through KeeperHub on Ethereum Sepolia.
+      Repository policy controls the recipient and the amount. A replay
+      returns the existing proof instead of sending another payment. A refused
+      run stops before any broadcast.
     </p>
     <div class="cta">
-      <a href="#setup">Set it up</a>
-      <a href="https://github.com/mystiquemide/skirwith-acceptance">View the acceptance repo</a>
+      <a href="#setup">Copy the setup</a>
+      <a href="https://github.com/mystiquemide/skirwith-acceptance">Verify the live proof</a>
     </div>
   </div>
 
@@ -197,10 +198,10 @@
       <div class="stat"><span class="n">7</span><span class="d">on-chain-confirmed KeeperHub USDC transactions, each verified by the USDC Transfer event on Sepolia</span></div>
       <div class="stat"><span class="n">1</span><span class="d">replay of the same event. It produced no second transaction. The wallet balance stayed the same.</span></div>
       <div class="stat"><span class="n">2</span><span class="d">refusal types blocked before broadcast: a missing label and an ambiguous payout. Both report <code>broadcastMade: false</code>.</span></div>
-      <div class="stat"><span class="n">0</span><span class="d">double payments. This holds across every replay and every uncertain broadcast.</span></div>
+      <div class="stat"><span class="n">0</span><span class="d">additional transactions across tested replays and uncertain outcomes.</span></div>
     </div>
 
-    <h2 class="sub">Confirmed transactions</h2>
+    <h2 class="sub">On-chain transaction evidence</h2>
     <table>
       <thead>
         <tr><th>PR</th><th>Amount</th><th>Execution</th><th>Transaction</th><th>Status</th></tr>
@@ -208,17 +209,13 @@
       <tbody>
         <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/1">#1</a></td><td>5 USDC</td><td class="mono">mn7vnwz2rednekykkww8d</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0">0x4c2e…dddb0</a></td><td class="ok">confirmed</td></tr>
         <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/3">#3</a></td><td>10 USDC</td><td class="mono">qyq992ip9zdrg24nfxj9u</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xdfdb1cf0b77894560f78a77bb11f1b19a53caaa73154db2de1704f91b9fd03c9">0xdfdb…03c9</a></td><td class="ok">confirmed</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/4">#4</a></td><td>5 USDC</td><td class="mono">qkj8rpvjvyy2pol3t1ijp</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8">0x2632…23be8</a></td><td class="warn">pending*</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/6">#6</a></td><td>5 USDC</td><td class="mono">4v4izi4r6mnemj22k8mo0</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe">0xea64…c5bbe</a></td><td class="warn">pending*</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/7">#7</a></td><td>5 USDC</td><td class="mono">x8qkxpq83p72ee7ixsub1</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d">0x1ff7…394f3d</a></td><td class="warn">pending*</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/4">#4</a></td><td>5 USDC</td><td class="mono">qkj8rpvjvyy2pol3t1ijp</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8">0x2632…23be8</a></td><td class="warn">Receipt pending · transaction confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/6">#6</a></td><td>5 USDC</td><td class="mono">4v4izi4r6mnemj22k8mo0</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe">0xea64…c5bbe</a></td><td class="warn">Receipt pending · transaction confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/7">#7</a></td><td>5 USDC</td><td class="mono">x8qkxpq83p72ee7ixsub1</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d">0x1ff7…394f3d</a></td><td class="warn">Receipt pending · transaction confirmed</td></tr>
         <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/8">#8</a></td><td>5 USDC</td><td class="mono">do4e7jj9ypabbnvxcljir</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f">0x9870…c021f</a></td><td class="ok">confirmed</td></tr>
         <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/9">#9</a></td><td>5 USDC</td><td class="mono">bhzf8rrfkps5f7v8147ik</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x3513e7c91987c6d9db4a1b87048392a956143c9879620486c75721a74e2a5027">0x3513…5027</a></td><td class="ok">confirmed</td></tr>
       </tbody>
     </table>
-    <p class="note">
-      * Receipt still <code>pending</code>; the transaction is independently
-      confirmed on-chain.
-    </p>
     <p class="note">
       The table counts on-chain-confirmed transactions. Four action receipts are
       <code>confirmed</code>. For PRs #4, #6, and #7, the broadcast confirmed
@@ -253,7 +250,7 @@
       <ul>
         <li>A repository that you control.</li>
         <li>A KeeperHub organization API key. Create it at app.keeperhub.com.</li>
-        <li>A receipt signing secret. Use any long random string.</li>
+        <li>A receipt signing secret. Generate a unique, high-entropy string and store it as <code>SKIRWITH_RECEIPT_SECRET</code>.</li>
       </ul>
       <h2 class="sub">Steps</h2>
       <ol>
@@ -336,6 +333,8 @@ jobs:
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/ARCHITECTURE.md">Architecture</a>
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/SECURITY.md">Security model</a>
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/CONFIGURATION.md">Configuration</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/RECOVERY.md">Recovery guide</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/VERIFY.md">Verify the proof</a>
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/KEEPERHUB-INTEGRATION.md">KeeperHub integration</a>
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/TEST-STRATEGY.md">Test strategy</a>
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/PHASE3-EVIDENCE.md">Phase 3 evidence</a>
@@ -357,7 +356,10 @@ jobs:
   var theme = saved || "dark";
   document.documentElement.setAttribute("data-theme", theme);
   var btn = document.getElementById("themeToggle");
-  if (btn) { btn.textContent = theme === "dark" ? "Light" : "Dark"; }
+  if (btn) {
+    btn.textContent = theme === "dark" ? "Light" : "Dark";
+    btn.setAttribute("aria-label", theme === "dark" ? "Switch to light theme" : "Switch to dark theme");
+  }
 })();
 document.addEventListener("click", function (e) {
   var btn = e.target.closest ? e.target.closest("#themeToggle") : null;
@@ -367,6 +369,7 @@ document.addEventListener("click", function (e) {
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem("skirwith-theme", next); } catch (err) {}
   btn.textContent = next === "dark" ? "Light" : "Dark";
+  btn.setAttribute("aria-label", next === "dark" ? "Switch to light theme" : "Switch to dark theme");
 });
 </script>
 </body>

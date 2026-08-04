@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027); audit-response hardening with legacy replay migration is complete (CP-028). Remaining: README polish, demo video, release packaging (rebuild `dist/`, tag `v0.1.0`), and DoraHacks submission before 2026-08-13.
+- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027); audit-response hardening with legacy replay migration is complete (CP-028); release packaged and tagged `v0.1.0` with docs pinned to the release SHA (CP-029). Remaining: demo video recording and DoraHacks submission before 2026-08-13.
 
 ### Blocked (resolved / narrowed)
 
@@ -73,9 +73,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### Not Started
 
-- All implementation and execution phases.
-- Live authenticated KeeperHub capability/smoke evidence.
-- Real transaction, replay, refusal, demo, and submission evidence.
+- Demo video recording and upload (owner-side; see `docs/DEMO_VIDEO_PLAN.md`).
+- DoraHacks final submission form entry with the archived repo, tag, site, and video URL (`docs/SUBMISSION.md`).
+- Post-hackathon follow-ups only: orchestrator decomposition, Node 20/22 compatibility matrix, and automated site accessibility smoke tests.
 
 ## Checkpoint Log
 
@@ -646,11 +646,53 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Acceptance criteria verified: A pre-rebrand `mergepay:` confirmed receipt resolves to `duplicate` with zero provider calls; a legacy pending receipt resumes polling without rebroadcast; a legacy conflicting receipt goes to manual review; new payments still broadcast under `skirwith:` keys.
 - Decisions: Dual-read legacy identities instead of rewriting live receipts, so historical evidence stays authoritative and unmodified; accept both `SKIRWITH_RECEIPT_SECRET` and the legacy `MERGE_PAY_RECEIPT_SECRET` names during the migration window (canonical name wins); do not rename the live acceptance repo secrets since legacy names are accepted.
 - Deviations: None.
-- Amendments: Approved migration amendment for the rebrand (see DEC-012): persisted payment identities and receipt markers written under the pre-rebrand `mergepay` purpose, key prefix, and product remain authoritative; new writes use `skirwith`.
+- Amendments: Approved migration amendment for the rebrand: `AMD-001` (`docs/AMD-001.md`). Persisted payment identities and receipt markers written under the pre-rebrand `mergepay` purpose, key prefix, and product remain authoritative; new writes use `skirwith`. DEC-012 records the decision.
 - Risks introduced: Legacy-compatibility lookups add one extra receipt-store query only when the current key misses (no extra network work for new payments).
 - Known issues: `dist/` must be rebuilt and committed before release; the acceptance repo still uses the legacy secret name, which the action accepts; `REV-012` workspace deletion on the reviewer machine remains a user-side item.
 - Blockers: None.
 - Next exact action: Rebuild `dist/`, run the full release preflight, tag `v0.1.0`, point the example workflows and README at the tag SHA, record the demo video, and submit to DoraHacks before 2026-08-13.
+
+### CP-029: Immutable release and submission archive
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 4 - Documentation and site
+- Objective: Publish the immutable release, pin every action reference to it, archive the submission payload, and close the combined audit's governance and completeness findings.
+- Requirements covered: Hackathon submission requirements (repo link, release tag, demo video, submission URL), `SC-004` public evidence, governance rules for amendments and checkpoints.
+- Work completed: Created annotated tag `v0.1.0` pointing to the verified release commit `594bcb928ed0fb40df1845263e17ce62ead6c8bc`. Replaced every `<release-sha>` placeholder in README, the example workflow, and the landing page with that SHA. Archived the submission payload in `docs/SUBMISSION.md` (repo, tag, release SHA, explorer transaction, execution id, docs site, honest disclosures). Completed logged-out link checks: all GitHub links and the Pages site returned HTTP 200 and all 7 Sepolia transactions resolve via `eth_getTransactionByHash`.
+- Files or assets changed: `docs/SUBMISSION.md`, `README.md`, `docs/examples/skirwith-workflow.yml`, `docs/index.html`, `PROJECT_STATE.md`; tag `v0.1.0` (annotated).
+- Commands or checks run: `git tag -a v0.1.0`, `git push origin master`, `git push origin v0.1.0`, CI run `30900238901` (success), Pages build `30900237539` (success), curl of the Pages site (HTTP 200), curl checks of every landing link, `eth_getTransactionByHash` on a public Sepolia RPC for all 7 transactions.
+- Test results: CI passed on the release commits under Node 24; Pages rebuilt; all 7 transactions resolve on-chain.
+- Acceptance criteria verified: `v0.1.0` tag points to the exact commit the docs pin; the submission archive records the release SHA and demo URL slot; all public links verified logged out.
+- Decisions: None beyond the existing release plan.
+- Deviations: None.
+- Amendments: Migration amendment recorded as `AMD-001` (see `docs/AMD-001.md`); DEC-012 references it.
+- Risks introduced: Demo video URL remains a pending slot in the submission archive until the owner records and uploads it.
+- Known issues: `REV-012` workspace deletion on the reviewer machine remains a user-side item.
+- Blockers: None.
+- Next exact action: Record the demo video against the `v0.1.0` release SHA, archive the video URL, and complete the DoraHacks submission form before 2026-08-13.
+
+### CP-030: Combined-audit response (operational copy, coverage, recovery, and packaged legacy proof)
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 4 - Documentation and site
+- Objective: Close the combined product/repo/UX audit findings that were not covered by CP-028/CP-029: repair the coverage command, redact bootstrap errors, add outcome-specific next-step copy, publish recovery and judge-verification guides, prove the legacy replay path in the packaged bundle, fix stale state, and record the formal AMD.
+- Requirements covered: `SC-002` replay suppression, `SC-004` evidence integrity, governance rules for numbered amendments and checkpoints, audit M0/M1/M2 items.
+- Work completed: Added `@vitest/coverage-v8` and verified `npm run test:coverage` runs. Routed bootstrap error paths through a safe error/redaction boundary (`src/action.ts`) so a secret-bearing action never logs raw unknown errors. Added a pure outcome-copy mapper (`src/output/status-copy.ts`) and rendered outcome, broadcast state, explanation, and safe next step in the action summary and the PR receipt comment. Fixed the stale "Not Started" section and added CP-029/CP-030 checkpoints. Created `docs/AMD-001.md` (formal migration amendment; DEC-012 references it), `docs/RECOVERY.md`, and `docs/VERIFY.md`; linked them from the landing page and README. Applied landing-page microcopy fixes and raised the faint step-number contrast to WCAG AA in both themes. Added a packaged legacy fixture to `scripts/verify-packaged.mjs` proving a legacy `mergepay` confirmed receipt resolves to duplicate with zero broadcasts. Narrowed `engines` to Node 24 to match the tested runtime.
+- Files or assets changed: `package.json`, `package-lock.json`, `src/action.ts`, `src/output/status-copy.ts` (new), `src/output/summary.ts`, `src/output/receipt-comment.ts`, `tests/output/status-copy.test.ts` (new), `tests/output/summary.test.ts`, `tests/output/receipt-comment.test.ts`, `tests/action.test.ts`, `scripts/verify-packaged.mjs`, `docs/AMD-001.md` (new), `docs/RECOVERY.md` (new), `docs/VERIFY.md` (new), `docs/index.html`, `docs/SUBMISSION.md`, `README.md`, `PROJECT_STATE.md`, `dist/`.
+- Commands or checks run: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test` (242 tests), `npm run test:coverage`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm audit`.
+- Test results: 242/242 tests pass; `test:coverage` runs; packaged verification adds `legacy mergepay confirmed receipt -> duplicate` and `legacy mergepay replay -> zero broadcasts`; 0 vulnerabilities.
+- Acceptance criteria verified: Every status exposes a safe next step; the packaged bundle proves legacy replay suppression; coverage and audit commands are reproducible; AMD-001 contains the required governance fields.
+- Decisions: Outcome copy is derived from `EvidenceRecord.status` plus broadcast state via a pure mapper; machine codes are retained. `engines` narrowed to `^24`; Node 20/22 matrix testing is a post-hackathon follow-up.
+- Deviations: None.
+- Amendments: `AMD-001` recorded; DEC-012 references it.
+- Risks introduced: `dist/` must be rebuilt and committed before any re-tag; engines narrowing means npm on older Node majors warns.
+- Known issues: `REV-012` workspace deletion on the reviewer machine remains a user-side item; automated site accessibility smoke test remains a post-hackathon follow-up.
+- Blockers: None.
+- Next exact action: Record the demo video against the `v0.1.0` release SHA, archive the video URL in `docs/SUBMISSION.md`, and complete the DoraHacks submission form before 2026-08-13.
 
 ## Decisions Made During Execution
 
@@ -667,7 +709,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | DEC-009 | 2026-08-03 | Convert human decimal amounts to atomic integer units via token decimals and reject fractional precision beyond token decimals; no generic fixed-width string comparison | Fixed-width decimal comparison accepted an over-cap amount (REV-002) | Cap and precision enforced at config load and policy; amounts stay decimal at config boundary |
 | DEC-010 | 2026-08-04 | Use a dedicated versioned receipt-signing secret (`MERGE_PAY_RECEIPT_SECRET`) with a key id and an optional previous key for rotation, decoupled from the KeeperHub broadcast key | REV-008: reusing the provider key meant provider rotation invalidated the durable replay record | Receipts survive provider-key rotation; `MERGE_PAY_RECEIPT_SECRET_PREVIOUS` supports one rotation window |
 | DEC-011 | 2026-08-04 | Commit the generated `dist/` bundle to the action repo (`94fcb1b`) before the Phase 4 release step so the acceptance workflow can pin the action by commit SHA | `uses:` requires `dist/index.js` to exist at the referenced SHA; Phase 3 live acceptance needs a usable action reference | Acceptance workflow pins `94fcb1b`; bundle matches the reviewed source at `2760aeb` |
-| DEC-012 | 2026-08-04 | Dual-read legacy `mergepay` payment identities and receipt markers instead of rewriting live receipts, and accept both `SKIRWITH_RECEIPT_SECRET` and `MERGE_PAY_RECEIPT_SECRET` during the migration window | The rebrand changed the persisted payment identity, which threatened the never-pay-twice replay claim; live receipts must stay authoritative and unmodified | Replay compatibility is proven by test (CP-028); new writes use `skirwith` and the canonical secret name |
+| DEC-012 | 2026-08-04 | Dual-read legacy `mergepay` payment identities and receipt markers instead of rewriting live receipts, and accept both `SKIRWITH_RECEIPT_SECRET` and `MERGE_PAY_RECEIPT_SECRET` during the migration window | The rebrand changed the persisted payment identity, which threatened the never-pay-twice replay claim; live receipts must stay authoritative and unmodified | Replay compatibility is proven by test (CP-028); formalized as amendment `AMD-001` |
 
 ## Plan Deviations
 
