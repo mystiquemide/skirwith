@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 3 - Live three-state acceptance
-- Current checkpoint: CP-024
+- Current checkpoint: CP-026
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -545,6 +545,28 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Execute Phase 3 (CP-024) live three-state acceptance once the `kh_` key, acceptance repo, and explicit broadcast confirmation are available.
 
+### CP-025: Phase 3 live three-state acceptance completed
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 3 - Live three-state acceptance
+- Objective: Prove the product with real GitHub and KeeperHub evidence: one confirmed payout, replay with no second transaction, blocked no-broadcast refusal, plus a backup confirmed transaction.
+- Requirements covered: `SC-001` to `SC-005`, Phase 3 exit-gate criteria.
+- Work completed: With the user's explicit confirmation, ran the live acceptance on `mystiquemide/mergepay-acceptance` (private) against the frozen Sepolia USDC contract. First made the action repo public (required for `uses:` to resolve a private action; also needed for the hackathon) after a full tracked-file secret scan. Created labels, opened and merged PRs, and watched the `MergePay settlement` workflow. Evidence archived in `docs/PHASE3-EVIDENCE.md`.
+- Evidence (testnet, verified on-chain via Sepolia RPC): SC-001 confirmed payout — PR #1 (labels `mergepay-approved`+`mergepay-5`), run `30886636409`, execution `mn7vnwz2rednekykkww8d`, tx `0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0` (5 USDC, status 0x1, Transfer event verified). SC-002 replay — re-ran run `30886636409`; no second transaction, org wallet USDC unchanged at 40, receipt comment unchanged. SC-003 refusal — PR #2 (no required label), run `30886951542`, zero receipt comments, no execution id, `broadcastMade: false`, no broadcast. Backup — PR #3 (`mergepay-10`), run `30887061343`, execution `qyq992ip9zdrg24nfxj9u`, tx `0xdfdb1cf0b77894560f78a77bb11f1b19a53caaa73154db2de1704f91b9fd03c9` (10 USDC, status 0x1, Transfer event verified).
+- Files or assets changed: new `docs/PHASE3-EVIDENCE.md`, `PROJECT_STATE.md`; acceptance repo `mystiquemide/mergepay-acceptance` created and populated; action repo made public.
+- Commands or checks run: `gh pr create/merge`, `gh run view/list/rerun`, Sepolia RPC `eth_getTransactionReceipt`/`eth_call`/`eth_getTransactionByHash`, `gh api` comment/repo checks.
+- Test results: All three states + backup confirmed with real, on-chain-verified KeeperHub transactions and GitHub evidence; org wallet balance verified unchanged after replay and refusal.
+- Acceptance criteria verified: SC-001 (exactly one confirmed transaction per eligible merged PR), SC-002 (replay -> no second transaction), SC-003 (blocked before broadcast, `broadcastMade: false`, no execution id), SC-004 (receipt, run, execution, and explorer agree), SC-005 (untrusted content cannot reach the secret; workflow never checks out PR code).
+- Decisions: Made the action repo public (verified clean via tracked-file secret scan) because private action references cannot resolve via `uses:` with the default token and the hackathon requires a public repository. Acceptance payouts are self-payments to the org wallet (recipient mapping), which is documented and provable on-chain.
+- Deviations: Action repo made public before the Phase 4 release step (recorded decision); acceptance recipient is the org wallet (self-payment) rather than a third-party wallet.
+- Amendments: None.
+- Risks introduced: None beyond disclosed testnet usage; the `kh_` key remains secret (only in the gitignored `.env` and as a repo secret).
+- Known issues: Node 20 deprecation warning on the runner (the action targets node20; GitHub may require migration to node24 for release). The acceptance repo is private (public only when needed).
+- Blockers: None.
+- Next exact action: Begin Phase 4 (documentation, demo video, optional site, release packaging with node24 migration if required, and DoraHacks submission before 2026-08-13).
+
 ### CP-024: Phase 3 acceptance environment set up
 
 - Status: Partial (ready for live runs; no broadcast yet)
@@ -667,6 +689,11 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-022 | Independent Phase 2 re-review | Approve | `CODE_REVIEW.md`: REV-010 confirmed corrected; 0 blocker/critical/high/medium; 2 Low (REV-012 workspace deletion, REV-013 comment pagination); Phase 2 gate approved for `f883b81` |
 | CP-023 | Comment pagination (REV-013) | Pass | Bounded early-stop pagination with `Link` next-page parsing; later-page receipts found/updated; fail-closed page limit; forged squatters never edited |
 | CP-023 | Phase 3 local readiness | Pass | `npm test` 222/222; typecheck/lint/format clean; build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
+| CP-024 | Acceptance environment setup | Pass | Key verified simulation-only; bundle committed (`94fcb1b`); acceptance repo + config + workflow + secrets created |
+| CP-025 | Confirmed payout (SC-001) | Pass | PR #1 merged -> tx `0x4c2e...dddb0` (5 USDC), execution `mn7vnwz2rednekykkww8d`, on-chain Transfer verified |
+| CP-025 | Replay no-second-tx (SC-002) | Pass | Re-run produced no new tx; wallet 40 USDC; receipt unchanged |
+| CP-025 | Blocked refusal (SC-003) | Pass | PR #2 (missing label) -> `broadcastMade: false`, no execution id, no comment, no broadcast |
+| CP-025 | Backup transaction | Pass | PR #3 merged -> tx `0xdfdb...03c9` (10 USDC), execution `qyq992ip9zdrg24nfxj9u`, on-chain Transfer verified |
 
 ## Known Issues
 
@@ -687,7 +714,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Execute Phase 3 (CP-024) live three-state acceptance with real GitHub and KeeperHub evidence once: (1) the KeeperHub org `kh_` Direct Execution key is provided to this environment, (2) a private acceptance repository exists with a trusted `.github/mergepay.yml` (frozen Sepolia config), a settlement workflow, and a merged PR, and (3) explicit confirmation is given before any broadcast. Sequence: simulation-only pass, one confirmed USDC payout on Sepolia (chain 11155111, token `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`, org wallet `0x05619d1a133623B322a8f366ea9594e4e586f26D`), replay with no second transaction, blocked no-broadcast refusal, and at least one backup successful transaction.
+Begin Phase 4: public documentation and demo, release packaging (address the Node 20 deprecation warning before release — migrate the action `runs.using` if required), make the acceptance repository public or document it, prepare the demo video and DoraHacks submission (deadline 2026-08-13 10:00) with the Phase 3 evidence, and run the full release preflight (audit, secret scan, bundle-diff, logged-out link checks).
 
 ## Checkpoint and Amendment Contract
 
