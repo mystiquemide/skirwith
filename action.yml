@@ -24,7 +24,7 @@ outputs:
   broadcast-made:
     description: "Whether a broadcast was attempted in this run."
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"
 branding:
   color: "blue"
