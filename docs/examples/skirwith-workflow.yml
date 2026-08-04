@@ -37,9 +37,9 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      # Replace the placeholder with the release commit SHA of the action.
+      # Pinned to the v0.1.0 release commit SHA, not a mutable tag.
       - name: Run Skirwith settlement
-        uses: mystiquemide/skirwith@<release-sha>
+        uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}

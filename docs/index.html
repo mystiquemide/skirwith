@@ -303,7 +303,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: mystiquemide/skirwith@&lt;release-sha&gt;
+      - uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
