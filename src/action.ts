@@ -21,6 +21,8 @@ import { FetchHttpTransport } from "./transport/http.js";
 export interface RunDependencies {
   githubToken: string;
   keeperhubApiKey: string;
+  receiptSecret: string;
+  previousReceiptSecret?: string;
   eventPayload: unknown;
   api: GitHubApi;
   provider: KeeperHubProvider;
@@ -63,6 +65,15 @@ export async function run(deps: RunDependencies): Promise<RunResult> {
       }),
     );
   }
+  if (deps.receiptSecret.length === 0) {
+    return fail(
+      new MergePayError({
+        code: "CONFIG_SEMANTIC_INVALID",
+        category: "configuration",
+        message: "Missing required receipt signing secret.",
+      }),
+    );
+  }
 
   let event;
   try {
@@ -80,7 +91,8 @@ export async function run(deps: RunDependencies): Promise<RunResult> {
       event.repository.owner,
       event.repository.name,
       event.pullRequestNumber,
-      deps.keeperhubApiKey,
+      deps.receiptSecret,
+      deps.previousReceiptSecret,
     );
     const orchestrator = new SettlementOrchestrator({ provider: deps.provider, receipts, nowIso });
     const evidence = await orchestrator.settle(input);
@@ -116,6 +128,9 @@ async function main(): Promise<void> {
   const result = await run({
     githubToken: secrets.githubToken,
     keeperhubApiKey: secrets.keeperhubApiKey,
+    receiptSecret: secrets.receiptSecret,
+    previousReceiptSecret:
+      secrets.previousReceiptSecret.length > 0 ? secrets.previousReceiptSecret : undefined,
     eventPayload: payload,
     api: new GithubRestApi({ token: secrets.githubToken, transport }),
     provider: new KeeperHubClient({ apiKey: secrets.keeperhubApiKey, transport }),

@@ -15,6 +15,7 @@ import type {
   PullRequestState,
 } from "../../src/github/api.js";
 import type { HttpRequest, HttpResponse, HttpTransport } from "../../src/transport/http.js";
+import { MergePayError } from "../../src/domain/errors.js";
 
 export class FakeHttpTransport implements HttpTransport {
   calls: HttpRequest[] = [];
@@ -43,6 +44,9 @@ export class FakeGitHubApi implements GitHubApi {
   checkRuns: CheckState[] = [];
   comments: CommentState[] = [];
   fetchError?: unknown;
+  createIssueCommentError?: unknown;
+  updateRejectsUnowned = true;
+  private ownedCommentIds = new Set<number>();
   private nextCommentId = 100;
 
   async fetchPullRequest(): Promise<PullRequestState> {
@@ -77,7 +81,12 @@ export class FakeGitHubApi implements GitHubApi {
     body: string,
   ): Promise<void> {
     this.throwIfError();
-    this.comments.push({ id: this.nextCommentId++, body, createdAt: "2026-08-03T22:00:00.000Z" });
+    if (this.createIssueCommentError !== undefined) {
+      throw this.createIssueCommentError;
+    }
+    const id = this.nextCommentId++;
+    this.comments.push({ id, body, createdAt: "2026-08-03T22:00:00.000Z" });
+    this.ownedCommentIds.add(id);
   }
 
   async updateIssueComment(
@@ -87,6 +96,13 @@ export class FakeGitHubApi implements GitHubApi {
     body: string,
   ): Promise<void> {
     this.throwIfError();
+    if (this.updateRejectsUnowned && !this.ownedCommentIds.has(commentId)) {
+      throw new MergePayError({
+        code: "GITHUB_FETCH_FAILED",
+        category: "github",
+        message: "GitHub rejected the comment update because the action does not own the comment.",
+      });
+    }
     const comment = this.comments.find((entry) => entry.id === commentId);
     if (comment) {
       comment.body = body;
@@ -163,12 +179,16 @@ export class FakeKeeperHubProvider implements KeeperHubProvider {
 export class FakeReceiptStore implements ReceiptStore {
   records = new Map<string, ReceiptRecord>();
   saves: ReceiptRecord[] = [];
+  saveError?: unknown;
 
   async findByPaymentKey(paymentKey: string): Promise<ReceiptRecord | undefined> {
     return this.records.get(paymentKey);
   }
 
   async save(record: ReceiptRecord): Promise<void> {
+    if (this.saveError !== undefined) {
+      throw this.saveError;
+    }
     this.records.set(record.paymentKey, record);
     this.saves.push(record);
   }

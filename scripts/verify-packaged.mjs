@@ -54,6 +54,7 @@ function deps(api, provider, eventPayload) {
   return {
     githubToken: "ghp_test_synthetic",
     keeperhubApiKey: "kh_test_synthetic",
+    receiptSecret: "receipt_test_synthetic_secret",
     eventPayload,
     api,
     provider,

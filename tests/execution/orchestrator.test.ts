@@ -304,6 +304,24 @@ describe("SettlementOrchestrator.settle", () => {
     expect(receipts.saves).toHaveLength(0);
   });
 
+  it("preserves the execution id as manual review when the pending receipt save fails after broadcast", async () => {
+    const provider = new FakeKeeperHubProvider();
+    provider.broadcastResult = { executionId: "ex_new", status: "running" };
+    const receipts = new FakeReceiptStore();
+    receipts.saveError = new Error("receipt persistence failed");
+    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+
+    const evidence = await orchestrator.settle(makeInput());
+
+    expect(evidence.status).toBe("manual-review");
+    expect(evidence.broadcastMade).toBe(true);
+    expect(evidence.executionId).toBe("ex_new");
+    expect(evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
+    expect(provider.calls.broadcast).toBe(1);
+    expect(provider.calls.waitForTerminal).toBe(0);
+    expect(receipts.saves).toHaveLength(0);
+  });
+
   it("uses the configured recipient wallet from the trusted mapping", async () => {
     const provider = new FakeKeeperHubProvider();
     const receipts = new FakeReceiptStore();

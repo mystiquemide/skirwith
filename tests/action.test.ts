@@ -67,6 +67,7 @@ function happyDeps() {
   return {
     githubToken: "ghp_test",
     keeperhubApiKey: "kh_test",
+    receiptSecret: "kh_test_synthetic_secret",
     eventPayload: eventPayload(),
     api,
     provider,
@@ -171,6 +172,7 @@ describe("run", () => {
       repository: "acme/mergepay-demo",
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
+      keyId: "0".repeat(16),
       mac: "0".repeat(64),
     });
     deps.api.comments = [{ id: 1, body: forged, createdAt: "2026-08-03T22:00:00.000Z" }];
@@ -182,6 +184,13 @@ describe("run", () => {
     expect(result.evidence.status).toBe("confirmed");
     expect(result.evidence.broadcastMade).toBe(true);
     expect(deps.provider.calls.broadcast).toBe(1);
+    // The forged squatter must never be updated; the action creates its own
+    // signed receipt comment instead.
+    expect(deps.api.comments[0]?.body).toBe(forged);
+    expect(deps.api.comments).toHaveLength(2);
+    const created = deps.api.comments[1];
+    expect(decodeReceiptMarker(created?.body ?? "")?.status).toBe("confirmed");
+    expect(decodeReceiptMarker(created?.body ?? "")?.mac).not.toBe("0".repeat(64));
   });
 
   it("honors a legitimately signed confirmed receipt as a duplicate with no broadcast", async () => {
@@ -205,7 +214,7 @@ describe("run", () => {
       "acme",
       "mergepay-demo",
       42,
-      deps.keeperhubApiKey,
+      deps.receiptSecret,
     );
     await store.save(receipt);
 
@@ -217,5 +226,20 @@ describe("run", () => {
     expect(result.evidence.broadcastMade).toBe(false);
     expect(result.evidence.executionId).toBe("ex_orig");
     expect(deps.provider.calls.broadcast).toBe(0);
+  });
+
+  it("reports manual review with the execution id when the pending receipt cannot be saved", async () => {
+    const deps = happyDeps();
+    deps.api.createIssueCommentError = new Error("receipt comment creation failed");
+
+    const result = await run(deps);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.status).toBe("manual-review");
+    expect(result.evidence.broadcastMade).toBe(true);
+    expect(result.evidence.executionId).toBe("ex_1");
+    expect(result.evidence.error?.code).toBe("EXECUTION_MANUAL_REVIEW");
+    expect(deps.provider.calls.broadcast).toBe(1);
   });
 });

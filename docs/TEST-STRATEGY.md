@@ -18,7 +18,8 @@
 - The payment key is stable across material content changes for the same payment identity.
 - Amounts and maximums convert to atomic integer units with fractional precision bounded by token decimals; over-cap values never pass.
 - Canonical request construction rejects malformed values (addresses, merge SHA, atomic amount, identifiers).
-- Receipt markers are HMAC-signed; forged, tampered, or differently-signed markers are ignored and never suppress a payout.
+- Receipt markers are HMAC-signed with a dedicated versioned key; forged, tampered, unknown-key, or differently-signed markers are ignored and never suppress a payout, and the write path never updates a forged squatter.
+- Post-broadcast receipt-persistence failure preserves the execution id as manual review and never rebroadcasts.
 - Secrets never appear in public output.
 - Receipt, evidence, execution ID, and transaction proof agree.
 

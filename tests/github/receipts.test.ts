@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CommentReceiptStore } from "../../src/github/receipts.js";
 import {
   decodeReceiptMarker,
+  keyIdFor,
   signReceiptMarker,
   verifyReceiptMarker,
 } from "../../src/evidence/receipt.js";
@@ -10,6 +11,7 @@ import type { ExecutionStatus } from "../../src/domain/types.js";
 import { FakeGitHubApi } from "../fakes/fakes.js";
 
 const SECRET = "kh_test_synthetic_secret";
+const PREVIOUS_SECRET = "kh_test_previous_secret";
 const MERGE_SHA = "0123456789abcdef0123456789abcdef01234567";
 const KEY = `mergepay:${"a".repeat(64)}`;
 const OTHER_KEY = `mergepay:${"b".repeat(64)}`;
@@ -39,20 +41,52 @@ function signedMarkerBody(paymentKey: string, status: ExecutionStatus = "confirm
     pullRequestNumber: 42,
     mergeSha: MERGE_SHA,
   };
-  const mac = signReceiptMarker(payload, SECRET);
-  return `<!-- mergepay:${JSON.stringify({ ...payload, mac })} -->`;
+  const key = { id: keyIdFor(SECRET), secret: SECRET };
+  const mac = signReceiptMarker(payload, key);
+  return `<!-- mergepay:${JSON.stringify({ ...payload, keyId: key.id, mac })} -->`;
+}
+
+function makeStore(api: FakeGitHubApi, previousSecret?: string): CommentReceiptStore {
+  return new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET, previousSecret);
 }
 
 describe("CommentReceiptStore", () => {
   it("finds a legitimately signed receipt by payment key", async () => {
     const api = new FakeGitHubApi();
     api.comments = [{ id: 1, body: signedMarkerBody(KEY), createdAt: "2026-08-03T00:00:00.000Z" }];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
 
     const found = await store.findByPaymentKey(KEY);
     expect(found?.paymentKey).toBe(KEY);
     expect(found?.status).toBe("confirmed");
     expect(found?.createdAt).toBe("2026-08-03T00:00:00.000Z");
+  });
+
+  it("finds a receipt signed with the previous key during rotation", async () => {
+    const api = new FakeGitHubApi();
+    const payload: ReceiptMarkerPayload = {
+      version: 1,
+      product: "mergepay",
+      paymentKey: KEY,
+      requestHash: "d".repeat(64),
+      status: "confirmed",
+      repository: "acme/mergepay-demo",
+      pullRequestNumber: 42,
+      mergeSha: MERGE_SHA,
+    };
+    const previousKey = { id: keyIdFor(PREVIOUS_SECRET), secret: PREVIOUS_SECRET };
+    const mac = signReceiptMarker(payload, previousKey);
+    api.comments = [
+      {
+        id: 1,
+        body: `<!-- mergepay:${JSON.stringify({ ...payload, keyId: previousKey.id, mac })} -->`,
+        createdAt: "2026-08-03T00:00:00.000Z",
+      },
+    ];
+    const store = makeStore(api, PREVIOUS_SECRET);
+
+    const found = await store.findByPaymentKey(KEY);
+    expect(found?.status).toBe("confirmed");
   });
 
   it("ignores a forged marker with an invalid mac (fails closed)", async () => {
@@ -64,7 +98,7 @@ describe("CommentReceiptStore", () => {
         createdAt: "2026-08-03T00:00:00.000Z",
       },
     ];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
 
     await expect(store.findByPaymentKey(KEY)).resolves.toBeUndefined();
   });
@@ -80,16 +114,17 @@ describe("CommentReceiptStore", () => {
       pullRequestNumber: 42,
       mergeSha: MERGE_SHA,
     };
-    const mac = signReceiptMarker(payload, "attacker-secret");
+    const attackerKey = { id: keyIdFor("attacker-secret"), secret: "attacker-secret" };
+    const mac = signReceiptMarker(payload, attackerKey);
     const api = new FakeGitHubApi();
     api.comments = [
       {
         id: 1,
-        body: `<!-- mergepay:${JSON.stringify({ ...payload, mac })} -->`,
+        body: `<!-- mergepay:${JSON.stringify({ ...payload, keyId: attackerKey.id, mac })} -->`,
         createdAt: "2026-08-03T00:00:00.000Z",
       },
     ];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
 
     await expect(store.findByPaymentKey(KEY)).resolves.toBeUndefined();
   });
@@ -99,7 +134,7 @@ describe("CommentReceiptStore", () => {
     api.comments = [
       { id: 1, body: signedMarkerBody(OTHER_KEY), createdAt: "2026-08-03T00:00:00.000Z" },
     ];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
     const missingKey = `mergepay:${"c".repeat(64)}`;
 
     await expect(store.findByPaymentKey(missingKey)).resolves.toBeUndefined();
@@ -107,7 +142,7 @@ describe("CommentReceiptStore", () => {
 
   it("creates a comment whose marker verifies with the receipt secret", async () => {
     const api = new FakeGitHubApi();
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
 
     await store.save(RECEIPT);
 
@@ -115,20 +150,42 @@ describe("CommentReceiptStore", () => {
     const marker = decodeReceiptMarker(api.comments[0]?.body ?? "");
     expect(marker?.paymentKey).toBe(KEY);
     expect(marker?.status).toBe("confirmed");
-    expect(verifyReceiptMarker(marker as never, SECRET)).toBe(true);
+    expect(verifyReceiptMarker(marker as never, [{ id: keyIdFor(SECRET), secret: SECRET }])).toBe(
+      true,
+    );
   });
 
-  it("updates the matching receipt comment instead of creating a second", async () => {
+  it("updates only its own authenticated receipt comment instead of creating a second", async () => {
     const api = new FakeGitHubApi();
-    api.comments = [
-      { id: 7, body: signedMarkerBody(KEY, "pending"), createdAt: "2026-08-03T00:00:00.000Z" },
-    ];
-    const store = new CommentReceiptStore(api, "acme", "mergepay-demo", 42, SECRET);
+    const store = makeStore(api);
 
+    await store.save({ ...RECEIPT, status: "pending" });
+    const firstId = api.comments[0]?.id;
     await store.save(RECEIPT);
 
     expect(api.comments).toHaveLength(1);
-    expect(api.comments[0]?.id).toBe(7);
+    expect(api.comments[0]?.id).toBe(firstId);
     expect(decodeReceiptMarker(api.comments[0]?.body ?? "")?.status).toBe("confirmed");
+  });
+
+  it("never updates a forged squatter; it creates a fresh signed receipt comment", async () => {
+    const api = new FakeGitHubApi();
+    api.comments = [
+      {
+        id: 7,
+        body: signedMarkerBody(KEY).replace(/mac":".{64}"/, 'mac":"' + "0".repeat(64) + '"'),
+        createdAt: "2026-08-03T00:00:00.000Z",
+      },
+    ];
+    const store = makeStore(api);
+
+    await store.save(RECEIPT);
+
+    expect(api.comments).toHaveLength(2);
+    expect(api.comments[0]?.id).toBe(7);
+    expect(decodeReceiptMarker(api.comments[0]?.body ?? "")?.mac).toBe("0".repeat(64));
+    const created = api.comments[1];
+    expect(created?.id).not.toBe(7);
+    expect(decodeReceiptMarker(created?.body ?? "")?.status).toBe("confirmed");
   });
 });

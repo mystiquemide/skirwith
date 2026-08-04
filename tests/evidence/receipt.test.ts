@@ -2,15 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   decodeReceiptMarker,
   encodeReceiptMarker,
+  keyIdFor,
   receiptMatchesCurrent,
   signReceiptMarker,
   verifyReceiptMarker,
 } from "../../src/evidence/receipt.js";
-import type { ReceiptMarker, ReceiptMarkerPayload } from "../../src/evidence/receipt.js";
+import type {
+  ReceiptMarker,
+  ReceiptMarkerPayload,
+  ReceiptSigningKey,
+} from "../../src/evidence/receipt.js";
 import type { ExecutionStatus } from "../../src/domain/types.js";
 
 const SECRET = "kh_test_synthetic_secret";
+const PREVIOUS_SECRET = "kh_test_previous_secret";
 const KEY = `mergepay:${"a".repeat(64)}`;
+
+const ACTIVE: ReceiptSigningKey = { id: keyIdFor(SECRET), secret: SECRET };
+const PREVIOUS: ReceiptSigningKey = { id: keyIdFor(PREVIOUS_SECRET), secret: PREVIOUS_SECRET };
 
 function payload(overrides: Partial<ReceiptMarkerPayload> = {}): ReceiptMarkerPayload {
   return {
@@ -29,36 +38,59 @@ function payload(overrides: Partial<ReceiptMarkerPayload> = {}): ReceiptMarkerPa
   };
 }
 
-function signed(overrides: Partial<ReceiptMarkerPayload> = {}): ReceiptMarker {
+function signed(
+  overrides: Partial<ReceiptMarkerPayload> = {},
+  key: ReceiptSigningKey = ACTIVE,
+): ReceiptMarker {
   const base = payload(overrides);
-  return { ...base, mac: signReceiptMarker(base, SECRET) };
+  return { ...base, keyId: key.id, mac: signReceiptMarker(base, key) };
 }
+
+describe("keyIdFor", () => {
+  it("derives a stable 16-hex key id from a secret", () => {
+    const first = keyIdFor(SECRET);
+    expect(first).toMatch(/^[0-9a-f]{16}$/);
+    expect(keyIdFor(SECRET)).toBe(first);
+    expect(keyIdFor(SECRET)).not.toBe(keyIdFor(PREVIOUS_SECRET));
+  });
+});
 
 describe("signReceiptMarker / verifyReceiptMarker", () => {
   it("round-trips a signed marker", () => {
     const marker = signed();
-    expect(verifyReceiptMarker(marker, SECRET)).toBe(true);
+    expect(verifyReceiptMarker(marker, [ACTIVE])).toBe(true);
   });
 
   it("rejects a tampered field", () => {
     const marker = signed({ status: "pending" });
     const tampered = { ...marker, status: "confirmed" as const };
-    expect(verifyReceiptMarker(tampered, SECRET)).toBe(false);
+    expect(verifyReceiptMarker(tampered, [ACTIVE])).toBe(false);
   });
 
-  it("rejects a marker signed with a different secret", () => {
+  it("rejects a marker signed with a different key", () => {
     const marker = signed();
-    expect(verifyReceiptMarker(marker, "different-secret")).toBe(false);
+    expect(verifyReceiptMarker(marker, [PREVIOUS])).toBe(false);
   });
 
   it("rejects a marker with a forged mac", () => {
     const marker = signed();
-    expect(verifyReceiptMarker({ ...marker, mac: "f".repeat(64) }, SECRET)).toBe(false);
+    expect(verifyReceiptMarker({ ...marker, mac: "f".repeat(64) }, [ACTIVE])).toBe(false);
+  });
+
+  it("rejects a marker whose key id is unknown or retired", () => {
+    const marker = signed();
+    expect(verifyReceiptMarker({ ...marker, keyId: "0".repeat(16) }, [ACTIVE])).toBe(false);
+  });
+
+  it("verifies markers signed with the previous key during rotation", () => {
+    const oldMarker = signed({}, PREVIOUS);
+    expect(verifyReceiptMarker(oldMarker, [ACTIVE, PREVIOUS])).toBe(true);
   });
 
   it("is stable regardless of field ordering", () => {
-    const a = signed();
-    const { mac, ...base } = a;
+    const marker = signed();
+    const { mac, keyId, ...base } = marker;
+    void keyId;
     const reordered = {
       repository: base.repository,
       paymentKey: base.paymentKey,
@@ -72,7 +104,7 @@ describe("signReceiptMarker / verifyReceiptMarker", () => {
       pullRequestNumber: base.pullRequestNumber,
       mergeSha: base.mergeSha,
     };
-    expect(signReceiptMarker(reordered, SECRET)).toBe(mac);
+    expect(signReceiptMarker(reordered, ACTIVE)).toBe(mac);
   });
 });
 
@@ -98,13 +130,16 @@ describe("encodeReceiptMarker / decodeReceiptMarker", () => {
     expect(decodeReceiptMarker("<!-- mergepay:not-json -->")).toBeUndefined();
   });
 
-  it("rejects a marker with a missing or malformed mac", () => {
+  it("rejects a marker with a missing or malformed mac or key id", () => {
     const marker = signed();
     const withoutMac = { ...marker } as Record<string, unknown>;
     delete withoutMac.mac;
     expect(decodeReceiptMarker(`<!-- mergepay:${JSON.stringify(withoutMac)} -->`)).toBeUndefined();
     expect(
       decodeReceiptMarker(`<!-- mergepay:${JSON.stringify({ ...marker, mac: "zz" })} -->`),
+    ).toBeUndefined();
+    expect(
+      decodeReceiptMarker(`<!-- mergepay:${JSON.stringify({ ...marker, keyId: "zz" })} -->`),
     ).toBeUndefined();
   });
 

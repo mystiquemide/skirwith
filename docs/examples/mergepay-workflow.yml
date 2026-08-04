@@ -2,7 +2,8 @@
 #
 # Add this workflow to a consumer repository that also has a trusted
 # `.github/mergepay.yml` config on the default branch (see mergepay.yml in
-# this directory) and the two secrets below.
+# this directory) and the secrets: GITHUB_TOKEN (auto), KEEPERHUB_API_KEY,
+# and MERGE_PAY_RECEIPT_SECRET (dedicated receipt-signing secret).
 #
 # Trust properties:
 # - Runs on `pull_request` (never `pull_request_target`), so no PR head code
@@ -41,3 +42,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
+          MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}
+          # Optional: set during receipt-secret rotation to accept the
+          # previous key for verification until old receipts are retired.
+          # MERGE_PAY_RECEIPT_SECRET_PREVIOUS: ${{ secrets.MERGE_PAY_RECEIPT_SECRET_PREVIOUS }}

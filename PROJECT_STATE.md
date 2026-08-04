@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Current checkpoint: CP-018
+- Current checkpoint: CP-020
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -45,10 +45,10 @@ The repository proves what exists. The plan defines intended scope, design, phas
 ## Current Objective
 
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution / exit gate
-- Checkpoint: CP-018
-- Goal: Obtain a fresh independent re-review confirming REV-006 is corrected (untrusted GitHub comments cannot forge or suppress settlement state), after which the Phase 2 exit gate closes and Phase 3 live three-state acceptance may begin.
+- Checkpoint: CP-020
+- Goal: Obtain a fresh independent re-review confirming REV-007 and REV-008 are corrected (authenticated receipt writes and post-broadcast recovery; receipt signing key independent of the broadcast credential), after which the Phase 2 exit gate closes and Phase 3 live three-state acceptance may begin.
 - Expected files or assets: Updated independent review record; no code changes unless the review requires them.
-- Acceptance criteria: Re-review approves the receipt-provenance fix and the full Phase 2 execution path; no unresolved blocker or major finding.
+- Acceptance criteria: Re-review approves the corrected receipt-provenance and recovery behavior; no unresolved blocker or major finding.
 - Required verification: Independent re-review; full verification suite (tests, lint, typecheck, format, build, bundle, packaged fixtures, audit, secret scan).
 
 ## Current Status
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned one Medium finding (REV-006), which is fixed (CP-017); a fresh re-review (CP-018) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
+- Phase 2 (Trusted GitHub and KeeperHub execution): all implementation (CP-012..CP-015) is complete and green; the Phase 2 review (CP-016) returned REV-006, fixed in CP-017; the re-review (CP-018) escalated REV-007 to High and added REV-008/REV-009, both security findings fixed in CP-019. A fresh re-review (CP-020) is pending before the exit gate closes. Live execution/broadcast behavior is not yet approved.
 
 ### Blocked (resolved / narrowed)
 
@@ -442,6 +442,39 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Request a fresh independent re-review (CP-018) confirming REV-006 is corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
 
+### CP-018: Phase 2 re-review after REV-006 fix
+
+- Status: Findings returned
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Independent reviewer (external)
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Re-review the REV-006 receipt-provenance fix (`bee4a94..aa73a92`) as the Phase 2 exit gate.
+- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `89d461f`). Verdict: Changes required. Reproduced 208/208 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Findings: `REV-007` escalated to High — `save()` still selects any decoded marker with the matching payment key (no MAC/ownership check) and updates it after a successful broadcast; real GitHub rejects edits to comments the token does not own, so the run can report failure with no trusted pending receipt and, after the provider idempotency window, a replay could double-pay. The permissive `FakeGitHubApi.updateIssueComment()` masked this. `REV-008` Medium — reusing the KeeperHub API key as the receipt HMAC secret means provider-key rotation invalidates the only durable replay record (idempotency is 24h). `REV-009` Low — `last stop.md` is deleted in the reviewer workspace.
+- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Next exact action: Fix REV-007 and REV-008 test-first, restore `last stop.md` in the reviewer workspace, and request another re-review.
+
+### CP-019: Review findings REV-007 and REV-008 fixed
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 2 - Trusted GitHub and KeeperHub execution
+- Objective: Fix REV-007 (authenticated receipt writes + post-broadcast recovery) and REV-008 (receipt signing key independent of the broadcast credential).
+- Requirements covered: `FR-012`, `BR-005`, `BR-006`, `NFR-001`, `RISK-003`, `RISK-009`; CP-018 findings REV-007 and REV-008.
+- Work completed: `REV-008` — `src/evidence/receipt.ts` now uses a dedicated versioned receipt-signing key: `ReceiptSigningKey { id, secret }`, `keyIdFor()` derives a stable 16-hex key id, markers carry `keyId`, `signReceiptMarker`/`verifyReceiptMarker` take keys, and verification looks up the key by `keyId` over the active and optional previous key, so rotating the KeeperHub broadcast key no longer invalidates receipts and a previous signing key is accepted during rotation. `REV-007` — `src/github/receipts.ts` `save()` now updates only a comment whose marker verifies with a known receipt key; a forged/unverified squatter is never edited and a fresh action-owned receipt comment is created. `src/execution/orchestrator.ts` wraps the post-broadcast `save(pending)` in a catch that returns manual-review evidence preserving the execution id with no rebroadcast. Wired a dedicated `MERGE_PAY_RECEIPT_SECRET` (and optional `MERGE_PAY_RECEIPT_SECRET_PREVIOUS`) through `action-inputs.ts`, `run()`/`main()`, the example workflow, and `.env.example`. `FakeGitHubApi` now models comment ownership: updates to comments the action does not own are rejected (configurable), and `FakeReceiptStore` supports a save-error switch.
+- Files or assets changed: `src/evidence/receipt.ts`, `src/github/receipts.ts`, `src/output/receipt-comment.ts`, `src/action.ts`, `src/action-inputs.ts`, `src/execution/orchestrator.ts`, tests (receipt, receipts, receipt-comment, action, orchestrator, inputs), `tests/fakes/fakes.ts`, `scripts/verify-packaged.mjs`, `.env.example`, `docs/examples/mergepay-workflow.yml`, docs `ARCHITECTURE.md`, `SECURITY.md`, `CONFIGURATION.md`, `TEST-STRATEGY.md`, and `PROJECT_STATE.md`.
+- Commands or checks run: Focused vitest runs, `npm test`, `npm run typecheck`, `npm run lint`, `npm run format`/`format:check`, `npm run build`, `npm run bundle:check`, `npm run verify:packaged`, `npm run audit`, grep secret scan.
+- Test results: 215 tests pass (was 208): key-id/rotation signing and verification, previous-key verification, unknown-key rejection, forged-squatter write-path tests, post-broadcast save-failure manual-review tests (orchestrator + action level), ownership-aware fake. Typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; packaged fixtures pass; audit 0 vulnerabilities; secret scan clean.
+- Acceptance criteria verified: A forged squatter is never updated by `save()` and never disrupts the write path; a legitimate receipt still suppresses exactly one replay; post-broadcast receipt-persistence failure returns manual-review with the execution id and no rebroadcast; rotating the provider key does not invalidate receipts, and previous receipt keys verify during rotation; the packaged bundle behaves identically.
+- Decisions: `DEC-010` (below) — dedicated versioned receipt-signing secret with previous-key rotation, decoupled from the KeeperHub broadcast key. Comment-author binding was still not required because the MAC is the cryptographic proof of ownership.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None beyond the documented single-previous-key rotation window (a second consecutive rotation before retirement would fail closed on the older receipts, which is acceptable for the testnet MVP).
+- Known issues: `REV-009` (Low) is a workspace-hygiene item on the reviewer machine: `last stop.md` is deleted in `/home/mide/mergepay`; this repository's working tree is clean and the file is intact here. Comment-list pagination remains a documented secondary item.
+- Blockers: None.
+- Next exact action: Request a fresh independent re-review (CP-020) confirming REV-007 and REV-008 are corrected; after approval, close the Phase 2 exit gate and begin Phase 3 live three-state acceptance.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -455,6 +488,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | DEC-007 | 2026-08-03 | Scoped Prettier to source/test/config files; kept pre-existing planning markdown unformatted | Do not reformat files the planner authored | format/format:check cover code only |
 | DEC-008 | 2026-08-03 | Payment key derives from a stable `PaymentIdentity` (version, repository, PR, merge SHA, purpose); recipient/amount/chain/token are content, tracked by the separate canonical request hash | Same-key/different-hash conflicts must be representable for BR-006 replay safety | Confirms FR-007; key no longer changes on material content change |
 | DEC-009 | 2026-08-03 | Convert human decimal amounts to atomic integer units via token decimals and reject fractional precision beyond token decimals; no generic fixed-width string comparison | Fixed-width decimal comparison accepted an over-cap amount (REV-002) | Cap and precision enforced at config load and policy; amounts stay decimal at config boundary |
+| DEC-010 | 2026-08-04 | Use a dedicated versioned receipt-signing secret (`MERGE_PAY_RECEIPT_SECRET`) with a key id and an optional previous key for rotation, decoupled from the KeeperHub broadcast key | REV-008: reusing the provider key meant provider rotation invalidated the durable replay record | Receipts survive provider-key rotation; `MERGE_PAY_RECEIPT_SECRET_PREVIOUS` supports one rotation window |
 
 ## Plan Deviations
 
@@ -528,6 +562,12 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-017 | Marker field validation | Pass | Payment key, 64-hex request hash, 40-hex merge SHA, positive PR number, valid status, tx-hash format all validated before acceptance |
 | CP-017 | Adversarial action tests | Pass | Attacker-forged confirmed marker still pays (broadcast 1); legitimately signed confirmed receipt returns duplicate (broadcast 0) |
 | CP-017 | Verification suite | Pass | `npm test` 208/208; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
+| CP-018 | Independent Phase 2 re-review | Findings returned | `CODE_REVIEW.md`: REV-007 escalated High (unauthenticated write path + post-broadcast save loss), REV-008 Medium (provider key reuse), REV-009 Low (workspace file deletion) |
+| CP-019 | Versioned receipt signing key | Pass | Dedicated `MERGE_PAY_RECEIPT_SECRET` with key id; previous key verifies during rotation; provider-key rotation no longer invalidates receipts; unknown key ids rejected |
+| CP-019 | Authenticated receipt writes | Pass | `save()` updates only MAC-verified matching receipts; forged squatter never edited and a fresh signed comment is created |
+| CP-019 | Post-broadcast recovery | Pass | `save(pending)` failure returns manual-review evidence with execution id and no rebroadcast (orchestrator + action tests) |
+| CP-019 | Ownership-aware fake | Pass | `FakeGitHubApi` rejects updates to comments the action does not own, matching real GitHub authorization |
+| CP-019 | Verification suite | Pass | `npm test` 215/215; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 
 ## Known Issues
 
@@ -548,7 +588,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ## Next Exact Action
 
-Request a fresh independent re-review (CP-018) confirming REV-006 is corrected: untrusted GitHub comments cannot forge or suppress settlement state. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance: one confirmed payout, replay with no second transaction, and a blocked no-broadcast refusal, using the funded Sepolia wallet and frozen USDC contract.
+Request a fresh independent re-review (CP-020) confirming REV-007 and REV-008 are corrected: authenticated receipt writes that never touch forged squatters, post-broadcast save failures preserved as manual review with the execution id, and a receipt-signing key independent of the broadcast credential with previous-key rotation. After Phase 2 review approval, close the exit gate and begin Phase 3 live three-state acceptance. Restore `last stop.md` in the reviewer workspace if its deletion is unintended.
 
 ## Checkpoint and Amendment Contract
 

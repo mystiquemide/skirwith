@@ -292,7 +292,26 @@ export class SettlementOrchestrator {
       createdAt: this.nowIso(),
       updatedAt: this.nowIso(),
     };
-    await this.receipts.save(pending);
+    try {
+      await this.receipts.save(pending);
+    } catch {
+      // The execution was already submitted. Preserve the known execution
+      // identity and fail to manual review rather than rebroadcasting.
+      return this.evidence({
+        policy,
+        paymentKey,
+        requestHash,
+        simulation: "passed",
+        broadcastMade: true,
+        status: "manual-review",
+        executionId: broadcast.executionId,
+        error: {
+          code: "EXECUTION_MANUAL_REVIEW",
+          message:
+            "Execution was submitted but its pending receipt could not be recorded; manual review required. No automatic rebroadcast.",
+        },
+      });
+    }
 
     try {
       const terminal = await this.provider.waitForTerminal(broadcast.executionId);

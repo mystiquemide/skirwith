@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { renderReceiptComment } from "../../src/output/receipt-comment.js";
-import { decodeReceiptMarker } from "../../src/evidence/receipt.js";
+import { decodeReceiptMarker, keyIdFor } from "../../src/evidence/receipt.js";
 import type { ReceiptRecord } from "../../src/evidence/receipt.js";
 
 const MAC = "a".repeat(64);
+const KEY_ID = keyIdFor("kh_test_synthetic_secret");
 const KEY = `mergepay:${"a".repeat(64)}`;
 
 const RECEIPT: ReceiptRecord = {
@@ -24,7 +25,7 @@ const RECEIPT: ReceiptRecord = {
 
 describe("renderReceiptComment", () => {
   it("renders readable receipt text plus a decodable signed marker", () => {
-    const body = renderReceiptComment(RECEIPT, MAC);
+    const body = renderReceiptComment(RECEIPT, MAC, KEY_ID);
     expect(body).toContain("## MergePay receipt");
     expect(body).toContain("Status: `confirmed`");
     expect(body).toContain(`Payment key: \`${KEY}\``);
@@ -40,7 +41,7 @@ describe("renderReceiptComment", () => {
     const { transactionHash, transactionLink, ...pendingBase } = RECEIPT;
     void transactionHash;
     void transactionLink;
-    const body = renderReceiptComment({ ...pendingBase, status: "pending" }, MAC);
+    const body = renderReceiptComment({ ...pendingBase, status: "pending" }, MAC, KEY_ID);
     expect(body).toContain("Status: `pending`");
     expect(body).not.toContain("Transaction:");
   });

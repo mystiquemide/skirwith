@@ -42,3 +42,5 @@ checks:
 
 `KEEPERHUB_API_KEY` exists only as a masked repository or organization secret on the trusted settlement workflow. It must never be written to this file, fixtures, logs, comments, screenshots, or documentation.
 
+`MERGE_PAY_RECEIPT_SECRET` is a dedicated secret used to sign receipt markers; it is independent of the KeeperHub key so provider-key rotation does not invalidate historical receipts. `MERGE_PAY_RECEIPT_SECRET_PREVIOUS` is optional and accepted for verification only during a receipt-secret rotation window.
+

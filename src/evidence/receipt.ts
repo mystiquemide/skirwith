@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import type { ExecutionStatus } from "../domain/types.js";
 
 export interface ReceiptRecord {
@@ -17,7 +17,7 @@ export interface ReceiptRecord {
   updatedAt: string;
 }
 
-export interface ReceiptMarker {
+export interface ReceiptMarkerPayload {
   version: 1;
   product: "mergepay";
   paymentKey: string;
@@ -29,10 +29,17 @@ export interface ReceiptMarker {
   repository: string;
   pullRequestNumber: number;
   mergeSha: string;
+}
+
+export interface ReceiptMarker extends ReceiptMarkerPayload {
+  keyId: string;
   mac: string;
 }
 
-export type ReceiptMarkerPayload = Omit<ReceiptMarker, "mac">;
+export interface ReceiptSigningKey {
+  id: string;
+  secret: string;
+}
 
 const MARKER_RE = /<!-- mergepay:(\{[\s\S]*?\}) -->/;
 
@@ -50,6 +57,7 @@ const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 const MERGE_SHA_RE = /^[0-9a-f]{40}$/;
 const TX_HASH_RE = /^0x[0-9a-fA-F]+$/;
 const MAC_RE = /^[0-9a-f]{64}$/;
+const KEY_ID_RE = /^[0-9a-f]{16}$/;
 
 function isOptionalString(value: unknown, minLength: number): boolean {
   return value === undefined || (typeof value === "string" && value.length >= minLength);
@@ -80,6 +88,8 @@ export function isReceiptMarker(value: unknown): value is ReceiptMarker {
     marker.pullRequestNumber > 0 &&
     typeof marker.mergeSha === "string" &&
     MERGE_SHA_RE.test(marker.mergeSha) &&
+    typeof marker.keyId === "string" &&
+    KEY_ID_RE.test(marker.keyId) &&
     typeof marker.mac === "string" &&
     MAC_RE.test(marker.mac) &&
     isOptionalString(marker.executionId, 1) &&
@@ -113,15 +123,27 @@ function stableStringify(value: unknown): string {
   return JSON.stringify(value);
 }
 
-export function signReceiptMarker(payload: ReceiptMarkerPayload, secret: string): string {
-  return createHmac("sha256", secret)
+export function keyIdFor(secret: string): string {
+  return createHash("sha256").update(secret).digest("hex").slice(0, 16);
+}
+
+export function signReceiptMarker(payload: ReceiptMarkerPayload, key: ReceiptSigningKey): string {
+  return createHmac("sha256", key.secret)
     .update(stableStringify(pruneUndefined(payload)))
     .digest("hex");
 }
 
-export function verifyReceiptMarker(marker: ReceiptMarker, secret: string): boolean {
-  const { mac, ...payload } = marker;
-  return signReceiptMarker(payload, secret) === mac;
+export function verifyReceiptMarker(
+  marker: ReceiptMarker,
+  keys: readonly ReceiptSigningKey[],
+): boolean {
+  const key = keys.find((candidate) => candidate.id === marker.keyId);
+  if (key === undefined) {
+    return false;
+  }
+  const { mac, keyId: _keyId, ...payload } = marker;
+  void _keyId;
+  return signReceiptMarker(payload, key) === mac;
 }
 
 export function encodeReceiptMarker(marker: ReceiptMarker): string {
