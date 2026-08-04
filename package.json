@@ -1,6 +1,6 @@
 {
   "name": "skirwith",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Pay a maintainer-approved contributor after a genuinely merged pull request, via KeeperHub on a testnet.",
   "license": "MIT",
   "private": true,

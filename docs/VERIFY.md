@@ -43,7 +43,7 @@ replay, created no new transaction, and never rebroadcast.
 - Repository: https://github.com/mystiquemide/skirwith
 
 Expected: the tag points to the commit the docs pin; `dist/index.js` at that
-commit matches a clean rebuild; 235 tests pass under Node 24.
+commit matches a clean rebuild; 242 tests pass under Node 24.
 
 ## 6. Limitations
 
