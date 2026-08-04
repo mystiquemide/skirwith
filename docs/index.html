@@ -1,16 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Skirwith: Pay approved contributors after a merged pull request</title>
 <meta name="description" content="Skirwith is a GitHub Action. It pays an approved contributor after a merged pull request through KeeperHub on a testnet." />
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem("skirwith-theme"); } catch (e) {}
+  document.documentElement.setAttribute("data-theme", saved || "dark");
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
-  :root {
+  :root, [data-theme="dark"] {
+    --canvas: #0b0f17;
+    --surface: #0f1522;
+    --ink: #e5e9f0;
+    --muted: #9aa7bd;
+    --faint: #5b667a;
+    --rule: #1d2738;
+    --accent: #60a5fa;
+    --accent-soft: rgba(96,165,250,0.18);
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  [data-theme="light"] {
     --canvas: #ffffff;
+    --surface: #ffffff;
     --ink: #111827;
     --muted: #6b7280;
     --faint: #9ca3af;
@@ -20,7 +42,6 @@
     --ok: #059669;
     --warn: #b45309;
     --bad: #dc2626;
-    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -31,6 +52,13 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
+  [data-theme="dark"] body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: -1;
+    background-image: url("https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=60");
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    opacity: 0.12;
+  }
   .nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 50;
     background: var(--canvas);
@@ -39,10 +67,16 @@
     height: 64px; padding: 0 20px;
   }
   .nav .wordmark { font-weight: 700; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); }
+  .nav .right { display: flex; align-items: center; gap: 20px; }
   .nav .links { display: flex; gap: 20px; }
   .nav .links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
   .nav .links a:hover { color: var(--ink); }
-  @media (min-width: 1024px) { .nav { padding: 0 40px; } .nav .links { gap: 28px; } }
+  .theme-toggle {
+    background: none; border: 1px solid var(--rule); color: var(--muted);
+    font-family: inherit; font-size: 0.85rem; padding: 4px 12px; cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--ink); border-color: var(--accent); }
+  @media (min-width: 1024px) { .nav { padding: 0 40px; } .nav .right { gap: 28px; } }
   main { max-width: 860px; margin: 0 auto; padding: 64px 20px 0; }
   @media (min-width: 1024px) { main { padding: 64px 40px 0; } }
   section { padding: 72px 0; border-bottom: 1px solid var(--rule); }
@@ -71,11 +105,12 @@
   }
   .flow .step .n { color: var(--faint); font-family: var(--mono); font-size: 0.8rem; width: 24px; }
   .flow .step .t { font-size: 1.05rem; font-weight: 500; }
-  .flow .note { color: var(--muted); margin-top: 20px; max-width: 60ch; }
+  .flow .note, .note { color: var(--muted); margin-top: 20px; max-width: 68ch; }
   .stats { display: flex; flex-direction: column; }
   .stat { display: flex; gap: 24px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); }
-  .stat .n { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; width: 80px; }
+  .stat .n { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; width: 80px; color: var(--accent); }
   .stat .d { color: var(--muted); }
+  h2.sub { font-size: 1.1rem; font-weight: 500; letter-spacing: -0.01em; margin: 40px 0 8px; }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   th, td { text-align: left; padding: 12px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
   th { color: var(--muted); font-weight: 500; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -86,16 +121,16 @@
   .ok { color: var(--ok); }
   .warn { color: var(--warn); }
   .bad { color: var(--bad); }
-  .note { color: var(--muted); margin-top: 16px; max-width: 68ch; }
-  .safety li, .setup ol li, .setup ul li { list-style-position: inside; margin: 10px 0; color: var(--muted); }
   .safety ul { list-style: none; }
-  .safety li { padding-left: 20px; position: relative; }
+  .safety li { padding-left: 20px; position: relative; margin: 10px 0; color: var(--muted); }
   .safety li::before { content: ""; position: absolute; left: 0; top: 0.7em; width: 6px; height: 6px; background: var(--accent); }
   .setup ol { list-style: decimal; margin-left: 20px; }
+  .setup ol li, .setup ul li { margin: 10px 0; color: var(--muted); }
+  .setup ul { list-style: disc; margin-left: 20px; }
   pre {
     font-family: var(--mono); font-size: 0.8rem; line-height: 1.5;
-    background: var(--canvas); border: 1px solid var(--rule);
-    padding: 16px; overflow-x: auto; margin: 16px 0;
+    background: var(--surface); border: 1px solid var(--rule);
+    padding: 16px; overflow-x: auto; margin: 16px 0; color: var(--ink);
   }
   .docs a { display: block; color: var(--accent); text-decoration: none; padding: 10px 0; border-bottom: 1px solid var(--rule); }
   .docs a:hover { text-decoration: underline; }
@@ -107,11 +142,14 @@
 
 <nav class="nav">
   <span class="wordmark">Skirwith</span>
-  <div class="links">
-    <a href="#proof">Proof</a>
-    <a href="#setup">Setup</a>
-    <a href="#safety">Safety</a>
-    <a href="#docs">Docs</a>
+  <div class="right">
+    <div class="links">
+      <a href="#proof">Proof</a>
+      <a href="#setup">Setup</a>
+      <a href="#safety">Safety</a>
+      <a href="#docs">Docs</a>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Light</button>
   </div>
 </nav>
 
@@ -128,7 +166,7 @@
     </p>
     <div class="cta">
       <a href="#setup">Set it up</a>
-      <a href="https://github.com/mystiquemide/mergepay-acceptance">View the acceptance repo</a>
+      <a href="https://github.com/mystiquemide/skirwith-acceptance">View the acceptance repo</a>
     </div>
   </div>
 
@@ -162,19 +200,19 @@
       <div class="stat"><span class="n">0</span><span class="d">double payments. This holds across every replay and every uncertain broadcast.</span></div>
     </div>
 
-    <h2 style="font-size:1.1rem;font-weight:500;letter-spacing:-0.01em;margin:40px 0 8px;">Confirmed transactions</h2>
+    <h2 class="sub">Confirmed transactions</h2>
     <table>
       <thead>
         <tr><th>PR</th><th>Amount</th><th>Execution</th><th>Transaction</th><th>Status</th></tr>
       </thead>
       <tbody>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/1">#1</a></td><td>5 USDC</td><td class="mono">mn7vnwz2rednekykkww8d</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0">0x4c2e…dddb0</a></td><td class="ok">confirmed</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/3">#3</a></td><td>10 USDC</td><td class="mono">qyq992ip9zdrg24nfxj9u</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xdfdb1cf0b77894560f78a77bb11f1b19a53caaa73154db2de1704f91b9fd03c9">0xdfdb…03c9</a></td><td class="ok">confirmed</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/4">#4</a></td><td>5 USDC</td><td class="mono">qkj8rpvjvyy2pol3t1ijp</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8">0x2632…23be8</a></td><td class="warn">pending*</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/6">#6</a></td><td>5 USDC</td><td class="mono">4v4izi4r6mnemj22k8mo0</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe">0xea64…c5bbe</a></td><td class="warn">pending*</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/7">#7</a></td><td>5 USDC</td><td class="mono">x8qkxpq83p72ee7ixsub1</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d">0x1ff7…394f3d</a></td><td class="warn">pending*</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/8">#8</a></td><td>5 USDC</td><td class="mono">do4e7jj9ypabbnvxcljir</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f">0x9870…c021f</a></td><td class="ok">confirmed</td></tr>
-        <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/9">#9</a></td><td>5 USDC</td><td class="mono">bhzf8rrfkps5f7v8147ik</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x3513e7c91987c6d9db4a1b87048392a956143c9879620486c75721a74e2a5027">0x3513…5027</a></td><td class="ok">confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/1">#1</a></td><td>5 USDC</td><td class="mono">mn7vnwz2rednekykkww8d</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0">0x4c2e…dddb0</a></td><td class="ok">confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/3">#3</a></td><td>10 USDC</td><td class="mono">qyq992ip9zdrg24nfxj9u</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xdfdb1cf0b77894560f78a77bb11f1b19a53caaa73154db2de1704f91b9fd03c9">0xdfdb…03c9</a></td><td class="ok">confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/4">#4</a></td><td>5 USDC</td><td class="mono">qkj8rpvjvyy2pol3t1ijp</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8">0x2632…23be8</a></td><td class="warn">pending*</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/6">#6</a></td><td>5 USDC</td><td class="mono">4v4izi4r6mnemj22k8mo0</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe">0xea64…c5bbe</a></td><td class="warn">pending*</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/7">#7</a></td><td>5 USDC</td><td class="mono">x8qkxpq83p72ee7ixsub1</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d">0x1ff7…394f3d</a></td><td class="warn">pending*</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/8">#8</a></td><td>5 USDC</td><td class="mono">do4e7jj9ypabbnvxcljir</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f">0x9870…c021f</a></td><td class="ok">confirmed</td></tr>
+        <tr><td><a href="https://github.com/mystiquemide/skirwith-acceptance/pull/9">#9</a></td><td>5 USDC</td><td class="mono">bhzf8rrfkps5f7v8147ik</td><td class="mono"><a href="https://sepolia.etherscan.io/tx/0x3513e7c91987c6d9db4a1b87048392a956143c9879620486c75721a74e2a5027">0x3513…5027</a></td><td class="ok">confirmed</td></tr>
       </tbody>
     </table>
     <p class="note">
@@ -184,7 +222,7 @@
       The replay returned <code>idempotentReplay: true</code>. It created no new
       transaction. A maintainer posted a reconciliation note on each PR. This is
       a live demonstration of the no-rebroadcast safety rule. See
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
     </p>
   </section>
 
@@ -205,13 +243,13 @@
   <section id="setup">
     <div class="label">Set it up</div>
     <div class="setup">
-      <h2 style="font-size:1rem;font-weight:500;margin-bottom:8px;">Prerequisites</h2>
+      <h2 class="sub">Prerequisites</h2>
       <ul>
         <li>A repository that you control.</li>
         <li>A KeeperHub organization API key. Create it at app.keeperhub.com.</li>
         <li>A receipt signing secret. Use any long random string.</li>
       </ul>
-      <h2 style="font-size:1rem;font-weight:500;margin:24px 0 8px;">Steps</h2>
+      <h2 class="sub">Steps</h2>
       <ol>
         <li>Add the config file <code>.github/skirwith.yml</code> to the default branch.</li>
         <li>Add the workflow file <code>.github/workflows/settle.yml</code>.</li>
@@ -259,12 +297,12 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: mystiquemide/mergepay@&lt;release-sha&gt;
+      - uses: mystiquemide/skirwith@&lt;release-sha&gt;
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
           MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}</code></pre>
-      <h2 style="font-size:1rem;font-weight:500;margin:24px 0 8px;">Expected result</h2>
+      <h2 class="sub">Expected result</h2>
       <p class="note">
         The action runs after the merge. It posts a receipt comment on the PR.
         The comment shows the transaction hash and the explorer link. The
@@ -276,21 +314,41 @@ jobs:
   <section id="docs">
     <div class="label">Documentation</div>
     <div class="docs">
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/ARCHITECTURE.md">Architecture</a>
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/SECURITY.md">Security model</a>
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/CONFIGURATION.md">Configuration</a>
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/KEEPERHUB-INTEGRATION.md">KeeperHub integration</a>
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/TEST-STRATEGY.md">Test strategy</a>
-      <a href="https://github.com/mystiquemide/mergepay/blob/master/docs/PHASE3-EVIDENCE.md">Phase 3 evidence</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/ARCHITECTURE.md">Architecture</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/SECURITY.md">Security model</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/CONFIGURATION.md">Configuration</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/KEEPERHUB-INTEGRATION.md">KeeperHub integration</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/TEST-STRATEGY.md">Test strategy</a>
+      <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/PHASE3-EVIDENCE.md">Phase 3 evidence</a>
     </div>
   </section>
 
   <footer>
     Skirwith is a testnet proof of concept for the KeeperHub Agents Onchain
     hackathon. It makes no production or mainnet claim. See
-    <a href="https://github.com/mystiquemide/mergepay">github.com/mystiquemide/mergepay</a>.
+    <a href="https://github.com/mystiquemide/skirwith">github.com/mystiquemide/skirwith</a>.
   </footer>
 
 </main>
+
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem("skirwith-theme"); } catch (e) {}
+  var theme = saved || "dark";
+  document.documentElement.setAttribute("data-theme", theme);
+  var btn = document.getElementById("themeToggle");
+  if (btn) { btn.textContent = theme === "dark" ? "Light" : "Dark"; }
+})();
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest ? e.target.closest("#themeToggle") : null;
+  if (!btn) return;
+  var current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  var next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem("skirwith-theme", next); } catch (err) {}
+  btn.textContent = next === "dark" ? "Light" : "Dark";
+});
+</script>
 </body>
 </html>

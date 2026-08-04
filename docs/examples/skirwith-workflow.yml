@@ -38,7 +38,7 @@ jobs:
     steps:
       # Replace the placeholder with the release commit SHA of the action.
       - name: Run Skirwith settlement
-        uses: mystiquemide/mergepay@<release-sha>
+        uses: mystiquemide/skirwith@<release-sha>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}

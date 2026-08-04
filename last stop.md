@@ -1570,7 +1570,7 @@ The next implementation sequence is:
 - Test both successful and blocked payout paths
 - Add progressive commits
 The only confirmation needed before repository creation is:
-Create the private repository mystiquemide/mergepay?
+Create the private repository mystiquemide/skirwith?
 ▣  Plan · gpt-5.6-sol · 42.4s
 let us plan everything first ...use master forge team 
 →Skill "Codex-master-forge"
@@ -2034,7 +2034,7 @@ Will not have before submission
 - Arbitrary payment addresses from PR content
 Open Decisions
 These need to be confirmed before architecture approval:
-1. Repository name: Is the private repository mystiquemide/mergepay?
+1. Repository name: Is the private repository mystiquemide/skirwith?
 2. Initial payout asset: Should we use a confirmed KeeperHub-supported Sepolia ERC-20 stablecoin, or start with native Sepolia ETH and add stablecoin payout after the smoke test?
 3. Demo recipient: Which test wallet address will receive the payout? Do not send it in chat if you prefer to keep it private. It can be configured locally later.
 4. Repository policy format: Do you approve maintainer-controlled .github/skirwith.yml as the configuration source?
@@ -2053,7 +2053,7 @@ approve
 Step 8: PRD approved. Master Forge is moving to Phase 2: Architecture and Design.
 No files, repository, commits, or system configuration will be changed during this planning phase.
 Phase 2 Architecture Plan
-- Define the clean private repository structure for mystiquemide/mergepay
+- Define the clean private repository structure for mystiquemide/skirwith
 - Specify the GitHub Action entrypoint and trusted merged-PR event flow
 - Define the .github/skirwith.yml configuration contract
 - Define policy evaluation outputs and reason codes
