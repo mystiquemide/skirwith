@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MergePay — Pay maintainer-approved contributors after merged PRs</title>
+<meta name="description" content="MergePay is a GitHub Action that pays a maintainer-approved contributor after a genuinely merged pull request, via KeeperHub on a testnet." />
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #111827;
+    --panel2: #1a2332;
+    --border: #26324a;
+    --text: #e5e9f0;
+    --muted: #9aa7bd;
+    --accent: #4f8cff;
+    --green: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  nav {
+    display: flex; align-items: center; gap: 1.25rem;
+    padding: 1rem 1.25rem; max-width: 900px; margin: 0 auto;
+  }
+  nav .brand { font-weight: 700; letter-spacing: 0.02em; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  nav a:hover { color: var(--text); }
+  nav .spacer { flex: 1; }
+  .badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted); font-size: 0.72rem;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  h1 { font-size: 2.2rem; line-height: 1.15; letter-spacing: -0.02em; margin: 0.5rem 0 0.75rem; }
+  h2 { font-size: 1.3rem; margin: 2.5rem 0 0.75rem; letter-spacing: -0.01em; }
+  h3 { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+  .lead { color: var(--muted); font-size: 1.05rem; max-width: 60ch; }
+  .hero { padding: 2.5rem 0 1rem; border-bottom: 1px solid var(--border); }
+  .cta { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+  .btn {
+    display: inline-block; padding: 0.6rem 1.1rem; border-radius: 8px;
+    background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+  }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .card .num { font-size: 1.6rem; font-weight: 700; color: var(--green); }
+  .card.blocked .num { color: var(--red); }
+  .card.manual .num { color: var(--amber); }
+  .card p { color: var(--muted); font-size: 0.85rem; margin-top: 0.35rem; }
+  code, pre {
+    font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; font-size: 0.8rem;
+  }
+  code { padding: 0.1rem 0.35rem; }
+  pre { padding: 1rem; overflow-x: auto; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  td a:hover { text-decoration: underline; }
+  .ok { color: var(--green); }
+  .no { color: var(--red); }
+  .muted { color: var(--muted); }
+  .flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1rem 0; }
+  .step { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+  .arrow { color: var(--muted); }
+  .foot { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.82rem; }
+  ul { margin-left: 1.25rem; }
+  li { margin: 0.3rem 0; color: var(--muted); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<nav>
+  <span class="brand">MergePay</span>
+  <span class="spacer"></span>
+  <a href="#proof">Live proof</a>
+  <a href="#setup">Setup</a>
+  <a href="#safety">Safety</a>
+  <a href="https://github.com/mystiquemide/mergepay">GitHub</a>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="badge">GitHub Action · Testnet</span>
+    <h1>Pay maintainer-approved contributors after a genuinely merged pull request.</h1>
+    <p class="lead">
+      MergePay turns a trusted merged PR into a deterministic, policy-controlled
+      stablecoin payout through KeeperHub on Ethereum Sepolia — with replay
+      suppression, no automatic rebroadcast, and refusal before any broadcast.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#setup">Set it up</a>
+      <a class="btn ghost" href="https://github.com/mystiquemide/mergepay-acceptance">See the live acceptance repo</a>
+    </div>
+  </div>
+
+  <h2>How it works</h2>
+  <div class="flow">
+    <span class="step">Trusted merged PR</span><span class="arrow">→</span>
+    <span class="step">Fresh GitHub state + default-branch config</span><span class="arrow">→</span>
+    <span class="step">Deterministic policy</span><span class="arrow">→</span>
+    <span class="step">Signed durable reservation</span><span class="arrow">→</span>
+    <span class="step">KeeperHub simulation</span><span class="arrow">→</span>
+    <span class="step">Exact-body broadcast once</span><span class="arrow">→</span>
+    <span class="step">Receipt comment + explorer proof</span>
+  </div>
+  <p class="muted">
+    Recipient and amount come only from maintainer-controlled mappings. Contributor
+    text, code, and head-branch config are never trusted.
+  </p>
+
+  <h2>Live proof <span class="muted" style="font-weight:400;font-size:0.85rem">(Sepolia, all verified on-chain)</span></h2>
+  <div class="grid">
+    <div class="card">
+      <div class="num">7</div>
+      <p>confirmed KeeperHub USDC transactions, each verified via the USDC Transfer event on Sepolia</p>
+    </div>
+    <div class="card">
+      <div class="num">1</div>
+      <p>replay of the same event produced no second transaction (wallet balance unchanged)</p>
+    </div>
+    <div class="card blocked">
+      <div class="num">2</div>
+      <p>refusal types blocked before broadcast: missing label and ambiguous payout, both <code>broadcastMade: false</code></p>
+    </div>
+    <div class="card manual">
+      <div class="num">0</div>
+      <p>double payments across every replay and every uncertain-broadcast retry</p>
+    </div>
+  </div>
+
+  <h3>Confirmed transactions</h3>
+  <table>
+    <thead>
+      <tr><th>PR</th><th>Amount</th><th>Execution</th><th>Transaction (Sepolia)</th><th>Receipt</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/1">#1</a></td><td>5 USDC</td><td><code>mn7vnwz2rednekykkww8d</code></td><td><a href="https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0">0x4c2e…dddb0</a></td><td class="ok">confirmed</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/3">#3</a></td><td>10 USDC</td><td><code>qyq992ip9zdrg24nfxj9u</code></td><td><a href="https://sepolia.etherscan.io/tx/0xdfdb1cf0b77894560f78a77bb11f1b19a53caaa73154db2de1704f91b9fd03c9">0xdfdb…03c9</a></td><td class="ok">confirmed</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/4">#4</a></td><td>5 USDC</td><td><code>qkj8rpvjvyy2pol3t1ijp</code></td><td><a href="https://sepolia.etherscan.io/tx/0x263243b9176efa2bd78257a58431d3b82650643c2c93ff45dd3a012d37e23be8">0x2632…23be8</a></td><td class="amber">pending*</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/6">#6</a></td><td>5 USDC</td><td><code>4v4izi4r6mnemj22k8mo0</code></td><td><a href="https://sepolia.etherscan.io/tx/0xea6465927ce9e7ba250bdeb69ac7ec1213855f6a0cfbf176df97a83a2f1c5bbe">0xea64…c5bbe</a></td><td class="amber">pending*</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/7">#7</a></td><td>5 USDC</td><td><code>x8qkxpq83p72ee7ixsub1</code></td><td><a href="https://sepolia.etherscan.io/tx/0x1ff7aaa5b12c0a85a0630b4d761641acbe0a820b89ffe2af9309151940394f3d">0x1ff7…394f3d</a></td><td class="amber">pending*</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/8">#8</a></td><td>5 USDC</td><td><code>do4e7jj9ypabbnvxcljir</code></td><td><a href="https://sepolia.etherscan.io/tx/0x9870e65d9f82697ec010d56b4e006d87870c33b8998935b4a0574eb020cb021f">0x9870…c021f</a></td><td class="ok">confirmed</td></tr>
+      <tr><td><a href="https://github.com/mystiquemide/mergepay-acceptance/pull/9">#9</a></td><td>5 USDC</td><td><code>bhzf8rrfkps5f7v8147ik</code></td><td><a href="https://sepolia.etherscan.io/tx/0x3513e7c91987c6d9db4a1b87048392a956143c9879620486c75721a74e2a5027">0x3513…5027</a></td><td class="ok">confirmed</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    * For PRs #4, #6 and #7 the broadcast confirmed on-chain but the KeeperHub
+    response was not delivered to the action, so the receipt stayed <code>pending</code>.
+    Each execution was recovered authoritatively via KeeperHub idempotent replay
+    (<code>idempotentReplay: true</code>, no new transaction) and a maintainer
+    reconciliation note was posted on the PR — a live demonstration of the
+    cross-run no-rebroadcast safety invariant. Full details in
+    <a href="PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
+  </p>
+
+  <h2 id="setup">Set it up</h2>
+  <ol>
+    <li>Add the trusted config <code>.github/mergepay.yml</code> on the default branch.</li>
+    <li>Add a workflow that runs on <code>pull_request: [closed]</code> and uses the action.</li>
+    <li>Set repo secrets <code>KEEPERHUB_API_KEY</code> and <code>MERGE_PAY_RECEIPT_SECRET</code>. The GitHub API token is automatic; no PAT is required.</li>
+    <li>Merge an approved PR to trigger a payout.</li>
+  </ol>
+  <pre><code># .github/mergepay.yml (default branch, trusted)
+version: 1
+repository: owner/name
+chain:
+  id: 11155111
+  explorer: https://sepolia.etherscan.io
+  token:
+    address: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
+    symbol: USDC
+    decimals: 6
+payout:
+  requiredLabel: mergepay-approved
+  maximum: "25"
+  amounts:
+    mergepay-5: "5"
+recipients:
+  contributor-login: "0x…"
+checks:
+  required: false
+  names: []</code></pre>
+  <pre><code># .github/workflows/settle.yml
+on:
+  pull_request:
+    types: [closed]
+permissions:
+  contents: read
+  checks: read
+  pull-requests: write
+concurrency:
+  group: mergepay-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  settle:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mystiquemide/mergepay@&lt;release-sha&gt;
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
+          MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}</code></pre>
+  <p class="muted">
+    The workflow never checks out or executes PR code. The action fetches trusted
+    state and configuration through the GitHub API and only ever reads
+    maintainer-controlled mappings for payment decisions.
+  </p>
+
+  <h2 id="safety">Safety design</h2>
+  <ul>
+    <li>Recipient and amount resolve only from the trusted config; contributor content is untrusted.</li>
+    <li>A signed, durable reservation is written <em>before</em> any broadcast; no broadcast happens without it.</li>
+    <li>Simulation and broadcast use the exact same transfer parameters; any mismatch aborts.</li>
+    <li>Replays resolve the existing receipt and never broadcast a second transaction.</li>
+    <li>Uncertain outcomes become manual review with the execution id preserved — never an automatic rebroadcast.</li>
+    <li>Receipt markers are HMAC-authenticated with a dedicated key, so forged comments cannot suppress a payout.</li>
+  </ul>
+
+  <div class="foot">
+    MergePay is a testnet proof-of-concept for the KeeperHub Agents Onchain hackathon.
+    No production or mainnet claim is made. See
+    <a href="https://github.com/mystiquemide/mergepay">github.com/mystiquemide/mergepay</a>.
+  </div>
+</div>
+</body>
+</html>
