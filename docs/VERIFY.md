@@ -15,7 +15,7 @@ matches the PR's configured payout.
 
 ## 2. Verify replay suppression
 
-- Replay evidence: https://github.com/mystiquemide/skirwith/blob/master/docs/PHASE3-EVIDENCE.md
+- Replay evidence: https://github.com/mystiquemide/skirwith-acceptance
 - Replay the same merged event against the same PR.
 
 Expected: the action resolves the existing receipt, reports
@@ -24,7 +24,7 @@ transfer count do not change.
 
 ## 3. Verify refusal before broadcast
 
-- Refusal evidence: the `blocked` rows in `docs/PHASE3-EVIDENCE.md`.
+- Refusal evidence: the blocked workflow outcomes in the acceptance repository.
 
 Expected: policy failures (for example a missing required label) stop the run
 with `broadcastMade: false` and no provider call.
@@ -47,9 +47,10 @@ commit matches a clean rebuild; 235 tests pass under Node 24.
 
 ## 6. Review limitations
 
-- `docs/SUBMISSION.md` lists testnet-only status, one-chain/one-token scope,
+- The README lists testnet-only status, one-chain/one-token scope,
   maintainer-controlled mappings, and self-payment disclosure.
 
 ## Recovery
 
-If a run does not settle, follow `docs/RECOVERY.md` before re-running.
+If a run does not settle, review the action summary and existing receipt before
+re-running.

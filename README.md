@@ -9,9 +9,8 @@ without sending a second transaction.
 
 ## Watch and verify
 
-Demo video: recording against the `v0.1.1` release; the URL will be linked
-here (script: [docs/DEMO_VIDEO_PLAN.md](docs/DEMO_VIDEO_PLAN.md)). To verify
-the claims now from public evidence, follow
+Demo video: pending owner recording against the `v0.1.1` release. To verify
+the claims now from the public acceptance repository, follow
 [docs/VERIFY.md](docs/VERIFY.md) or start with:
 
 - Confirmed PR: https://github.com/mystiquemide/skirwith-acceptance/pull/1
@@ -19,7 +18,7 @@ the claims now from public evidence, follow
 - KeeperHub execution ID: `mn7vnwz2rednekykkww8d`
 - Sepolia transaction:
   https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0
-- Replay and refusal evidence: [docs/PHASE3-EVIDENCE.md](docs/PHASE3-EVIDENCE.md)
+- Replay and refusal evidence: [the acceptance repository](https://github.com/mystiquemide/skirwith-acceptance)
 - Live site: https://mystiquemide.github.io/skirwith/
 
 ## Three-state proof
@@ -43,8 +42,7 @@ parameters with an `Idempotency-Key`. It polls `/api/execute/{id}/status`.
 When a broadcast confirms on-chain but the response is lost, the same
 idempotency key recovers the original execution and never creates a second
 transaction. A direct RPC substitute would not reproduce this exact
-simulate-broadcast-recover path. See
-[docs/KEEPERHUB-INTEGRATION.md](docs/KEEPERHUB-INTEGRATION.md).
+simulate-broadcast-recover path.
 
 ## How it works
 
@@ -151,8 +149,8 @@ Config rules live in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 | Manual review required | Outcome is uncertain or conflicting | Never automatically repeated | Review receipt and execution |
 | Failed safely | No safe settlement completed | See evidence | Correct the cause before a controlled rerun |
 
-Skirwith never rebroadcasts an uncertain outcome. For each state, follow
-[docs/RECOVERY.md](docs/RECOVERY.md).
+Skirwith never rebroadcasts an uncertain outcome. Review the action summary
+and existing receipt before taking another action.
 
 ## Evidence and limitations
 
@@ -195,7 +193,7 @@ sit behind injected interfaces.
 - `src/execution`: settlement orchestrator.
 - `src/evidence`: signed receipt markers and verification.
 - `src/output`: action summary, receipt comment, and outcome copy.
-- `docs/`: architecture, security, configuration, evidence, recovery, and
+- `docs/`: architecture, security, configuration, test strategy, and proof
   verification guides.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -203,5 +201,5 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## License and submission
 
 MIT (see [LICENSE](LICENSE)). Release tag `v0.1.1` points to commit
-`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Submission archive:
-[docs/SUBMISSION.md](docs/SUBMISSION.md).
+`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Final submission metadata will be
+added after the demo video is recorded.

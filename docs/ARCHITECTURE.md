@@ -245,5 +245,6 @@ Decision: summaries and comments are primary; a public site is documentation onl
 
 ## Full Target Tree
 
-The authoritative code tree is maintained in `docs/TASKS.md` under Planned Code Map. Documentation adds `PRD.md`, `ARCHITECTURE.md`, `SECURITY.md`, `CONFIGURATION.md`, `KEEPERHUB-INTEGRATION.md`, `TEST-STRATEGY.md`, `DEMO.md`, and `SUBMISSION.md`.
-
+The authoritative code tree is maintained in the source tree and the public
+README. The remaining public documentation covers architecture, security,
+configuration, test strategy, and proof verification.
