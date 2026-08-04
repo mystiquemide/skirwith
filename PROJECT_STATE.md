@@ -545,6 +545,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Execute Phase 3 (CP-024) live three-state acceptance once the `kh_` key, acceptance repo, and explicit broadcast confirmation are available.
 
+### CP-024: Phase 3 acceptance environment set up
+
+- Status: Partial (ready for live runs; no broadcast yet)
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 3 - Live three-state acceptance
+- Objective: Stand up the live acceptance environment: verify the KeeperHub key, commit the action bundle, create the private acceptance repository with trusted config, workflow, and secrets.
+- Requirements covered: `FR-008`, `SC-001` to `SC-005`, Phase 3 exit-gate prerequisites, `AGENTS.md` live-execution preconditions.
+- Work completed: Verified the KeeperHub org key authenticates via simulation-only Sepolia calls (`wouldRevert: false`, gasEstimate 40695, no broadcast) and re-confirmed org wallet funding (40 USDC via `balanceOf`, gas via simulated self-transfer). Wrote a gitignored `.env` (mode 600) with the key and a generated `MERGE_PAY_RECEIPT_SECRET`. Committed the generated action bundle to the action repo (`94fcb1b`) so `uses: mystiquemide/mergepay@<sha>` resolves; verified `action.yml` and `dist/index.js` exist at that SHA. Created the private acceptance repository `mystiquemide/mergepay-acceptance` with trusted `.github/mergepay.yml` (frozen Sepolia USDC config, `checks.required: false`), the settlement workflow pinned to `94fcb1b`, and a README. Set repo secrets `KEEPERHUB_API_KEY` and `MERGE_PAY_RECEIPT_SECRET`.
+- Files or assets changed: `mergepay` repo (committed `dist/` at `94fcb1b`), new `mergepay-acceptance` repo, gitignored `.env` in the local workspace.
+- Commands or checks run: curl simulation-only `POST /api/execute/transfer` (native + USDC), public RPC `balanceOf` read, `gh repo create`, `gh secret set`, contents-API checks of the pinned action SHA.
+- Test results: Key authenticates; simulations succeed without broadcast; org wallet has 40 USDC + Sepolia gas; action bundle present at the pinned SHA; secrets set.
+- Acceptance criteria verified: Live credential verified; acceptance repo, trusted config, workflow, and secrets are ready; the only remaining step is the explicit go-ahead before the first real broadcast.
+- Decisions: `DEC-011` (below) — commit the generated bundle to the action repo before Phase 4 release packaging so the acceptance workflow can pin the action by SHA; `checks.required: false` in the acceptance config to avoid the merge-SHA check-run mismatch for the demo; recipient mapped to the org wallet (self-payment on testnet, provable).
+- Deviations: Committing `dist/` ahead of the plan's Phase 4 release step is a recorded decision, not a scope change.
+- Amendments: None.
+- Risks introduced: Testnet-only, disclosed; the first live broadcast remains gated on explicit confirmation.
+- Known issues: None blocking. `gh` CLI in this sandbox is authenticated and usable (differs from earlier notes).
+- Blockers: Explicit confirmation for the first live broadcast.
+- Next exact action: With the user's go-ahead, create and merge a `mergepay-approved`+`mergepay-5` PR to trigger the first confirmed payout, then re-run for replay (no second tx) and create a refusal PR (blocked, no broadcast), then capture evidence.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -559,6 +580,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | DEC-008 | 2026-08-03 | Payment key derives from a stable `PaymentIdentity` (version, repository, PR, merge SHA, purpose); recipient/amount/chain/token are content, tracked by the separate canonical request hash | Same-key/different-hash conflicts must be representable for BR-006 replay safety | Confirms FR-007; key no longer changes on material content change |
 | DEC-009 | 2026-08-03 | Convert human decimal amounts to atomic integer units via token decimals and reject fractional precision beyond token decimals; no generic fixed-width string comparison | Fixed-width decimal comparison accepted an over-cap amount (REV-002) | Cap and precision enforced at config load and policy; amounts stay decimal at config boundary |
 | DEC-010 | 2026-08-04 | Use a dedicated versioned receipt-signing secret (`MERGE_PAY_RECEIPT_SECRET`) with a key id and an optional previous key for rotation, decoupled from the KeeperHub broadcast key | REV-008: reusing the provider key meant provider rotation invalidated the durable replay record | Receipts survive provider-key rotation; `MERGE_PAY_RECEIPT_SECRET_PREVIOUS` supports one rotation window |
+| DEC-011 | 2026-08-04 | Commit the generated `dist/` bundle to the action repo (`94fcb1b`) before the Phase 4 release step so the acceptance workflow can pin the action by commit SHA | `uses:` requires `dist/index.js` to exist at the referenced SHA; Phase 3 live acceptance needs a usable action reference | Acceptance workflow pins `94fcb1b`; bundle matches the reviewed source at `2760aeb` |
 
 ## Plan Deviations
 
