@@ -2,7 +2,7 @@
 
 ## System Context
 
-Skirwith sits between GitHub and KeeperHub. GitHub supplies a trusted merge event and repository state. Skirwith converts trusted state into a deterministic payment decision. KeeperHub simulates and executes the transfer. The block explorer provides authoritative chain evidence. GitHub remains the operator interface and audit surface.
+Skirwith sits between GitHub and KeeperHub. GitHub supplies a trusted merge event and repository state. Skirwith converts trusted state into a deterministic payment decision. KeeperHub simulates and executes the transfer. The block explorer provides authoritative chain evidence. GitHub remains the operator interface and public evidence surface.
 
 ```text
 Maintainer -> GitHub merge/config/labels
@@ -42,7 +42,7 @@ Final settlement and independent transaction evidence. One supported chain and o
 - `payment`: canonical serialization, request hashing, and payment key.
 - `keeperhub`: typed transport, simulation, broadcast, lookup, polling, and error mapping.
 - `execution`: duplicate state machine and settlement orchestration.
-- `evidence`: versioned audit record.
+- `evidence`: versioned evidence record.
 - `output`: Actions summary, receipt comment, and action outputs.
 - `security`: recursive redaction and safe error projection.
 - `action.ts`: dependency composition only; no business logic.
@@ -190,7 +190,7 @@ Every call uses an injectable transport, timeout, validated JSON decoder, safe p
 ## Onchain/Offchain Split
 
 - Onchain: the final token transfer and transaction receipt only.
-- KeeperHub: execution state and provider audit identity.
+- KeeperHub: execution state and provider execution identity.
 - GitHub: policy configuration, trigger, receipt, and user-visible evidence.
 - No smart contract, proxy, RPC fallback, or indexer is needed. Direct explorer/provider evidence is sufficient for one transfer flow.
 
@@ -207,7 +207,7 @@ Every call uses an injectable transport, timeout, validated JSON decoder, safe p
 - Every HTTP call has an explicit timeout.
 - Polling has minimum interval, maximum interval, and total deadline.
 - A workflow restart is safe because it resolves evidence before attempting first broadcast.
-- No availability claim beyond observed hackathon testing.
+- No availability claim beyond the observed testnet runs.
 
 ## Architecture Decisions
 

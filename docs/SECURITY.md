@@ -17,7 +17,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 - Derive the payment key from the stable payment identity (repository, PR, merge SHA, purpose), independent of material content, and compare the canonical request hash on replay: same key plus same hash is a duplicate; same key plus changed hash is a conflict for manual review.
 - Resolve existing executions before any new broadcast.
 - Make blocked/no-broadcast a first-class result.
-- Write a durable pending reservation before any broadcast and never broadcast unless it persists; on any uncertain post-submission outcome, preserve the execution id as manual review so a later run resolves the existing record and never rebroadcasts across invocations.
+- Write a durable pending reservation before any broadcast and never broadcast unless it persists; on any uncertain post-broadcast outcome, preserve the execution id as manual review so a later run resolves the existing record and never rebroadcasts across invocations.
 - Redact secrets recursively in logs, errors, summaries, comments, fixtures, and evidence.
 - Pin third-party workflow actions by commit SHA.
 
@@ -34,7 +34,7 @@ Untrusted: fork branches, contributor code, PR title/body/comments, changed file
 | Receipt key rotation | Receipt signing uses a dedicated versioned secret independent of the KeeperHub broadcast key; rotating the provider key does not invalidate receipts, and the previous signing key is accepted for verification during rotation |
 | Simulation passes, body mutates | Parity hash mismatch aborts broadcast |
 | Provider 401/429/5xx | Typed safe failure; no secret leak or blind retry |
-| Network loss after submission | Lookup original execution; no rebroadcast |
+| Network loss after broadcast | Lookup original execution; no rebroadcast |
 | Fake receipt comment | Structured marker and provider lookup must agree |
 
 ## Trusted Workflow
@@ -44,4 +44,3 @@ The example consumer workflow (`docs/examples/skirwith-workflow.yml`) runs on `p
 ## Residual Risks
 
 GitHub and KeeperHub availability, provider-side semantics, maintainer credential compromise, and lack of durable cumulative accounting remain operational risks. The MVP must disclose them rather than imply production treasury guarantees.
-
