@@ -201,6 +201,7 @@ export class FakeReceiptStore implements ReceiptStore {
   saves: ReceiptRecord[] = [];
   saveError?: unknown;
   saveErrorAt?: number;
+  saveErrorsBefore = 0;
 
   async findByPaymentKey(paymentKey: string): Promise<ReceiptRecord | undefined> {
     return this.records.get(paymentKey);
@@ -212,6 +213,10 @@ export class FakeReceiptStore implements ReceiptStore {
     }
     if (this.saveErrorAt !== undefined && this.saves.length + 1 === this.saveErrorAt) {
       throw this.saveError ?? new Error("receipt persistence failed");
+    }
+    if (this.saveErrorsBefore > 0) {
+      this.saveErrorsBefore -= 1;
+      throw new Error("transient receipt persistence failure");
     }
     this.saves.push(record);
     this.records.set(record.paymentKey, record);

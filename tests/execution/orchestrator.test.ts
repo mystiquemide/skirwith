@@ -319,7 +319,12 @@ describe("SettlementOrchestrator.settle", () => {
     provider.broadcastResult = { executionId: "ex_new", status: "running" };
     const receipts = new FakeReceiptStore();
     receipts.saveErrorAt = 2;
-    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+    const orchestrator = new SettlementOrchestrator({
+      provider,
+      receipts,
+      nowIso: () => NOW,
+      sleepMs: async () => undefined,
+    });
 
     const evidence = await orchestrator.settle(makeInput());
 
@@ -347,7 +352,12 @@ describe("SettlementOrchestrator.settle", () => {
     };
     const receipts = new FakeReceiptStore();
     receipts.saveErrorAt = 2;
-    const orchestrator = new SettlementOrchestrator({ provider, receipts, nowIso: () => NOW });
+    const orchestrator = new SettlementOrchestrator({
+      provider,
+      receipts,
+      nowIso: () => NOW,
+      sleepMs: async () => undefined,
+    });
 
     // Run 1: broadcast succeeds but the submitted receipt save fails.
     const first = await orchestrator.settle(makeInput());
@@ -362,6 +372,32 @@ describe("SettlementOrchestrator.settle", () => {
     expect(second.status).toBe("manual-review");
     expect(second.broadcastMade).toBe(false);
     expect(provider.calls.broadcast).toBe(0);
+  });
+
+  it("retries a transient post-broadcast receipt save and still confirms", async () => {
+    const provider = new FakeKeeperHubProvider();
+    provider.broadcastResult = { executionId: "ex_new", status: "running" };
+    provider.terminalResult = {
+      executionId: "ex_new",
+      status: "completed",
+      transactionHash: "0xabc",
+      pollIntervalHint: 0,
+    };
+    const receipts = new FakeReceiptStore();
+    receipts.saveErrorsBefore = 2;
+    const orchestrator = new SettlementOrchestrator({
+      provider,
+      receipts,
+      nowIso: () => NOW,
+      sleepMs: async () => undefined,
+    });
+
+    const evidence = await orchestrator.settle(makeInput());
+
+    expect(evidence.status).toBe("confirmed");
+    expect(evidence.broadcastMade).toBe(true);
+    expect(evidence.executionId).toBe("ex_new");
+    expect(provider.calls.broadcast).toBe(1);
   });
 
   it("uses the configured recipient wallet from the trusted mapping", async () => {

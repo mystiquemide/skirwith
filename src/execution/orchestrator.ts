@@ -38,17 +38,42 @@ export interface SettlementServices {
   provider: KeeperHubProvider;
   receipts: ReceiptStore;
   nowIso?: () => string;
+  sleepMs?: (ms: number) => Promise<void>;
 }
+
+const RECEIPT_SAVE_ATTEMPTS = 3;
 
 export class SettlementOrchestrator {
   private readonly provider: KeeperHubProvider;
   private readonly receipts: ReceiptStore;
   private readonly nowIso: () => string;
+  private readonly sleepMs: (ms: number) => Promise<void>;
 
   constructor(services: SettlementServices) {
     this.provider = services.provider;
     this.receipts = services.receipts;
     this.nowIso = services.nowIso ?? (() => new Date().toISOString());
+    this.sleepMs =
+      services.sleepMs ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  }
+
+  // Retries a receipt persistence operation so a transient GitHub/network
+  // failure cannot drop a post-broadcast execution identity. Broadcast is
+  // never retried here; only idempotent receipt create-or-update is.
+  private async saveWithRetry(record: ReceiptRecord): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < RECEIPT_SAVE_ATTEMPTS; attempt += 1) {
+      try {
+        await this.receipts.save(record);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < RECEIPT_SAVE_ATTEMPTS - 1) {
+          await this.sleepMs(500 * (attempt + 1));
+        }
+      }
+    }
+    throw lastError;
   }
 
   async settle(input: SettlementInput): Promise<EvidenceRecord> {
@@ -205,7 +230,7 @@ export class SettlementOrchestrator {
         transactionLink: terminal.transactionLink ?? existing.transactionLink,
         updatedAt: this.nowIso(),
       };
-      await this.receipts.save(updated);
+      await this.saveWithRetry(updated);
       return this.evidence({
         policy,
         paymentKey,
@@ -288,7 +313,7 @@ export class SettlementOrchestrator {
       updatedAt: this.nowIso(),
     };
     try {
-      await this.receipts.save(reservation);
+      await this.saveWithRetry(reservation);
     } catch {
       return this.evidence({
         policy,
@@ -316,7 +341,7 @@ export class SettlementOrchestrator {
       executionId: broadcast.executionId,
     };
     try {
-      await this.receipts.save(submitted);
+      await this.saveWithRetry(submitted);
     } catch {
       // The reservation (pending, no execution id) remains durable, so a
       // later run resolves to manual review and never rebroadcasts.
@@ -346,7 +371,7 @@ export class SettlementOrchestrator {
         transactionLink: terminal.transactionLink,
         updatedAt: this.nowIso(),
       };
-      await this.receipts.save(updated);
+      await this.saveWithRetry(updated);
       return this.evidence({
         policy,
         paymentKey,
