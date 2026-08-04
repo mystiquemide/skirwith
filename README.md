@@ -44,15 +44,16 @@ Steps:
 1. Add the config file `.github/skirwith.yml` to the default branch.
 2. Add the workflow file `.github/workflows/settle.yml`.
 3. Set the repository secrets `KEEPERHUB_API_KEY` and
-   `MERGE_PAY_RECEIPT_SECRET`.
+   `SKIRWITH_RECEIPT_SECRET`.
 4. Open a PR and add the labels that the config requires.
 5. Merge the PR.
 
 Expected result:
 
-The action runs after the merge. It posts a receipt comment on the PR. The
-comment shows the transaction hash and the explorer link. The transaction
-appears on Sepolia.
+The action runs after the merge. If policy passes, the wallet is funded, and
+KeeperHub is available, it broadcasts once and posts a receipt comment on the
+PR. The comment shows the transaction hash and the explorer link for the
+Sepolia transaction.
 
 You do not need a personal access token (PAT). GitHub Actions provides the
 `GITHUB_TOKEN` automatically.
@@ -82,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
-          MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}
+          SKIRWITH_RECEIPT_SECRET: ${{ secrets.SKIRWITH_RECEIPT_SECRET }}
 ```
 
 The workflow never checks out or runs PR code.
@@ -179,7 +180,7 @@ See [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Development
 
-Requirements: Node 20 or 22, npm.
+Requirements: Node 20, 22, or 24 (the action runtime is Node 24), npm.
 
 ```bash
 npm install

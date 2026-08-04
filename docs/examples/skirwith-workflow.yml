@@ -3,7 +3,8 @@
 # Add this workflow to a consumer repository that also has a trusted
 # `.github/skirwith.yml` config on the default branch (see skirwith.yml in
 # this directory) and the secrets: GITHUB_TOKEN (auto), KEEPERHUB_API_KEY,
-# and MERGE_PAY_RECEIPT_SECRET (dedicated receipt-signing secret).
+# and SKIRWITH_RECEIPT_SECRET (dedicated receipt-signing secret). The legacy
+# name MERGE_PAY_RECEIPT_SECRET is still accepted during the migration window.
 #
 # Trust properties:
 # - Runs on `pull_request` (never `pull_request_target`), so no PR head code
@@ -42,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
-          MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}
+          SKIRWITH_RECEIPT_SECRET: ${{ secrets.SKIRWITH_RECEIPT_SECRET }}
           # Optional: set during receipt-secret rotation to accept the
           # previous key for verification until old receipts are retired.
-          # MERGE_PAY_RECEIPT_SECRET_PREVIOUS: ${{ secrets.MERGE_PAY_RECEIPT_SECRET_PREVIOUS }}
+          # SKIRWITH_RECEIPT_SECRET_PREVIOUS: ${{ secrets.SKIRWITH_RECEIPT_SECRET_PREVIOUS }}

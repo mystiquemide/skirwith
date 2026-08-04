@@ -194,7 +194,7 @@
   <section id="proof">
     <div class="label">Live proof</div>
     <div class="stats">
-      <div class="stat"><span class="n">7</span><span class="d">confirmed KeeperHub USDC transactions, each verified by the USDC Transfer event on Sepolia</span></div>
+      <div class="stat"><span class="n">7</span><span class="d">on-chain-confirmed KeeperHub USDC transactions, each verified by the USDC Transfer event on Sepolia</span></div>
       <div class="stat"><span class="n">1</span><span class="d">replay of the same event. It produced no second transaction. The wallet balance stayed the same.</span></div>
       <div class="stat"><span class="n">2</span><span class="d">refusal types blocked before broadcast: a missing label and an ambiguous payout. Both report <code>broadcastMade: false</code>.</span></div>
       <div class="stat"><span class="n">0</span><span class="d">double payments. This holds across every replay and every uncertain broadcast.</span></div>
@@ -216,12 +216,18 @@
       </tbody>
     </table>
     <p class="note">
-      * For PRs #4, #6, and #7, the broadcast confirmed on-chain. The KeeperHub
-      response did not reach the action. The receipt stayed <code>pending</code>.
-      The action recovered each execution id with KeeperHub idempotent replay.
-      The replay returned <code>idempotentReplay: true</code>. It created no new
-      transaction. A maintainer posted a reconciliation note on each PR. This is
-      a live demonstration of the no-rebroadcast safety rule. See
+      * Receipt still <code>pending</code>; the transaction is independently
+      confirmed on-chain.
+    </p>
+    <p class="note">
+      The table counts on-chain-confirmed transactions. Four action receipts are
+      <code>confirmed</code>. For PRs #4, #6, and #7, the broadcast confirmed
+      on-chain, but the KeeperHub response did not reach the action, so the
+      receipt stayed <code>pending</code>. The action recovered each execution id
+      with KeeperHub idempotent replay. The replay returned
+      <code>idempotentReplay: true</code>. It created no new transaction. A
+      maintainer posted a reconciliation note on each PR. This is a live
+      demonstration of the no-rebroadcast safety rule. See
       <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
     </p>
   </section>
@@ -253,7 +259,7 @@
       <ol>
         <li>Add the config file <code>.github/skirwith.yml</code> to the default branch.</li>
         <li>Add the workflow file <code>.github/workflows/settle.yml</code>.</li>
-        <li>Set the repository secrets <code>KEEPERHUB_API_KEY</code> and <code>MERGE_PAY_RECEIPT_SECRET</code>.</li>
+        <li>Set the repository secrets <code>KEEPERHUB_API_KEY</code> and <code>SKIRWITH_RECEIPT_SECRET</code>.</li>
         <li>Open a PR and add the labels that the config requires.</li>
         <li>Merge the PR.</li>
       </ol>
@@ -301,12 +307,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
-          MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}</code></pre>
+          SKIRWITH_RECEIPT_SECRET: ${{ secrets.SKIRWITH_RECEIPT_SECRET }}</code></pre>
       <h2 class="sub">Expected result</h2>
       <p class="note">
-        The action runs after the merge. It posts a receipt comment on the PR.
-        The comment shows the transaction hash and the explorer link. The
-        transaction appears on Sepolia.
+        The action runs after the merge. If policy passes, the wallet is funded,
+        and KeeperHub is available, it broadcasts once and posts a receipt
+        comment on the PR. The comment shows the transaction hash and the
+        explorer link for the Sepolia transaction.
+      </p>
+      <h2 class="sub">If the run does not settle</h2>
+      <p class="note">
+        A blocked policy, a pending or manual-review outcome, missing secrets, or
+        an unfunded testnet wallet all stop the action before any broadcast.
+        Check the run log for the reason code, confirm the required label and
+        recipient mapping, then review
+        <a href="https://github.com/mystiquemide/skirwith/blob/master/docs/CONFIGURATION.md">Configuration</a>
+        and the
+        <a href="https://github.com/mystiquemide/skirwith/blob/master/README.md#troubleshooting">troubleshooting</a>
+        section. A run that reaches manual review never rebroadcasts; a maintainer
+        resolves it from the recorded execution id.
       </p>
     </div>
   </section>

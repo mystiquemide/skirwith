@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027). Remaining: README polish, demo video, release packaging (node24 migration check), and DoraHacks submission before 2026-08-13.
+- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027); audit-response hardening with legacy replay migration is complete (CP-028). Remaining: README polish, demo video, release packaging (rebuild `dist/`, tag `v0.1.0`), and DoraHacks submission before 2026-08-13.
 
 ### Blocked (resolved / narrowed)
 
@@ -631,6 +631,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Finish Phase 4 — README polish, demo video, release packaging (node24 migration check), and DoraHacks submission before 2026-08-13.
 
+### CP-028: Audit-response hardening and legacy replay migration
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 4 - Documentation and site
+- Objective: Close the Elite Hackathon Audit findings before release: prove the rename did not break replay suppression, bound comment pagination, align the Node 24 runtime, and align naming and landing copy.
+- Requirements covered: `SC-002` replay suppression across the rebrand, `SC-004` evidence integrity, audit P0/P1/P2 action items.
+- Work completed: Dual-read legacy receipts. The marker parser now accepts both `mergepay` and `skirwith` products, envelopes, and payment-key prefixes (`src/evidence/receipt.ts`). Added `deriveLegacyPaymentKey` (`src/payment/payment-key.ts`) and `LEGACY_PAYMENT_PURPOSE` (`src/domain/constants.ts`). The orchestrator now looks up the current `skirwith:` key first, then the legacy `mergepay:` key, and resolves any found receipt against the matching identity so a pre-rebrand PR resolves to duplicate/resume/manual-review and never rebroadcasts (`src/execution/orchestrator.ts`). Bounded pagination with a request counter and visited-page cycle detection in `CommentReceiptStore.iterateComments` (`src/github/receipts.ts`). Aligned Node 24 across CI, `engines`, and `.nvmrc`. Canonicalized the receipt secret to `SKIRWITH_RECEIPT_SECRET` with legacy-name fallback for the migration window (`src/action-inputs.ts`). Rewrote landing-page proof copy (on-chain-confirmed vs receipt-confirmed), made the setup promise conditional, and added an "If the run does not settle" recovery section with doc links.
+- Files or assets changed: `src/evidence/receipt.ts`, `src/payment/payment-key.ts`, `src/domain/constants.ts`, `src/execution/orchestrator.ts`, `src/github/receipts.ts`, `src/action-inputs.ts`, `tests/evidence/receipt.test.ts`, `tests/execution/orchestrator.test.ts`, `tests/github/receipts.test.ts`, `tests/github/inputs.test.ts`, `.github/workflows/ci.yml`, `package.json`, `.nvmrc`, `docs/index.html`, `docs/CONFIGURATION.md`, `docs/examples/skirwith-workflow.yml`, `README.md`, `PROJECT_STATE.md`.
+- Commands or checks run: `npm run typecheck`, `npm test` (233 tests), focused suites for receipt/orchestrator/receipts-store/inputs.
+- Test results: 233/233 tests pass; new legacy-compatibility tests cover confirmed duplicate, pending resume, changed-content conflict, no-broadcast-on-new-payment, and legacy marker parse/verify; new pagination-cycle test fails closed within the page cap.
+- Acceptance criteria verified: A pre-rebrand `mergepay:` confirmed receipt resolves to `duplicate` with zero provider calls; a legacy pending receipt resumes polling without rebroadcast; a legacy conflicting receipt goes to manual review; new payments still broadcast under `skirwith:` keys.
+- Decisions: Dual-read legacy identities instead of rewriting live receipts, so historical evidence stays authoritative and unmodified; accept both `SKIRWITH_RECEIPT_SECRET` and the legacy `MERGE_PAY_RECEIPT_SECRET` names during the migration window (canonical name wins); do not rename the live acceptance repo secrets since legacy names are accepted.
+- Deviations: None.
+- Amendments: Approved migration amendment for the rebrand (see DEC-012): persisted payment identities and receipt markers written under the pre-rebrand `mergepay` purpose, key prefix, and product remain authoritative; new writes use `skirwith`.
+- Risks introduced: Legacy-compatibility lookups add one extra receipt-store query only when the current key misses (no extra network work for new payments).
+- Known issues: `dist/` must be rebuilt and committed before release; the acceptance repo still uses the legacy secret name, which the action accepts; `REV-012` workspace deletion on the reviewer machine remains a user-side item.
+- Blockers: None.
+- Next exact action: Rebuild `dist/`, run the full release preflight, tag `v0.1.0`, point the example workflows and README at the tag SHA, record the demo video, and submit to DoraHacks before 2026-08-13.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -646,6 +667,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | DEC-009 | 2026-08-03 | Convert human decimal amounts to atomic integer units via token decimals and reject fractional precision beyond token decimals; no generic fixed-width string comparison | Fixed-width decimal comparison accepted an over-cap amount (REV-002) | Cap and precision enforced at config load and policy; amounts stay decimal at config boundary |
 | DEC-010 | 2026-08-04 | Use a dedicated versioned receipt-signing secret (`MERGE_PAY_RECEIPT_SECRET`) with a key id and an optional previous key for rotation, decoupled from the KeeperHub broadcast key | REV-008: reusing the provider key meant provider rotation invalidated the durable replay record | Receipts survive provider-key rotation; `MERGE_PAY_RECEIPT_SECRET_PREVIOUS` supports one rotation window |
 | DEC-011 | 2026-08-04 | Commit the generated `dist/` bundle to the action repo (`94fcb1b`) before the Phase 4 release step so the acceptance workflow can pin the action by commit SHA | `uses:` requires `dist/index.js` to exist at the referenced SHA; Phase 3 live acceptance needs a usable action reference | Acceptance workflow pins `94fcb1b`; bundle matches the reviewed source at `2760aeb` |
+| DEC-012 | 2026-08-04 | Dual-read legacy `mergepay` payment identities and receipt markers instead of rewriting live receipts, and accept both `SKIRWITH_RECEIPT_SECRET` and `MERGE_PAY_RECEIPT_SECRET` during the migration window | The rebrand changed the persisted payment identity, which threatened the never-pay-twice replay claim; live receipts must stay authoritative and unmodified | Replay compatibility is proven by test (CP-028); new writes use `skirwith` and the canonical secret name |
 
 ## Plan Deviations
 
