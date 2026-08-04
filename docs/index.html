@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MergePay — Pay maintainer-approved contributors after merged PRs</title>
-<meta name="description" content="MergePay is a GitHub Action that pays a maintainer-approved contributor after a genuinely merged pull request, via KeeperHub on a testnet." />
+<title>MergePay — Pay approved contributors after a merged pull request</title>
+<meta name="description" content="MergePay is a GitHub Action. It pays an approved contributor after a merged pull request through KeeperHub on a testnet." />
 <style>
   :root {
     --bg: #0b0f17;
@@ -77,6 +77,8 @@
   .foot { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.82rem; }
   ul { margin-left: 1.25rem; }
   li { margin: 0.3rem 0; color: var(--muted); }
+  ol { margin-left: 1.25rem; }
+  ol li { margin: 0.3rem 0; color: var(--muted); }
   a { color: var(--accent); }
 </style>
 </head>
@@ -93,50 +95,55 @@
 <div class="wrap">
   <div class="hero">
     <span class="badge">GitHub Action · Testnet</span>
-    <h1>Pay maintainer-approved contributors after a genuinely merged pull request.</h1>
+    <h1>Pay approved contributors after a merged pull request.</h1>
     <p class="lead">
-      MergePay turns a trusted merged PR into a deterministic, policy-controlled
-      stablecoin payout through KeeperHub on Ethereum Sepolia — with replay
-      suppression, no automatic rebroadcast, and refusal before any broadcast.
+      MergePay is a GitHub Action. It pays an approved contributor after a
+      merged pull request (PR). It uses KeeperHub on Ethereum Sepolia. Policy
+      controls the payout. Replays never pay twice. Refusals happen before any
+      broadcast.
     </p>
     <div class="cta">
       <a class="btn" href="#setup">Set it up</a>
-      <a class="btn ghost" href="https://github.com/mystiquemide/mergepay-acceptance">See the live acceptance repo</a>
+      <a class="btn ghost" href="https://github.com/mystiquemide/mergepay-acceptance">View the acceptance repo</a>
     </div>
   </div>
 
   <h2>How it works</h2>
   <div class="flow">
-    <span class="step">Trusted merged PR</span><span class="arrow">→</span>
-    <span class="step">Fresh GitHub state + default-branch config</span><span class="arrow">→</span>
-    <span class="step">Deterministic policy</span><span class="arrow">→</span>
-    <span class="step">Signed durable reservation</span><span class="arrow">→</span>
+    <span class="step">Merged PR</span><span class="arrow">→</span>
+    <span class="step">Fresh GitHub state</span><span class="arrow">→</span>
+    <span class="step">Policy decision</span><span class="arrow">→</span>
+    <span class="step">Signed reservation</span><span class="arrow">→</span>
     <span class="step">KeeperHub simulation</span><span class="arrow">→</span>
-    <span class="step">Exact-body broadcast once</span><span class="arrow">→</span>
-    <span class="step">Receipt comment + explorer proof</span>
+    <span class="step">One broadcast</span><span class="arrow">→</span>
+    <span class="step">Receipt comment</span>
   </div>
   <p class="muted">
-    Recipient and amount come only from maintainer-controlled mappings. Contributor
-    text, code, and head-branch config are never trusted.
+    The workflow triggers on a closed PR. The action reads fresh state from
+    GitHub. It reads the trusted config from the default branch. Policy picks
+    the recipient and the amount from the config. The action writes a signed
+    reservation before any broadcast. KeeperHub simulates the transfer, then
+    broadcasts it once. The action posts a receipt comment with the explorer
+    link.
   </p>
 
-  <h2>Live proof <span class="muted" style="font-weight:400;font-size:0.85rem">(Sepolia, all verified on-chain)</span></h2>
+  <h2 id="proof">Live proof <span class="muted" style="font-weight:400;font-size:0.85rem">(Sepolia, verified on-chain)</span></h2>
   <div class="grid">
     <div class="card">
       <div class="num">7</div>
-      <p>confirmed KeeperHub USDC transactions, each verified via the USDC Transfer event on Sepolia</p>
+      <p>confirmed KeeperHub USDC transactions. Each one is verified by the USDC Transfer event on Sepolia.</p>
     </div>
     <div class="card">
       <div class="num">1</div>
-      <p>replay of the same event produced no second transaction (wallet balance unchanged)</p>
+      <p>replay of the same event. It produced no second transaction. The wallet balance stayed the same.</p>
     </div>
     <div class="card blocked">
       <div class="num">2</div>
-      <p>refusal types blocked before broadcast: missing label and ambiguous payout, both <code>broadcastMade: false</code></p>
+      <p>refusal types blocked before broadcast: a missing label and an ambiguous payout. Both report <code>broadcastMade: false</code>.</p>
     </div>
     <div class="card manual">
       <div class="num">0</div>
-      <p>double payments across every replay and every uncertain-broadcast retry</p>
+      <p>double payments. This holds across every replay and every uncertain broadcast.</p>
     </div>
   </div>
 
@@ -156,22 +163,34 @@
     </tbody>
   </table>
   <p class="muted">
-    * For PRs #4, #6 and #7 the broadcast confirmed on-chain but the KeeperHub
-    response was not delivered to the action, so the receipt stayed <code>pending</code>.
-    Each execution was recovered authoritatively via KeeperHub idempotent replay
-    (<code>idempotentReplay: true</code>, no new transaction) and a maintainer
-    reconciliation note was posted on the PR — a live demonstration of the
-    cross-run no-rebroadcast safety invariant. Full details in
+    * For PRs #4, #6, and #7, the broadcast confirmed on-chain. The KeeperHub
+    response did not reach the action. The receipt stayed <code>pending</code>.
+    The action recovered each execution id with KeeperHub idempotent replay.
+    The replay returned <code>idempotentReplay: true</code>. It created no new
+    transaction. A maintainer posted a reconciliation note on each PR. This is
+    a live demonstration of the no-rebroadcast safety rule. See
     <a href="PHASE3-EVIDENCE.md">PHASE3-EVIDENCE.md</a>.
   </p>
 
   <h2 id="setup">Set it up</h2>
+  <h3>Prerequisites</h3>
+  <ul>
+    <li>A repository that you control.</li>
+    <li>A KeeperHub organization API key. Create it at app.keeperhub.com.</li>
+    <li>A receipt signing secret. Use any long random string.</li>
+  </ul>
+  <h3>Steps</h3>
   <ol>
-    <li>Add the trusted config <code>.github/mergepay.yml</code> on the default branch.</li>
-    <li>Add a workflow that runs on <code>pull_request: [closed]</code> and uses the action.</li>
-    <li>Set repo secrets <code>KEEPERHUB_API_KEY</code> and <code>MERGE_PAY_RECEIPT_SECRET</code>. The GitHub API token is automatic; no PAT is required.</li>
-    <li>Merge an approved PR to trigger a payout.</li>
+    <li>Add the config file <code>.github/mergepay.yml</code> to the default branch.</li>
+    <li>Add the workflow file <code>.github/workflows/settle.yml</code>.</li>
+    <li>Set the repository secrets <code>KEEPERHUB_API_KEY</code> and <code>MERGE_PAY_RECEIPT_SECRET</code>.</li>
+    <li>Open a PR and add the labels that the config requires.</li>
+    <li>Merge the PR.</li>
   </ol>
+  <p class="muted">
+    You do not need a personal access token (PAT). GitHub Actions provides the
+    <code>GITHUB_TOKEN</code> automatically.
+  </p>
   <pre><code># .github/mergepay.yml (default branch, trusted)
 version: 1
 repository: owner/name
@@ -213,25 +232,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
           MERGE_PAY_RECEIPT_SECRET: ${{ secrets.MERGE_PAY_RECEIPT_SECRET }}</code></pre>
+  <h3>Expected result</h3>
   <p class="muted">
-    The workflow never checks out or executes PR code. The action fetches trusted
-    state and configuration through the GitHub API and only ever reads
-    maintainer-controlled mappings for payment decisions.
+    The action runs after the merge. It posts a receipt comment on the PR. The
+    comment shows the transaction hash and the explorer link. The transaction
+    appears on Sepolia.
   </p>
 
   <h2 id="safety">Safety design</h2>
   <ul>
-    <li>Recipient and amount resolve only from the trusted config; contributor content is untrusted.</li>
-    <li>A signed, durable reservation is written <em>before</em> any broadcast; no broadcast happens without it.</li>
-    <li>Simulation and broadcast use the exact same transfer parameters; any mismatch aborts.</li>
-    <li>Replays resolve the existing receipt and never broadcast a second transaction.</li>
-    <li>Uncertain outcomes become manual review with the execution id preserved — never an automatic rebroadcast.</li>
-    <li>Receipt markers are HMAC-authenticated with a dedicated key, so forged comments cannot suppress a payout.</li>
+    <li>Recipient and amount come only from the trusted config. Contributor content is untrusted.</li>
+    <li>The action writes a signed reservation before any broadcast. It never broadcasts without a reservation.</li>
+    <li>Simulation and broadcast use the same transfer parameters. A mismatch aborts the run.</li>
+    <li>Replays resolve the existing receipt. They never broadcast a second transaction.</li>
+    <li>Uncertain outcomes become manual review. The action keeps the execution id. It never rebroadcasts.</li>
+    <li>Receipt markers use an HMAC (Hash-based Message Authentication Code) signature with a dedicated key. A forged comment cannot suppress a payout.</li>
   </ul>
 
   <div class="foot">
-    MergePay is a testnet proof-of-concept for the KeeperHub Agents Onchain hackathon.
-    No production or mainnet claim is made. See
+    MergePay is a testnet proof of concept for the KeeperHub Agents Onchain
+    hackathon. It makes no production or mainnet claim. See
     <a href="https://github.com/mystiquemide/mergepay">github.com/mystiquemide/mergepay</a>.
   </div>
 </div>
