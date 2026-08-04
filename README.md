@@ -9,7 +9,7 @@ without sending a second transaction.
 
 ## Watch and verify
 
-Demo video: recording against the `v0.1.0` release; the URL will be linked
+Demo video: recording against the `v0.1.1` release; the URL will be linked
 here (script: [docs/DEMO_VIDEO_PLAN.md](docs/DEMO_VIDEO_PLAN.md)). To verify
 the claims now from public evidence, follow
 [docs/VERIFY.md](docs/VERIFY.md) or start with:
@@ -129,7 +129,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
+      - uses: mystiquemide/skirwith@0f821cf4bade597f23cd594be222b4d59a3b33f7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEPERHUB_API_KEY: ${{ secrets.KEEPERHUB_API_KEY }}
@@ -202,6 +202,6 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License and submission
 
-MIT (see [LICENSE](LICENSE)). Release tag `v0.1.0` points to commit
-`594bcb928ed0fb40df1845263e17ce62ead6c8bc`. Submission archive:
+MIT (see [LICENSE](LICENSE)). Release tag `v0.1.1` points to commit
+`0f821cf4bade597f23cd594be222b4d59a3b33f7`. Submission archive:
 [docs/SUBMISSION.md](docs/SUBMISSION.md).

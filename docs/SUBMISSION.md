@@ -3,18 +3,18 @@
 ## Required Links
 
 - Public GitHub repository: https://github.com/mystiquemide/skirwith
-- Final release tag: `v0.1.0` → commit `594bcb928ed0fb40df1845263e17ce62ead6c8bc`
-- Demo video under three minutes: PENDING (see `docs/DEMO_VIDEO_PLAN.md`; URL recorded here once uploaded)
+- Final release tag: `v0.1.1` → commit `0f821cf4bade597f23cd594be222b4d59a3b33f7`
+- Demo video under three minutes: PENDING (see `docs/DEMO_VIDEO_PLAN.md`; URL recorded here once uploaded). A final `v1.0.0` submission tag will be cut after the video and this archive, so the demo, README, bundle, and submission reference one revision.
 - Real KeeperHub transaction explorer link: https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0
 - KeeperHub execution reference: `mn7vnwz2rednekykkww8d`
 - Optional public documentation site: https://mystiquemide.github.io/skirwith/
 
 ## Pinned Action Reference
 
-Docs and the example workflow pin the action to the `v0.1.0` release commit:
+Docs and the example workflow pin the action to the `v0.1.1` release commit:
 
 ```yaml
-uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
+uses: mystiquemide/skirwith@0f821cf4bade597f23cd594be222b4d59a3b33f7
 ```
 
 ## Verification
@@ -25,7 +25,7 @@ uses: mystiquemide/skirwith@594bcb928ed0fb40df1845263e17ce62ead6c8bc
   returns HTTP 403 to plain curl (bot protection), not a broken link.
 - Confirm transaction chain, token, amount, recipient, status, and timestamp:
   recorded in `docs/PHASE3-EVIDENCE.md`.
-- Confirm the repository tag matches the recorded demo build: tag `v0.1.0`
+- Confirm the repository tag matches the recorded demo build: tag `v0.1.1`
   points to the commit the docs pin.
 - Confirm README separates live proof from fixtures: README marks fixtures as
   synthetic and links `docs/PHASE3-EVIDENCE.md` for live proof.

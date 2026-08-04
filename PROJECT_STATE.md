@@ -5,7 +5,7 @@
 - Plan file: `PROJECT_PLAN.md`
 - Status: In progress
 - Current phase: Phase 4 - Documentation, onboarding, and submission
-- Current checkpoint: CP-028
+- Current checkpoint: CP-031
 - Last updated: 2026-08-04 (Africa/Lagos)
 - Last agent: Implementation lead
 - Planning confidence: 84/100 (Medium)
@@ -64,7 +64,7 @@ The repository proves what exists. The plan defines intended scope, design, phas
 
 ### In Progress
 
-- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027); audit-response hardening with legacy replay migration is complete (CP-028); release packaged and tagged `v0.1.0` with docs pinned to the release SHA (CP-029). Remaining: demo video recording and DoraHacks submission before 2026-08-13.
+- Phase 4 (Documentation, onboarding, optional site, release, submission): acceptance repo and docs site are live (CP-027); audit-response hardening with legacy replay migration is complete (CP-028); release packaged and tagged `v0.1.0` with docs pinned to the release SHA (CP-029); combined-audit response complete (CP-030); win-plan packaging complete with re-tag to `v0.1.1` (CP-031). Remaining: demo video recording, final immutable submission tag (`v1.0.0`) after the video, and DoraHacks submission before 2026-08-13.
 
 ### Blocked (resolved / narrowed)
 
@@ -280,9 +280,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 1 - Foundation and contract freeze
 - Objective: Independently review the full Phase 1 diff (`20b6fa2..46b8825`) as the Phase 1 exit gate before Phase 2.
-- Work completed: The reviewer added `CODE_REVIEW.md` (212 lines) and pushed commit `b0a882e`. Verdict: Changes required. Reproduced 62 passing tests plus clean format/lint/typecheck/build/bundle, but flagged defects that block the contract freeze.
+- Work completed: The reviewer added `docs/reviews/CODE_REVIEW.md` (212 lines) and pushed commit `b0a882e`. Verdict: Changes required. Reproduced 62 passing tests plus clean format/lint/typecheck/build/bundle, but flagged defects that block the contract freeze.
 - Findings: `REV-001` High — payment key was the hash of the whole canonical request, so changed content always changed the key and the FR-007/BR-006 same-key/different-hash conflict was unrepresentable. `REV-002` High — decimal comparison padded to 18 fractional digits without normalizing longer scales, so an over-cap amount could pass (`0.000000000000000001` vs cap `0.0000000000000000001`). `REV-003` Medium — `buildCanonicalRequest` cast/normalized malformed values (bad addresses, fractional atomic amount, non-positive identifiers) instead of validating. `REV-004` Low — repository hygiene: untracked nested `skirwith/` copy; the review commit also introduced a stray self-referential `skirwith` gitlink with no `.gitmodules`.
-- Files or assets changed: `CODE_REVIEW.md` (new); `PROJECT_STATE.md` not touched by the reviewer.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` (new); `PROJECT_STATE.md` not touched by the reviewer.
 - Commands or checks run: Independent reproduction of test/build/format/lint/typecheck and the flagged boundary cases.
 - Test results: 62/62 tests reproduced; audit unavailable in the reviewer environment (`EAI_AGAIN`).
 - Next exact action: Fix REV-001..REV-004 test-first, update contract docs, rerun full verification, and request a fresh re-review.
@@ -315,8 +315,8 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 1 - Foundation and contract freeze
 - Objective: Fresh independent re-review of the CP-010 corrections to close the Phase 1 exit gate (CP-011).
-- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `65563d5`). Verdict: Approve with non-blocking findings. 0 blocker/critical/high/medium; 1 Low (`REV-005`); 4 positives. Phase 1 exit gate approved for revision `4554773` only. Prior findings REV-001 (payment identity), REV-002 (atomic conversion/precision), and REV-003 (canonical validation) confirmed materially corrected and covered by new tests.
-- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Work completed: The reviewer updated `docs/reviews/CODE_REVIEW.md` (commit `65563d5`). Verdict: Approve with non-blocking findings. 0 blocker/critical/high/medium; 1 Low (`REV-005`); 4 positives. Phase 1 exit gate approved for revision `4554773` only. Prior findings REV-001 (payment identity), REV-002 (atomic conversion/precision), and REV-003 (canonical validation) confirmed materially corrected and covered by new tests.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
 - Commands or checks run: Independent reproduction of 90/90 tests, format, lint, typecheck, build, bundle load, and the payment-identity/decimal/canonical regression tests.
 - Acceptance criteria verified: Phase 1 gate closed for `4554773`; Phase 2 not approved and requires its own review scope.
 - Decisions: None required; approval applies to the reviewed Phase 1 revision only.
@@ -415,9 +415,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
 - Objective: Independently review the Phase 2 execution path (`4554773..887cce2`) as the Phase 2 exit gate before live acceptance.
-- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `ea33028`). Verdict: Changes required. Reproduced 199/199 tests, format, lint, typecheck, build, bundle load, and packaged fixtures; flagged one Medium finding blocking the gate.
+- Work completed: The reviewer updated `docs/reviews/CODE_REVIEW.md` (commit `ea33028`). Verdict: Changes required. Reproduced 199/199 tests, format, lint, typecheck, build, bundle load, and packaged fixtures; flagged one Medium finding blocking the gate.
 - Findings: `REV-006` Medium — `CommentReceiptStore.findByPaymentKey()` treated any issue comment containing a syntactically valid receipt marker as authoritative execution state. Because payment keys and request hashes are deterministic from public data, a commenter could forge a `confirmed` marker and suppress a legitimate payout (duplicate/manual-review with no broadcast), violating RISK-009 and the replay-integrity control. Also noted: comment-list pagination is a secondary operational risk (not blocking).
-- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
 - Commands or checks run: Independent reproduction of the full verification suite and the forged-marker scenario.
 - Next exact action: Fix REV-006 test-first (bind markers to a secret via HMAC, fail closed on bad provenance, validate marker fields), update docs, rerun verification, and request a re-review.
 
@@ -449,9 +449,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
 - Objective: Re-review the REV-006 receipt-provenance fix (`bee4a94..aa73a92`) as the Phase 2 exit gate.
-- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `89d461f`). Verdict: Changes required. Reproduced 208/208 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Work completed: The reviewer updated `docs/reviews/CODE_REVIEW.md` (commit `89d461f`). Verdict: Changes required. Reproduced 208/208 tests, format/lint/typecheck, build, bundle, packaged fixtures.
 - Findings: `REV-007` escalated to High — `save()` still selects any decoded marker with the matching payment key (no MAC/ownership check) and updates it after a successful broadcast; real GitHub rejects edits to comments the token does not own, so the run can report failure with no trusted pending receipt and, after the provider idempotency window, a replay could double-pay. The permissive `FakeGitHubApi.updateIssueComment()` masked this. `REV-008` Medium — reusing the KeeperHub API key as the receipt HMAC secret means provider-key rotation invalidates the only durable replay record (idempotency is 24h). `REV-009` Low — `last stop.md` is deleted in the reviewer workspace.
-- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
 - Next exact action: Fix REV-007 and REV-008 test-first, restore `last stop.md` in the reviewer workspace, and request another re-review.
 
 ### CP-019: Review findings REV-007 and REV-008 fixed
@@ -482,9 +482,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
 - Objective: Re-review the REV-007/REV-008 fix (`aa73a92..ebefa9a`) as the Phase 2 exit gate.
-- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `74ca268`). Verdict: Changes required. Confirmed REV-007 (forged-comment write) and REV-008 (key rotation) corrected; reproduced 215/215 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Work completed: The reviewer updated `docs/reviews/CODE_REVIEW.md` (commit `74ca268`). Verdict: Changes required. Confirmed REV-007 (forged-comment write) and REV-008 (key rotation) corrected; reproduced 215/215 tests, format/lint/typecheck, build, bundle, packaged fixtures.
 - Findings: `REV-010` High — post-broadcast receipt-persistence failure returned manual-review evidence only for the current run; nothing durable was stored, so a later run found no receipt and could broadcast again, creating a duplicate after the provider idempotency window. `REV-011` Low — `last stop.md` deleted in the reviewer workspace (same item as REV-009).
-- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
 - Next exact action: Fix REV-010 by making a durable pending reservation before broadcast so a later run resolves the existing record and never rebroadcasts.
 
 ### CP-021: Review finding REV-010 fixed
@@ -515,9 +515,9 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Agent: Independent reviewer (external)
 - Phase: Phase 2 - Trusted GitHub and KeeperHub execution
 - Objective: Re-review the REV-010 fix (`ebefa9a..f883b81`) to close the Phase 2 exit gate.
-- Work completed: The reviewer updated `CODE_REVIEW.md` (commit `ed98ef9`). Verdict: Approve with non-blocking findings. REV-010 corrected: a signed pending reservation persists before broadcast, broadcast is refused if reservation persistence fails, and a failed submitted-state update leaves the reservation durable so later runs resolve to manual review without simulation or rebroadcast. Phase 2 execution gate approved for revision `f883b81`. Reproduced 218/218 tests, format/lint/typecheck, build, bundle, packaged fixtures.
+- Work completed: The reviewer updated `docs/reviews/CODE_REVIEW.md` (commit `ed98ef9`). Verdict: Approve with non-blocking findings. REV-010 corrected: a signed pending reservation persists before broadcast, broadcast is refused if reservation persistence fails, and a failed submitted-state update leaves the reservation durable so later runs resolve to manual review without simulation or rebroadcast. Phase 2 execution gate approved for revision `f883b81`. Reproduced 218/218 tests, format/lint/typecheck, build, bundle, packaged fixtures.
 - Findings: `REV-012` Low — `last stop.md` deleted in the reviewer workspace (hygiene, not in this repository). `REV-013` Low — GitHub comment receipt discovery lacks pagination (reliability hardening for active public PRs; deferred).
-- Files or assets changed: `CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
+- Files or assets changed: `docs/reviews/CODE_REVIEW.md` updated; `PROJECT_STATE.md` not touched by the reviewer.
 - Acceptance criteria verified: No unresolved Blocker/Critical/High/Medium; Phase 2 gate closed for `f883b81`; no further Phase 2 re-review required unless reservation/receipt/identity/idempotency/workflow code changes.
 - Decisions: None required.
 - Known issues: REV-012 (workspace deletion on reviewer machine), REV-013 (pagination), audit/secret-scan must be reproduced in a network-enabled clean environment before publication.
@@ -694,6 +694,27 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Record the demo video against the `v0.1.0` release SHA, archive the video URL in `docs/SUBMISSION.md`, and complete the DoraHacks submission form before 2026-08-13.
 
+### CP-031: Win-plan packaging and release re-tag
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 4 - Documentation and site
+- Objective: Apply the win plan's packaging requirements: a judge-first README, a root MIT license, removal of internal review material from the primary repository path, and an unambiguous release identity that includes the judge-facing documentation.
+- Requirements covered: Win-plan README blueprint, licensing, repository hygiene, and one-revision release identity.
+- Work completed: Restructured the README around verification (hero pitch, watch-and-verify evidence path, three-state proof table, why KeeperHub, security invariants, quickstart pinned to the release SHA, outcome guide, evidence and limitations, reproduction, repository map) and removed the generic "Who it is for" section and the untested "replays never pay twice" claim. Added the root `LICENSE` (MIT). Moved internal review documents (`CODE_REVIEW.md`, `ELITE_HACKATHON_AUDIT.md`, `COMBINED_PRODUCT_REPO_UX_HACKATHON_AUDIT.md`, `SKIRWITH_WIN_PLAN.md`) into `docs/reviews/` via `git mv`. Created annotated tag `v0.1.1` at commit `0f821cf4bade597f23cd594be222b4d59a3b33f7` and re-pointed every README, example workflow, landing page, submission archive, and verify-guide reference from `v0.1.0`/`594bcb9` to `v0.1.1`/the new SHA. Fixed stale project-state references (`docs/reviews/CODE_REVIEW.md` paths, current checkpoint).
+- Files or assets changed: `README.md`, `LICENSE` (new), `docs/reviews/` (moved CODE_REVIEW and the three audit/win-plan docs), `docs/SUBMISSION.md`, `docs/VERIFY.md`, `docs/examples/skirwith-workflow.yml`, `docs/index.html`, `PROJECT_STATE.md`; tag `v0.1.1` (annotated).
+- Commands or checks run: `git mv` for the review archive, `git tag -a v0.1.1`, `npm test` (242 tests), link existence checks across all referenced docs, `grep` for stale root-path references (none remaining).
+- Test results: 242/242 tests pass; all README/doc links resolve; no stale references to the moved review documents remain.
+- Acceptance criteria verified: The README leads with verification; the release tag includes the judge-first README; internal review material is out of the primary repository path; the submission archive pins the exact release commit and records the pending `v1.0.0` final tag after the demo video.
+- Decisions: Re-tagged to `v0.1.1` at the current HEAD rather than rewriting `v0.1.0`; the final `v1.0.0` submission tag will be cut after the demo video and submission archive so the evaluated revision matches the release exactly.
+- Deviations: None.
+- Amendments: `AMD-001` remains approved.
+- Risks introduced: Two release tags exist (`v0.1.0`, `v0.1.1`); docs reference `v0.1.1`, and the final submission tag supersedes both after the video.
+- Known issues: Demo video URL is still a pending slot in the submission archive; `REV-012` workspace deletion on the reviewer machine remains a user-side item.
+- Blockers: None.
+- Next exact action: Record the demo video against `v0.1.1`, archive the URL in `docs/SUBMISSION.md`, cut the final `v1.0.0` submission tag so the evaluated SHA matches, and complete the DoraHacks submission form before 2026-08-13.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
@@ -752,13 +773,13 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-008 | Resolution helpers | Pass | `resolveRecipient`, `resolvePayoutAmount`, `isChainTokenAllowed` block unmapped recipient, missing/ambiguous amount, zero amount, over-cap amount, disallowed chain/token |
 | CP-008 | Decimal helpers | Pass | `exceedsDecimalString` and `isZeroAmount` compare big-int decimals without floating point |
 | CP-008 | Verification suite | Pass | `npm test` 62/62; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean |
-| CP-009 | Independent Phase 1 review | Findings returned | `CODE_REVIEW.md`: REV-001 High (payment key = content hash), REV-002 High (fixed-width decimal cap bypass), REV-003 Medium (canonical builder not validating), REV-004 Low (nested copy/gitlink) |
+| CP-009 | Independent Phase 1 review | Findings returned | `docs/reviews/CODE_REVIEW.md`: REV-001 High (payment key = content hash), REV-002 High (fixed-width decimal cap bypass), REV-003 Medium (canonical builder not validating), REV-004 Low (nested copy/gitlink) |
 | CP-010 | Payment key / identity separation | Pass | Same key stable across material content changes while canonical hash differs; key changes on identity change (identity/payment tests) |
 | CP-010 | Atomic-unit decimal conversion | Pass | `toAtomicUnits("0.000000000000000001", 19)` = `10` > cap `1`; excess fractional precision rejected; no floating point |
 | CP-010 | Config precision and cap bounds | Pass | Over-precision amount and maximum rejected; amount equal to maximum accepted; over-cap blocked (config validation tests) |
 | CP-010 | Canonical request validation boundary | Pass | 17 malformed-field cases rejected with `CANONICAL_REQUEST_INVALID`; equivalent inputs canonicalize identically |
 | CP-010 | Verification suite | Pass | `npm test` 90/90; typecheck clean; lint clean (`--max-warnings 0`); format clean; ncc build + bundle loads; `npm audit` 0 vulnerabilities; grep secret scan clean; `git rm skirwith` removed stray gitlink |
-| CP-011 | Independent Phase 1 re-review | Approve | `CODE_REVIEW.md`: 0 blocker/critical/high/medium; REV-001..REV-003 confirmed corrected; 1 Low (`REV-005` nested copy in reviewer workspace); Phase 1 gate approved for `4554773` |
+| CP-011 | Independent Phase 1 re-review | Approve | `docs/reviews/CODE_REVIEW.md`: 0 blocker/critical/high/medium; REV-001..REV-003 confirmed corrected; 1 Low (`REV-005` nested copy in reviewer workspace); Phase 1 gate approved for `4554773` |
 | CP-012 | Provider transport | Pass | `FetchHttpTransport` injectable fetch, per-request timeout, header normalization, network/timeout -> `PROVIDER_TRANSPORT_FAILED` |
 | CP-012 | Provider client | Pass | Simulate/broadcast/lookup/poll/discover against fake transport; idempotency-key on broadcast, `simulate` only on simulation, 409 -> conflict/in-progress kind, 401/403/429 mapping, malformed JSON rejected |
 | CP-012 | Bounded polling | Pass | Clamped hints, terminal at completed/failed/zero-hint, deterministic `PROVIDER_POLL_TIMEOUT` via injected clock/sleeper |
@@ -778,22 +799,22 @@ The repository proves what exists. The plan defines intended scope, design, phas
 | CP-015 | Pinned actions | Pass | checkout + setup-node pinned by commit SHA verified from GitHub API |
 | CP-015 | Packaged action vs fixtures | Pass | `npm run verify:packaged` against `dist/index.js`: merged -> confirmed, unmerged -> blocked, opened -> safe failure |
 | CP-015 | Verification suite | Pass | `npm test` 199/199; typecheck/lint/format clean; bundle loads; `npm audit` 0; secret scan clean incl. action.yml/.github/scripts |
-| CP-016 | Independent Phase 2 review | Findings returned | `CODE_REVIEW.md`: REV-006 Medium — forged comment markers treated as authoritative receipt state could suppress payouts |
+| CP-016 | Independent Phase 2 review | Findings returned | `docs/reviews/CODE_REVIEW.md`: REV-006 Medium — forged comment markers treated as authoritative receipt state could suppress payouts |
 | CP-017 | Receipt marker MAC | Pass | HMAC-SHA256 over marker payload with the receipt secret; sorted-key stable serialization; forged/tampered/different-secret markers fail closed |
 | CP-017 | Marker field validation | Pass | Payment key, 64-hex request hash, 40-hex merge SHA, positive PR number, valid status, tx-hash format all validated before acceptance |
 | CP-017 | Adversarial action tests | Pass | Attacker-forged confirmed marker still pays (broadcast 1); legitimately signed confirmed receipt returns duplicate (broadcast 0) |
 | CP-017 | Verification suite | Pass | `npm test` 208/208; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
-| CP-018 | Independent Phase 2 re-review | Findings returned | `CODE_REVIEW.md`: REV-007 escalated High (unauthenticated write path + post-broadcast save loss), REV-008 Medium (provider key reuse), REV-009 Low (workspace file deletion) |
+| CP-018 | Independent Phase 2 re-review | Findings returned | `docs/reviews/CODE_REVIEW.md`: REV-007 escalated High (unauthenticated write path + post-broadcast save loss), REV-008 Medium (provider key reuse), REV-009 Low (workspace file deletion) |
 | CP-019 | Versioned receipt signing key | Pass | Dedicated `MERGE_PAY_RECEIPT_SECRET` with key id; previous key verifies during rotation; provider-key rotation no longer invalidates receipts; unknown key ids rejected |
 | CP-019 | Authenticated receipt writes | Pass | `save()` updates only MAC-verified matching receipts; forged squatter never edited and a fresh signed comment is created |
 | CP-019 | Post-broadcast recovery | Pass | `save(pending)` failure returns manual-review evidence with execution id and no rebroadcast (orchestrator + action tests) |
 | CP-019 | Ownership-aware fake | Pass | `FakeGitHubApi` rejects updates to comments the action does not own, matching real GitHub authorization |
 | CP-019 | Verification suite | Pass | `npm test` 215/215; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
-| CP-020 | Independent Phase 2 re-review | Findings returned | `CODE_REVIEW.md`: REV-007/REV-008 confirmed corrected; REV-010 High (no durable cross-run rebroadcast guard), REV-011 Low (workspace file deletion) |
+| CP-020 | Independent Phase 2 re-review | Findings returned | `docs/reviews/CODE_REVIEW.md`: REV-007/REV-008 confirmed corrected; REV-010 High (no durable cross-run rebroadcast guard), REV-011 Low (workspace file deletion) |
 | CP-021 | Pre-broadcast durable reservation | Pass | `executeNew` writes a pending reservation before broadcast; no broadcast without a durable reservation; submitted-save failure returns manual-review with the execution id |
 | CP-021 | Cross-run no-rebroadcast | Pass | Two-run action and orchestrator tests prove a second invocation of the same event performs zero broadcasts and zero simulations after a post-broadcast receipt failure |
 | CP-021 | Verification suite | Pass | `npm test` 218/218; typecheck/lint/format clean; ncc build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
-| CP-022 | Independent Phase 2 re-review | Approve | `CODE_REVIEW.md`: REV-010 confirmed corrected; 0 blocker/critical/high/medium; 2 Low (REV-012 workspace deletion, REV-013 comment pagination); Phase 2 gate approved for `f883b81` |
+| CP-022 | Independent Phase 2 re-review | Approve | `docs/reviews/CODE_REVIEW.md`: REV-010 confirmed corrected; 0 blocker/critical/high/medium; 2 Low (REV-012 workspace deletion, REV-013 comment pagination); Phase 2 gate approved for `f883b81` |
 | CP-023 | Comment pagination (REV-013) | Pass | Bounded early-stop pagination with `Link` next-page parsing; later-page receipts found/updated; fail-closed page limit; forged squatters never edited |
 | CP-023 | Phase 3 local readiness | Pass | `npm test` 222/222; typecheck/lint/format clean; build + bundle load; packaged fixtures pass; `npm audit` 0; secret scan clean |
 | CP-024 | Acceptance environment setup | Pass | Key verified simulation-only; bundle committed (`94fcb1b`); acceptance repo + config + workflow + secrets created |
