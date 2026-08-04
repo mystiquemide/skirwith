@@ -588,6 +588,28 @@ The repository proves what exists. The plan defines intended scope, design, phas
 - Blockers: None.
 - Next exact action: Begin Phase 4 (documentation, demo video, optional site, release packaging with node24 migration if required, and DoraHacks submission before 2026-08-13).
 
+### CP-026: Receipt-save retry robustness and extended live evidence
+
+- Status: Complete
+- Date: 2026-08-04 (Africa/Lagos)
+- Agent: Implementation lead
+- Phase: Phase 3 - Live three-state acceptance
+- Objective: Reduce the chance of a post-broadcast receipt save dropping the execution id (transient GitHub/network failures), and extend live evidence.
+- Requirements covered: `FR-012`, `BR-005`, `NFR-002`, Phase 3 evidence.
+- Work completed: Added bounded retry (up to 3 attempts with backoff) around the idempotent receipt create-or-update saves in the orchestrator (`saveWithRetry`); broadcast is never retried. Added safe outcome logging to the action entrypoint (`mergepay status=... broadcast=... executionId=... tx=... error=...`). Rebuilt and redeployed the bundle (`d75ca53`); acceptance workflow pinned to it. Ran PRs #4-#9: additional confirmed payouts (#4, #6, #7, #8, #9) and a second refusal type (#5, ambiguous labels). PRs #4/#6/#7 confirmed on-chain but the broadcast response was not delivered to the action, demonstrating the uncertain-state no-rebroadcast safety; PRs #8/#9 (and #1/#3) confirmed with complete receipts.
+- Evidence: 7 confirmed on-chain transactions total (5+10+5+5+5+5+5 USDC, self-payments; org wallet unchanged at 40 USDC); 2 refusal types (missing label, ambiguous payout); re-run after uncertain state performed zero broadcasts. See `docs/PHASE3-EVIDENCE.md`.
+- Files or assets changed: `src/execution/orchestrator.ts`, `src/action.ts`, tests, `docs/PHASE3-EVIDENCE.md`, `PROJECT_STATE.md`; acceptance repo workflow pinned to `d75ca53`.
+- Commands or checks run: `npm test` (223), typecheck, lint, format, build; live runs watched via `gh run view` + on-chain RPC verification of each transaction.
+- Test results: 223 tests pass; a retry test proves a transient save still confirms.
+- Acceptance criteria verified: Retry prevents transient receipt-save drops; uncertain-state runs never rebroadcast; on-chain evidence verified for every transaction.
+- Decisions: Retry only idempotent receipt saves, never the broadcast (no automatic rebroadcast). Pending receipts from an undelivered broadcast response are manual-review by design and are reconciled via the KeeperHub execution record (execution id) or documented as uncertain-state evidence.
+- Deviations: None.
+- Amendments: None.
+- Risks introduced: None; bounded retries are idempotent (create-or-update by payment key).
+- Known issues: PRs #4/#6/#7 receipts remain `pending` (undelivered broadcast response); the execution ids were not recorded by the action and must be pulled from the KeeperHub dashboard to reconcile authoritatively.
+- Blockers: None.
+- Next exact action: Provide execution-id pull steps and reconcile the three pending receipts or document them; then proceed to Phase 4.
+
 ## Decisions Made During Execution
 
 | ID | Date | Decision | Reason | Plan impact |
