@@ -9,17 +9,18 @@ without sending a second transaction.
 
 ## Watch and verify
 
-Demonstration link: not yet published. To verify the claims now from the public
-acceptance repository, follow
-[docs/VERIFY.md](docs/VERIFY.md) or start with:
+The public proof path is ready now. The demo recording will be published after
+it is recorded against the final evaluated release. Until then, use the
+[verification guide](docs/VERIFY.md) or start with:
 
 - Confirmed PR: https://github.com/mystiquemide/skirwith-acceptance/pull/1
-- Action run: `30886636409` (checks tab on the PR)
+- Action run: https://github.com/mystiquemide/skirwith-acceptance/actions/runs/30886636409
 - KeeperHub execution ID: `mn7vnwz2rednekykkww8d`
 - Sepolia transaction:
   https://sepolia.etherscan.io/tx/0x4c2e25779a1bccd11db69dd68ba5aa25a5a164d3010e1a34001a55750c7dddb0
 - Replay and refusal evidence: [the acceptance repository](https://github.com/mystiquemide/skirwith-acceptance)
 - Live site: https://mystiquemide.github.io/skirwith/
+- Existing recording plan: [docs/DEMO_VIDEO_PLAN.md](docs/DEMO_VIDEO_PLAN.md)
 
 ## Three-state proof
 
@@ -32,7 +33,17 @@ acceptance repository, follow
 The acceptance repository
 ([mystiquemide/skirwith-acceptance](https://github.com/mystiquemide/skirwith-acceptance))
 holds 7 on-chain-confirmed transactions, a replay with no second transaction,
-and two refusal types.
+and two refusal types. The historical transactions were controlled Sepolia
+self-payments to the organization wallet. They prove the KeeperHub settlement
+and safety path, not production contributor payroll.
+
+## Why this is an agent
+
+Skirwith is a deterministic policy settlement agent delivered as a GitHub
+Action. It observes a merged pull request, reads trusted policy, decides
+`approved`, `blocked`, `duplicate`, or `manual-review`, executes through
+KeeperHub when allowed, and publishes signed proof. The decision layer is
+rules-first by design. No model is claimed or required to authorize a payment.
 
 ## Why KeeperHub is essential
 
@@ -179,6 +190,10 @@ npm run verify:packaged
 npm run test:coverage
 ```
 
+Latest verification: 242 tests passed across 26 files, coverage reached 87.51%,
+and the dependency audit reported zero high-severity vulnerabilities. GitHub CI
+runs the same checks under the declared Node 24 runtime.
+
 Behavior is test-driven. Domain logic stays pure. Provider and GitHub calls
 sit behind injected interfaces.
 
@@ -199,5 +214,5 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## License and release
 
 MIT (see [LICENSE](LICENSE)). Release tag `v0.1.2` points to commit
-`dc705c96e5ff098edbaa9e42c19437cd2d2c8fc6`. Additional release metadata will
-be added when the demonstration link is available.
+`dc705c96e5ff098edbaa9e42c19437cd2d2c8fc6`. The final submission release will
+be created after the recorded demo is checked against the evaluated revision.

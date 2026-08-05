@@ -159,11 +159,11 @@
     <h1>Skirwith</h1>
     <p class="tagline">Pay approved contributors after a verified merge. Once.</p>
     <p class="lead">
-      Skirwith is a GitHub Action. It pays an approved contributor after a
-      merged pull request (PR) through KeeperHub on Ethereum Sepolia.
-      Repository policy controls the recipient and the amount. A replay
-      returns the existing proof instead of sending another payment. A refused
-      run stops before any broadcast.
+      Skirwith is a deterministic policy settlement agent delivered as a GitHub
+      Action. It pays an approved contributor after a merged pull request (PR)
+      through KeeperHub on Ethereum Sepolia. Repository policy controls the
+      recipient and amount. A replay returns the existing proof instead of
+      sending another payment. A refused run stops before any broadcast.
     </p>
     <div class="cta">
       <a href="#setup">Copy the setup</a>
@@ -224,7 +224,9 @@
       with KeeperHub idempotent replay. The replay returned
       <code>idempotentReplay: true</code>. It created no new transaction. A
       maintainer posted a reconciliation note on each PR. This is a live
-      demonstration of the no-rebroadcast safety rule. See
+      demonstration of the no-rebroadcast safety rule. All live transfers are
+      controlled Sepolia self-payments to the organization wallet during
+      testing. See
       <a href="https://github.com/mystiquemide/skirwith-acceptance">the public acceptance repository</a>.
     </p>
   </section>
@@ -238,6 +240,7 @@
         <li>Simulation and broadcast use the same transfer parameters. A mismatch aborts the run.</li>
         <li>Replays resolve the existing receipt. They never broadcast a second transaction.</li>
         <li>Uncertain outcomes become manual review. The action keeps the execution id. It never rebroadcasts.</li>
+        <li>Live evidence is Sepolia testnet evidence using controlled self-payments to the organization wallet.</li>
         <li>Receipt markers use an HMAC (Hash-based Message Authentication Code) signature with a dedicated key. A forged comment cannot suppress a payout.</li>
       </ul>
     </div>
